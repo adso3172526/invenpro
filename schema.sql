@@ -126,6 +126,13 @@ CREATE TABLE ventas_hoy (
   v  INTEGER NOT NULL DEFAULT 0
 );
 
+-- ===================== CONFIGURACIÓN =====================
+
+CREATE TABLE configuracion (
+  clave  TEXT PRIMARY KEY,
+  valor  TEXT NOT NULL DEFAULT ''
+);
+
 -- ===================== ÍNDICES =====================
 
 CREATE INDEX idx_productos_categoria ON productos(categoria);
@@ -150,6 +157,7 @@ ALTER TABLE ventas_mes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ventas_cajero ENABLE ROW LEVEL SECURITY;
 ALTER TABLE top_productos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ventas_hoy ENABLE ROW LEVEL SECURITY;
+ALTER TABLE configuracion ENABLE ROW LEVEL SECURITY;
 
 -- Política permisiva (proyecto académico)
 CREATE POLICY allow_all ON productos FOR ALL USING (true) WITH CHECK (true);
@@ -165,6 +173,7 @@ CREATE POLICY allow_all ON ventas_mes FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY allow_all ON ventas_cajero FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY allow_all ON top_productos FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY allow_all ON ventas_hoy FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY allow_all ON configuracion FOR ALL USING (true) WITH CHECK (true);
 
 -- ===================== FUNCIÓN RPC =====================
 

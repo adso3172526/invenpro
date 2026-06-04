@@ -422,6 +422,16 @@ INSERT INTO factura_items (factura_id, sku, nombre, q, precio) VALUES ('F-10309'
 INSERT INTO factura_items (factura_id, sku, nombre, q, precio) VALUES ('F-10309', '7720004', 'Pasta espagueti 500g', 3, 4100);
 INSERT INTO factura_items (factura_id, sku, nombre, q, precio) VALUES ('F-10309', '7720004', 'Pasta espagueti 500g', 3, 4100);
 
+-- -------------------------------------------------------------
+-- CONFIGURACIÓN IA (defaults)
+-- -------------------------------------------------------------
+INSERT INTO configuracion (clave, valor) VALUES
+('ia_provider', 'gemini'),
+('ia_api_key',  ''),
+('ia_model',    'gemini-2.0-flash'),
+('ia_url',      ''),
+('ia_format',   'gemini');
+
 -- =============================================================
 -- END OF SEED DATA
 -- Total: 30 productos, 5 usuarios, 3 cajeros, 6 proveedores,

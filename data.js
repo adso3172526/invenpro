@@ -50,6 +50,7 @@
       { data: turnos },
       { data: facturas },
       { data: ingresos },
+      { data: configuracion },
     ] = await Promise.all([
       d.from("productos").select("*"),
       d.from("cajeros").select("*"),
@@ -62,6 +63,7 @@
       d.from("turnos").select("*"),
       d.from("facturas").select("*, factura_items(*)"),
       d.from("ingresos").select("*, ingreso_detalle(*)"),
+      d.from("configuracion").select("*"),
     ]);
 
     // Reconstruir facturas con .items anidado
@@ -83,6 +85,10 @@
       return raw;
     });
 
+    // Convertir configuracion de filas [{clave, valor}] a objeto {clave: valor}
+    const configMap = {};
+    (configuracion || []).forEach(r => { configMap[r.clave] = r.valor; });
+
     window.MOCK = {
       today,
       productos: camelize(productos || []),
@@ -96,6 +102,7 @@
       turnos: camelize(turnos || []),
       facturas: facturasConItems,
       ingresos: ingresosConDetalle,
+      configuracion: configMap,
     };
   };
 
@@ -200,6 +207,30 @@
         .update(row)
         .eq("id", id);
       if (error) console.error("closeTurno:", error);
+    },
+
+    async saveConfig(clave, valor) {
+      const { error } = await window.db
+        .from("configuracion")
+        .upsert({ clave, valor }, { onConflict: "clave" });
+      if (error) console.error("saveConfig:", error);
+      // Actualizar cache local
+      if (window.MOCK && window.MOCK.configuracion) {
+        window.MOCK.configuracion[clave] = valor;
+      }
+    },
+
+    async saveConfigBatch(entries) {
+      // entries = { clave1: valor1, clave2: valor2, ... }
+      const rows = Object.entries(entries).map(([clave, valor]) => ({ clave, valor }));
+      const { error } = await window.db
+        .from("configuracion")
+        .upsert(rows, { onConflict: "clave" });
+      if (error) console.error("saveConfigBatch:", error);
+      // Actualizar cache local
+      if (window.MOCK && window.MOCK.configuracion) {
+        Object.assign(window.MOCK.configuracion, entries);
+      }
     },
   };
 

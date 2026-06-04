@@ -965,14 +965,15 @@ const IA_PRESETS = [
 
 // Load full provider config (preset + user overrides from localStorage)
 const getIAConfig = () => {
-  const id = localStorage.getItem("ia_provider") || "gemini";
+  const cfg = (window.MOCK && window.MOCK.configuracion) || {};
+  const id = cfg.ia_provider || "gemini";
   const preset = IA_PRESETS.find(p => p.id === id) || IA_PRESETS[0];
   return {
     ...preset,
-    format: localStorage.getItem("ia_format_" + id) || preset.format,
-    model: localStorage.getItem("ia_model_" + id) || preset.model,
-    url: localStorage.getItem("ia_url_" + id) || preset.url,
-    apiKey: localStorage.getItem("ia_api_key") || "",
+    format: cfg.ia_format || preset.format,
+    model: cfg.ia_model || preset.model,
+    url: cfg.ia_url || preset.url,
+    apiKey: cfg.ia_api_key || "",
   };
 };
 
@@ -2088,49 +2089,54 @@ const Reportes = () => {
 
 // =================== Ajustes (solo admin) ===================
 const Ajustes = () => {
-  const [providerId, setProviderId] = useStateA(() => localStorage.getItem("ia_provider") || "gemini");
-  const [apiKey, setApiKey] = useStateA(() => localStorage.getItem("ia_api_key") || "");
-  const [modelo, setModelo] = useStateA(() => { const id = localStorage.getItem("ia_provider") || "gemini"; return localStorage.getItem("ia_model_" + id) || (IA_PRESETS.find(p => p.id === id) || IA_PRESETS[0]).model; });
-  const [urlApi, setUrlApi] = useStateA(() => { const id = localStorage.getItem("ia_provider") || "gemini"; return localStorage.getItem("ia_url_" + id) || (IA_PRESETS.find(p => p.id === id) || IA_PRESETS[0]).url; });
-  const [formato, setFormato] = useStateA(() => { const id = localStorage.getItem("ia_provider") || "gemini"; return localStorage.getItem("ia_format_" + id) || (IA_PRESETS.find(p => p.id === id) || IA_PRESETS[0]).format; });
+  const cfg = (window.MOCK && window.MOCK.configuracion) || {};
+  const initId = cfg.ia_provider || "gemini";
+  const initPreset = IA_PRESETS.find(p => p.id === initId) || IA_PRESETS[0];
+
+  const [providerId, setProviderId] = useStateA(initId);
+  const [apiKey, setApiKey] = useStateA(cfg.ia_api_key || "");
+  const [modelo, setModelo] = useStateA(cfg.ia_model || initPreset.model);
+  const [urlApi, setUrlApi] = useStateA(cfg.ia_url || initPreset.url);
+  const [formato, setFormato] = useStateA(cfg.ia_format || initPreset.format);
   const [showKey, setShowKey] = useStateA(false);
   const [saved, setSaved] = useStateA(false);
+  const [saving, setSaving] = useStateA(false);
   const [testing, setTesting] = useStateA(false);
   const [testResult, setTestResult] = useStateA(null);
 
   const preset = IA_PRESETS.find(p => p.id === providerId) || IA_PRESETS[IA_PRESETS.length - 1];
-  const isCustom = providerId === "custom";
-  const canEditUrl = isCustom || !preset.url;
 
   const cambiarProveedor = (id) => {
     const pr = IA_PRESETS.find(p => p.id === id) || IA_PRESETS[IA_PRESETS.length - 1];
     setProviderId(id);
-    localStorage.setItem("ia_provider", id);
-    setApiKey(localStorage.getItem("ia_key_" + id) || "");
-    setModelo(localStorage.getItem("ia_model_" + id) || pr.model);
-    setUrlApi(localStorage.getItem("ia_url_" + id) || pr.url);
-    setFormato(localStorage.getItem("ia_format_" + id) || pr.format);
+    setModelo(pr.model);
+    setUrlApi(pr.url);
+    setFormato(pr.format);
+    setApiKey("");
     setSaved(false);
     setTestResult(null);
   };
 
-  const guardar = () => {
-    localStorage.setItem("ia_api_key", apiKey.trim());
-    localStorage.setItem("ia_key_" + providerId, apiKey.trim());
-    localStorage.setItem("ia_model_" + providerId, modelo.trim());
-    localStorage.setItem("ia_url_" + providerId, urlApi.trim());
-    localStorage.setItem("ia_format_" + providerId, formato);
+  const guardar = async () => {
+    setSaving(true);
+    await DB.saveConfigBatch({
+      ia_provider: providerId,
+      ia_api_key: apiKey.trim(),
+      ia_model: modelo.trim(),
+      ia_url: urlApi.trim(),
+      ia_format: formato,
+    });
+    setSaving(false);
     setSaved(true);
     setTestResult(null);
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const borrarKey = () => {
-    localStorage.removeItem("ia_api_key");
-    localStorage.removeItem("ia_key_" + providerId);
+  const borrarKey = async () => {
     setApiKey("");
     setSaved(false);
     setTestResult(null);
+    await DB.saveConfig("ia_api_key", "");
   };
 
   const probarConexion = async () => {
@@ -2172,102 +2178,113 @@ const Ajustes = () => {
         </div>
       </div>
 
+      {/* ── Card: Proveedor de IA ── */}
       <div className="card" style={{ marginTop: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 15 }}>Inteligencia Artificial</div>
-            <div className="muted" style={{ fontSize: 12 }}>Configura el proveedor y API Key para el escáner de facturas</div>
+        <div className="card-h">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
+            <h3>Proveedor de IA</h3>
           </div>
+          <p className="sub">Escáner de facturas</p>
         </div>
-
-        <div style={{ background: "var(--surface-2)", borderRadius: 8, padding: 16, border: "1px solid var(--border)" }}>
-          {/* Selector de proveedor */}
-          <label style={{ display: "block", fontWeight: 500, fontSize: 13, marginBottom: 8 }}>Proveedor de IA</label>
-          <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+        <div className="card-b">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 8 }}>
             {IA_PRESETS.map(p => (
               <button key={p.id}
-                className={"btn sm" + (providerId === p.id ? " primary" : " ghost")}
+                className={"btn" + (providerId === p.id ? " primary" : " ghost")}
                 onClick={() => cambiarProveedor(p.id)}
-                style={{ fontSize: 12, fontWeight: providerId === p.id ? 600 : 400 }}
+                style={{ fontSize: 12, fontWeight: providerId === p.id ? 600 : 400, width: "100%", padding: "10px 8px" }}
               >{p.name}</button>
             ))}
           </div>
+        </div>
+      </div>
 
-          {/* Formato de API (solo visible si es custom o si el user quiere cambiar) */}
-          {isCustom && (
-            <div className="field" style={{ margin: "0 0 12px" }}>
-              <label style={{ fontSize: 13 }}>Formato de API</label>
-              <select value={formato} onChange={e => setFormato(e.target.value)} style={{ fontSize: 13 }}>
-                <option value="openai">OpenAI Compatible (la mayoría de APIs)</option>
+      {/* ── Card: Configuración de conexión ── */}
+      <div className="card" style={{ marginTop: 12 }}>
+        <div className="card-h">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="settings" size={16}/>
+            <h3>Configuración de conexión</h3>
+          </div>
+        </div>
+        <div className="card-b">
+          <div className="grid-2" style={{ gap: 12 }}>
+            <div className="field" style={{ margin: 0 }}>
+              <label>Formato de API</label>
+              <select value={formato} onChange={e => { setFormato(e.target.value); setSaved(false); }}>
+                <option value="openai">OpenAI Compatible</option>
                 <option value="gemini">Google Gemini</option>
                 <option value="claude">Anthropic Claude</option>
               </select>
-              <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
-                La mayoría de APIs (Groq, Together, Mistral, DeepSeek, Ollama, LM Studio, etc.) usan formato OpenAI Compatible.
-              </div>
             </div>
-          )}
-
-          {/* URL del endpoint */}
-          {(isCustom || canEditUrl) && (
-            <div className="field" style={{ margin: "0 0 12px" }}>
-              <label style={{ fontSize: 13 }}>URL del endpoint</label>
+            <div className="field" style={{ margin: 0 }}>
+              <label>Modelo</label>
+              <input
+                className="mono"
+                value={modelo}
+                onChange={e => { setModelo(e.target.value); setSaved(false); }}
+                placeholder="nombre-del-modelo"
+              />
+            </div>
+          </div>
+          {formato !== "gemini" && (
+            <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+              <label>URL del endpoint</label>
               <input
                 className="mono"
                 value={urlApi}
                 onChange={e => { setUrlApi(e.target.value); setSaved(false); }}
-                placeholder={formato === "openai" ? "https://api.ejemplo.com/v1/chat/completions" : formato === "claude" ? "https://api.anthropic.com/v1/messages" : ""}
+                placeholder={formato === "openai" ? "https://api.ejemplo.com/v1/chat/completions" : "https://api.anthropic.com/v1/messages"}
                 style={{ fontSize: 12 }}
               />
-              {formato === "openai" && (
-                <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>Debe terminar en /chat/completions</div>
-              )}
             </div>
           )}
+          <p className="muted" style={{ fontSize: 11, marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
+            Groq, Together, Mistral, DeepSeek, Ollama, LM Studio, OpenRouter usan formato OpenAI Compatible.
+          </p>
+        </div>
+      </div>
 
-          {/* Modelo */}
-          <div className="field" style={{ margin: "0 0 12px" }}>
-            <label style={{ fontSize: 13 }}>Modelo</label>
-            <input
-              className="mono"
-              value={modelo}
-              onChange={e => { setModelo(e.target.value); setSaved(false); }}
-              placeholder="nombre-del-modelo"
-              style={{ fontSize: 12 }}
-            />
+      {/* ── Card: API Key ── */}
+      <div className="card" style={{ marginTop: 12 }}>
+        <div className="card-h">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            <h3>API Key</h3>
           </div>
-
-          {/* API Key */}
-          <label style={{ display: "block", fontWeight: 500, fontSize: 13, marginBottom: 6 }}>API Key</label>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-            <div style={{ flex: 1, position: "relative" }}>
+        </div>
+        <div className="card-b">
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 200px", position: "relative", minWidth: 0 }}>
               <input
                 type={showKey ? "text" : "password"}
                 value={apiKey}
                 onChange={e => { setApiKey(e.target.value); setSaved(false); setTestResult(null); }}
                 placeholder={preset.placeholder}
-                style={{ width: "100%", fontSize: 13, padding: "8px 40px 8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "monospace" }}
+                style={{ width: "100%", fontSize: 13, padding: "8px 36px 8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "monospace" }}
               />
               <button
                 onClick={() => setShowKey(v => !v)}
-                style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 11 }}
+                style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 11, padding: 0 }}
                 title={showKey ? "Ocultar" : "Mostrar"}
               >{showKey ? "🙈" : "👁"}</button>
             </div>
-            <button className="btn primary sm" onClick={guardar} disabled={!apiKey.trim() || !modelo.trim()}>Guardar</button>
-            {apiKey && (
-              <button className="btn ghost sm" onClick={borrarKey} title="Borrar API Key"><Icon name="x" size={14}/></button>
-            )}
+            <div style={{ display: "flex", gap: 6 }}>
+              <button className="btn primary sm" onClick={guardar} disabled={!apiKey.trim() || !modelo.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
+              {apiKey && (
+                <button className="btn ghost sm" onClick={borrarKey} title="Borrar"><Icon name="x" size={14}/></button>
+              )}
+            </div>
           </div>
 
           {saved && (
-            <div style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
-              <Icon name="check" size={14}/> Configuración guardada
+            <div style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4, marginTop: 10 }}>
+              <Icon name="check" size={14}/> Configuración guardada en la nube
             </div>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
             <button className="btn sm ghost" onClick={probarConexion} disabled={!apiKey.trim() || testing}>
               {testing ? "Probando…" : "Probar conexión"}
             </button>
@@ -2281,10 +2298,11 @@ const Ajustes = () => {
             )}
           </div>
 
-          <p className="muted" style={{ fontSize: 11, marginTop: 4, lineHeight: 1.5 }}>
-            La configuración se almacena solo en este navegador.
-            {preset.link && <> Obtén tu key en <a href={preset.link} target="_blank" rel="noopener" style={{ color: "var(--primary)" }}>{preset.linkLabel}</a>.</>}
-          </p>
+          {preset.link && (
+            <p className="muted" style={{ fontSize: 11, marginTop: 10, marginBottom: 0, lineHeight: 1.5 }}>
+              Obtén tu key en <a href={preset.link} target="_blank" rel="noopener" style={{ color: "var(--primary)" }}>{preset.linkLabel}</a>.
+            </p>
+          )}
         </div>
       </div>
     </>
