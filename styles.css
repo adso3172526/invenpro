@@ -530,7 +530,7 @@ input, select, textarea { font: inherit; color: inherit; }
   .sidebar .nav-card { width: 100%; border-radius: 10px; aspect-ratio: 1; }
   .nav-card-label-mobile { display: none !important; }
   .nav-card-top { padding: 0; min-height: 100%; display: grid; place-items: center; }
-  .nav-card-top svg { width: 22px; height: 22px; }
+  .nav-card-top svg { width: 30px; height: 30px; }
   .nav-card-badge { font-size: 8px; padding: 1px 5px; top: 4px; right: 4px; }
 
   /* User box */
@@ -768,8 +768,8 @@ input, select, textarea { font: inherit; color: inherit; }
   .hub-grid { grid-template-columns: 1fr; }
   .hub-h h1 { font-size: 22px; }
 
-  /* Dashboard responsive */
-  .page:has(.dash) { height: auto !important; overflow: visible !important; padding: 12px !important; max-width: 100% !important; }
+  /* Dashboard responsive móvil */
+  .page:has(.dash) { height: auto !important; overflow: visible !important; padding: 10px !important; max-width: 100% !important; }
   .dash {
     height: auto !important;
     min-height: auto !important;
@@ -777,28 +777,41 @@ input, select, textarea { font: inherit; color: inherit; }
     gap: 10px !important;
     padding: 0 !important;
   }
-  .dash-h { padding: 12px !important; flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+  /* Header */
+  .dash-h { padding: 12px !important; flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; border-radius: 10px !important; }
   .dash-h .row { width: 100% !important; }
   .dash-h .row .btn { width: 100% !important; justify-content: center !important; }
-  .dash-h h2 { font-size: 18px !important; }
+  .dash-h h2 { font-size: 17px !important; }
   .dash-h .sub { font-size: 11px !important; }
+  /* KPIs — 2 columnas compactas */
   .dash-kpi { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-  .dash-kpi .kpi { padding: 12px !important; min-height: 80px !important; }
-  .dash-kpi .kpi .val { font-size: 18px !important; }
+  .dash-kpi .kpi { padding: 10px !important; min-height: auto !important; }
+  .dash-kpi .kpi .val { font-size: 17px !important; }
   .dash-kpi .kpi .label { font-size: 10px !important; }
-  .dash-kpi .kpi .delta { font-size: 10px !important; }
+  .dash-kpi .kpi .delta { font-size: 9px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
   .dash-kpi .kpi .spark { display: none !important; }
+  /* Cards en 1 columna */
   .dash-row { grid-template-columns: 1fr !important; gap: 10px !important; }
   .dash-row > .card {
     min-height: auto !important;
     overflow: visible !important;
-    display: block !important;
+    display: flex !important; flex-direction: column !important;
   }
+  .dash-row > .card > .card-h { padding: 10px 12px !important; }
+  .dash-row > .card > .card-h h3 { font-size: 13px !important; }
+  .dash-row > .card > .card-h .sub { font-size: 10px !important; }
   .dash-row > .card > .card-b,
   .dash-row > .card > .tbl-wrap,
   .dash-row > .card > div:not(.card-h) { overflow: visible !important; height: auto !important; }
-  .dash-row .chart-bars { height: 220px !important; min-height: 220px !important; padding: 8px 4px 0 !important; }
-  .dash-row .chart-bars .lbl, .dash-row .chart-bars .val { font-size: 10px; }
+  /* Gráfico de barras más bajo y compacto */
+  .dash-row .chart-bars { height: 160px !important; min-height: 160px !important; padding: 6px 2px 0 !important; gap: 6px !important; }
+  .dash-row .chart-bars .col { gap: 3px !important; }
+  .dash-row .chart-bars .lbl { font-size: 9px !important; }
+  .dash-row .chart-bars .bar-wrap .val { font-size: 9px !important; }
+  .dash-row .chart-bars .bar { max-width: 32px !important; }
+  /* Tabla cajeros compacta */
+  .dash-row .tbl td { padding: 8px 10px !important; font-size: 12px !important; }
+  .dash-row .tbl .progress { height: 4px !important; }
   /* Pagination wrap */
   .pagination { flex-direction: column; align-items: center; gap: 8px; }
   /* KPI grid del vencimiento: 2 cols en mobile */
@@ -940,6 +953,11 @@ input, select, textarea { font: inherit; color: inherit; }
 
 @media (max-width: 380px) {
   .kpi-grid { grid-template-columns: 1fr; }
+  .dash-kpi { grid-template-columns: 1fr !important; gap: 6px !important; }
+  .dash-kpi .kpi .val { font-size: 20px !important; }
+  .dash-kpi .kpi .delta { font-size: 9px !important; }
+  .dash-h h2 { font-size: 16px !important; }
+  .dash-row .chart-bars { height: 140px !important; min-height: 140px !important; }
   .topbar .crumb .sub, .topbar .crumb .chip { display: none; }
   .login-footer .pitch { display: none; }
   .product-grid { grid-template-columns: 1fr; }
