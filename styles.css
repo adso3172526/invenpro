@@ -522,17 +522,16 @@ input, select, textarea { font: inherit; color: inherit; }
   }
   .sidebar .brand { display: none !important; }
 
-  /* Nav cards — ancho completo dentro del 50vw */
+  /* Nav cards — cuadradas, fáciles de tocar */
   .sidebar .nav-cards {
-    display: flex; flex-direction: column; gap: 6px;
-    flex: none; align-items: stretch;
-    width: 100%;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    flex: none; width: 100%;
   }
-  .sidebar .nav-card { width: 100%; border-radius: 8px; }
+  .sidebar .nav-card { width: 100%; border-radius: 10px; aspect-ratio: 1; }
   .nav-card-label-mobile { display: none !important; }
-  .nav-card-top { padding: 10px; }
-  .nav-card-top svg { width: 18px; height: 18px; }
-  .nav-card-badge { font-size: 8px; padding: 1px 5px; top: auto; right: 10px; }
+  .nav-card-top { padding: 0; min-height: 100%; display: grid; place-items: center; }
+  .nav-card-top svg { width: 22px; height: 22px; }
+  .nav-card-badge { font-size: 8px; padding: 1px 5px; top: 4px; right: 4px; }
 
   /* User box */
   .sidebar .user {
