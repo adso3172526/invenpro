@@ -369,6 +369,8 @@ input, select, textarea { font: inherit; color: inherit; }
 .main {
   display: flex; flex-direction: column;
   min-width: 0;
+  max-height: 100vh;
+  overflow-y: auto;
 }
 .topbar {
   height: 60px;
@@ -552,8 +554,8 @@ input, select, textarea { font: inherit; color: inherit; }
   }
   .user-logout-label { display: inline; font-size: 11px; }
 
-  /* Main */
-  .main { min-width: 0; }
+  /* Main — descontar mobile topbar */
+  .main { min-width: 0; max-height: calc(100vh - 56px); overflow-y: auto; }
   .page { max-width: 100%; padding: 16px 14px 24px; }
 
   /* Login compacto */
