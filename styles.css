@@ -985,32 +985,32 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 
 .page { padding: 24px 32px 60px; max-width: 1180px; margin: 0 auto; width: 100%; }
-.page:has(.dash) { padding: 16px 24px 32px; max-width: 1320px; }
+.page:has(.dash) { padding: 14px 20px 24px; max-width: 1320px; }
 
 /* Dashboard fits in viewport */
 .dash {
-  min-height: calc(100vh - 48px);
+  min-height: auto;
   display: grid;
   grid-template-rows: auto auto auto;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
   box-sizing: border-box;
 }
-.dash-h { margin: 0; padding: 14px 20px; }
-.dash-h h2 { font-size: 24px; }
-.dash-h .sub { font-size: 13px; }
-.dash-kpi { margin: 0 !important; gap: 14px; display: grid; grid-template-columns: repeat(4, 1fr); }
-.dash-kpi .kpi { padding: 18px 20px; }
-.dash-kpi .kpi .val { font-size: 26px; }
-.dash-kpi .kpi .label { font-size: 12px; }
-.dash-kpi .kpi .delta { font-size: 12px; margin-top: 4px; }
-.dash-kpi .kpi .spark { width: 80px; }
+.dash-h { margin: 0; padding: 10px 16px; }
+.dash-h h2 { font-size: 22px; }
+.dash-h .sub { font-size: 12px; }
+.dash-kpi { margin: 0 !important; gap: 10px; display: grid; grid-template-columns: repeat(4, 1fr); }
+.dash-kpi .kpi { padding: 14px 16px; }
+.dash-kpi .kpi .val { font-size: 24px; }
+.dash-kpi .kpi .label { font-size: 11px; }
+.dash-kpi .kpi .delta { font-size: 11px; margin-top: 2px; }
+.dash-kpi .kpi .spark { width: 70px; }
 .dash-row {
-  display: grid; gap: 14px;
+  display: grid; gap: 10px;
 }
 .dash-row > .card {
   display: flex; flex-direction: column; overflow: hidden;
-  min-height: 360px;
+  min-height: 280px;
 }
 .dash-row > .card > .card-h { flex: 0 0 auto; padding: 14px 18px; }
 .dash-row > .card > .card-h h3 { font-size: 15px; }
