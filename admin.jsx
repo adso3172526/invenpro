@@ -22,7 +22,7 @@ const NAV = [
   { id: "proveedores", label: "Proveedores",        icon: "store",    color: "#A16207" },
   { id: "cajeros",     label: "Cajeros y turnos",   icon: "users",    color: "#9CA3AF" },
   { id: "reportes",    label: "Reporte de ventas",  icon: "chart",    color: "#8B5CF6" },
-  { id: "ajustes",     label: "Ajustes",            icon: "settings", color: "#6B7280", rol: "admin" },
+  { id: "ajustes",     label: "Ajustes",            icon: "settings", color: "#6B7280", rol: "Administrador" },
 ];
 
 const Sidebar = ({ active, setActive, user, onLogout }) => {
