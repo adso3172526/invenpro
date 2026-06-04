@@ -1,18 +1,31 @@
 // Componente raíz: gestiona autenticación, rol, estado de turno
 const { useState: useStateApp, useEffect: useEffectApp } = React;
 
+// Helpers para persistir sesión en localStorage
+const _ssKey = "invenpro-session";
+const _ssRead = () => { try { return JSON.parse(localStorage.getItem(_ssKey)) || {}; } catch { return {}; } };
+const _ssWrite = (patch) => { const cur = _ssRead(); Object.assign(cur, patch); localStorage.setItem(_ssKey, JSON.stringify(cur)); };
+const _ssClear = () => localStorage.removeItem(_ssKey);
+
 const App = () => {
+  const _ss = _ssRead();
   const [theme, setTheme] = useStateApp(() => localStorage.getItem("invenpro-theme") || "light");
-  const [stage, setStage] = useStateApp("login"); // login | shift-open | pos | shift-closed | admin
-  const [user, setUser] = useStateApp(null);
-  const [shift, setShift] = useStateApp(null);
+  const [stage, setStage] = useStateApp(_ss.stage || "login");
+  const [user, setUser] = useStateApp(_ss.user || null);
+  const [shift, setShift] = useStateApp(_ss.shift || null);
   const [shiftSummary, setShiftSummary] = useStateApp(null);
-  const [adminPage, setAdminPage] = useStateApp("dashboard");
+  const [adminPage, setAdminPage] = useStateApp(_ss.adminPage || "dashboard");
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("invenpro-theme", theme);
   }, [theme]);
+
+  // Persistir sesión en cada cambio relevante
+  useEffectApp(() => { _ssWrite({ stage }); }, [stage]);
+  useEffectApp(() => { _ssWrite({ user }); }, [user]);
+  useEffectApp(() => { _ssWrite({ shift }); }, [shift]);
+  useEffectApp(() => { _ssWrite({ adminPage }); }, [adminPage]);
 
   const onLogin = (u) => {
     setUser({
@@ -29,6 +42,7 @@ const App = () => {
   };
 
   const onLogout = () => {
+    _ssClear();
     setUser(null); setShift(null); setShiftSummary(null);
     setStage("login"); setAdminPage("dashboard");
   };
