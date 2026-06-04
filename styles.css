@@ -604,10 +604,11 @@ input, select, textarea { font: inherit; color: inherit; }
   .modal-b { max-height: calc(100vh - 130px); overflow-y: auto; }
 
   /* Nav móvil más compacto */
-  .nav-card-top { padding: 5px; }
-  .nav-card-top svg { width: 14px; height: 14px; }
-  .nav-card-badge { font-size: 7px; padding: 0 3px; }
-  .nav-card-label-mobile { font-size: 10px; padding: 4px 3px; }
+  /* Nav cards — mantener cuadradas grandes en móvil */
+  .nav-card-top { padding: 0; min-height: 100%; display: grid; place-items: center; }
+  .nav-card-top svg { width: 30px; height: 30px; }
+  .nav-card-badge { font-size: 8px; padding: 1px 5px; }
+  .nav-card-label-mobile { display: none !important; }
 
   /* Toolbar de búsqueda */
   .pos-search { padding: 10px 12px; }
@@ -777,15 +778,15 @@ input, select, textarea { font: inherit; color: inherit; }
     gap: 10px !important;
     padding: 0 !important;
   }
-  /* Header */
-  .dash-h { padding: 12px !important; flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; border-radius: 10px !important; }
+  /* Header — botón exportar compacto */
+  .dash-h { padding: 10px 12px !important; flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; border-radius: 10px !important; }
   .dash-h .row { width: 100% !important; }
-  .dash-h .row .btn { width: 100% !important; justify-content: center !important; }
+  .dash-h .row .btn { width: 100% !important; justify-content: center !important; padding: 10px 12px !important; font-size: 13px !important; min-height: 44px !important; }
   .dash-h h2 { font-size: 17px !important; }
   .dash-h .sub { font-size: 11px !important; }
   /* KPIs — 2 columnas compactas */
   .dash-kpi { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-  .dash-kpi .kpi { padding: 10px !important; min-height: auto !important; }
+  .dash-kpi .kpi { padding: 10px !important; min-height: auto !important; border-radius: 10px !important; }
   .dash-kpi .kpi .val { font-size: 17px !important; }
   .dash-kpi .kpi .label { font-size: 10px !important; }
   .dash-kpi .kpi .delta { font-size: 9px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
@@ -794,21 +795,23 @@ input, select, textarea { font: inherit; color: inherit; }
   .dash-row { grid-template-columns: 1fr !important; gap: 10px !important; }
   .dash-row > .card {
     min-height: auto !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     display: flex !important; flex-direction: column !important;
+    border-radius: 10px !important;
   }
   .dash-row > .card > .card-h { padding: 10px 12px !important; }
   .dash-row > .card > .card-h h3 { font-size: 13px !important; }
   .dash-row > .card > .card-h .sub { font-size: 10px !important; }
+  .dash-row > .card > .card-b { padding: 10px !important; }
   .dash-row > .card > .card-b,
   .dash-row > .card > .tbl-wrap,
   .dash-row > .card > div:not(.card-h) { overflow: visible !important; height: auto !important; }
-  /* Gráfico de barras más bajo y compacto */
-  .dash-row .chart-bars { height: 160px !important; min-height: 160px !important; padding: 6px 2px 0 !important; gap: 6px !important; }
+  /* Gráfico de barras compacto */
+  .dash-row .chart-bars { height: 160px !important; min-height: 160px !important; padding: 6px 2px 0 !important; gap: 4px !important; }
   .dash-row .chart-bars .col { gap: 3px !important; }
   .dash-row .chart-bars .lbl { font-size: 9px !important; }
   .dash-row .chart-bars .bar-wrap .val { font-size: 9px !important; }
-  .dash-row .chart-bars .bar { max-width: 32px !important; }
+  .dash-row .chart-bars .bar { max-width: 28px !important; border-radius: 4px 4px 0 0 !important; }
   /* Tabla cajeros compacta */
   .dash-row .tbl td { padding: 8px 10px !important; font-size: 12px !important; }
   .dash-row .tbl .progress { height: 4px !important; }
