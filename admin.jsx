@@ -953,11 +953,28 @@ const matchItems = (geminiItems) => {
 };
 
 // Catálogo de proveedores de IA
-const IA_PROVIDERS = [
-  { id: "gemini",   name: "Google Gemini Flash",  model: "gemini-2.0-flash",  placeholder: "AIzaSy...",        link: "https://aistudio.google.com/apikey",              linkLabel: "Google AI Studio" },
-  { id: "openai",   name: "OpenAI GPT-4o",        model: "gpt-4o",            placeholder: "sk-proj-...",      link: "https://platform.openai.com/api-keys",            linkLabel: "OpenAI Platform" },
-  { id: "claude",   name: "Anthropic Claude",      model: "claude-sonnet-4-20250514",  placeholder: "sk-ant-...", link: "https://console.anthropic.com/settings/keys", linkLabel: "Anthropic Console" },
+// Presets de proveedores IA (el usuario puede agregar personalizados)
+const IA_PRESETS = [
+  { id: "gemini",   name: "Gemini",    format: "gemini",  model: "gemini-2.0-flash",         url: "",                                                          placeholder: "AIzaSy...",   link: "https://aistudio.google.com/apikey",         linkLabel: "Google AI Studio" },
+  { id: "openai",   name: "OpenAI",    format: "openai",  model: "gpt-4o",                   url: "https://api.openai.com/v1/chat/completions",                placeholder: "sk-proj-...", link: "https://platform.openai.com/api-keys",       linkLabel: "OpenAI Platform" },
+  { id: "claude",   name: "Claude",    format: "claude",  model: "claude-sonnet-4-20250514", url: "https://api.anthropic.com/v1/messages",                     placeholder: "sk-ant-...",  link: "https://console.anthropic.com/settings/keys",linkLabel: "Anthropic Console" },
+  { id: "groq",     name: "Groq",      format: "openai",  model: "llama-4-scout-17b-16e-instruct", url: "https://api.groq.com/openai/v1/chat/completions",    placeholder: "gsk_...",     link: "https://console.groq.com/keys",              linkLabel: "Groq Console" },
+  { id: "openrouter", name: "OpenRouter", format: "openai", model: "google/gemini-2.0-flash-exp:free", url: "https://openrouter.ai/api/v1/chat/completions",  placeholder: "sk-or-...",   link: "https://openrouter.ai/keys",                 linkLabel: "OpenRouter" },
+  { id: "custom",   name: "Otro",      format: "openai",  model: "",                         url: "",                                                          placeholder: "tu-api-key",  link: "",                                           linkLabel: "" },
 ];
+
+// Load full provider config (preset + user overrides from localStorage)
+const getIAConfig = () => {
+  const id = localStorage.getItem("ia_provider") || "gemini";
+  const preset = IA_PRESETS.find(p => p.id === id) || IA_PRESETS[0];
+  return {
+    ...preset,
+    format: localStorage.getItem("ia_format_" + id) || preset.format,
+    model: localStorage.getItem("ia_model_" + id) || preset.model,
+    url: localStorage.getItem("ia_url_" + id) || preset.url,
+    apiKey: localStorage.getItem("ia_api_key") || "",
+  };
+};
 
 const PROMPT_FACTURA = `Analiza esta factura/remisión. Extrae JSON estricto:
 { "proveedor": "...", "nit": "...", "factura": "...", "fecha": "...", "vendedor": "...", "celular": "...",
@@ -987,30 +1004,18 @@ const parseApiError = (status, body, provider) => {
   return `Error de ${provider} (${status}). Intenta de nuevo.`;
 };
 
-const analizarConIA = async (base64, mimeType, apiKey, providerId) => {
+const analizarConIA = async (base64, mimeType) => {
+  const cfg = getIAConfig();
+  if (!cfg.apiKey) throw new Error("Configura tu API Key en Ajustes antes de usar el escáner IA.");
+  const label = cfg.name || cfg.id;
   let text;
-  if (providerId === "openai") {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+
+  if (cfg.format === "claude") {
+    const res = await fetch(cfg.url || "https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+      headers: { "Content-Type": "application/json", "x-api-key": cfg.apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
       body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: [
-          { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64}` } },
-          { type: "text", text: PROMPT_FACTURA }
-        ]}],
-        max_tokens: 2048,
-      }),
-    });
-    if (!res.ok) { const err = await res.text(); throw new Error(parseApiError(res.status, err, "OpenAI")); }
-    const json = await res.json();
-    text = json.choices?.[0]?.message?.content;
-  } else if (providerId === "claude") {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: cfg.model,
         max_tokens: 2048,
         messages: [{ role: "user", content: [
           { type: "image", source: { type: "base64", media_type: mimeType, data: base64 } },
@@ -1018,12 +1023,12 @@ const analizarConIA = async (base64, mimeType, apiKey, providerId) => {
         ]}],
       }),
     });
-    if (!res.ok) { const err = await res.text(); throw new Error(parseApiError(res.status, err, "Claude")); }
+    if (!res.ok) { const err = await res.text(); throw new Error(parseApiError(res.status, err, label)); }
     const json = await res.json();
     text = json.content?.[0]?.text;
-  } else {
-    // Gemini (default)
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  } else if (cfg.format === "gemini") {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${cfg.apiKey}`;
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1032,10 +1037,30 @@ const analizarConIA = async (base64, mimeType, apiKey, providerId) => {
         { text: PROMPT_FACTURA }
       ]}]}),
     });
-    if (!res.ok) { const err = await res.text(); throw new Error(parseApiError(res.status, err, "Gemini")); }
+    if (!res.ok) { const err = await res.text(); throw new Error(parseApiError(res.status, err, label)); }
     const json = await res.json();
     text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  } else {
+    // OpenAI-compatible format (OpenAI, Groq, OpenRouter, Together, Mistral, custom, etc.)
+    const endpoint = cfg.url || "https://api.openai.com/v1/chat/completions";
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${cfg.apiKey}` },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [{ role: "user", content: [
+          { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64}` } },
+          { type: "text", text: PROMPT_FACTURA }
+        ]}],
+        max_tokens: 2048,
+      }),
+    });
+    if (!res.ok) { const err = await res.text(); throw new Error(parseApiError(res.status, err, label)); }
+    const json = await res.json();
+    text = json.choices?.[0]?.message?.content;
   }
+
   if (!text) throw new Error("La IA no devolvió resultado. Intenta con una imagen más clara.");
   const clean = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
   return JSON.parse(clean);
@@ -1069,10 +1094,6 @@ const IaScannerModal = ({ onClose, onRead }) => {
   };
 
   const analizar = async () => {
-    const providerId = localStorage.getItem("ia_provider") || "gemini";
-    const apiKey = localStorage.getItem("ia_api_key") || "";
-    const provName = (IA_PROVIDERS.find(p => p.id === providerId) || IA_PROVIDERS[0]).name;
-    if (!apiKey.trim()) { setErrorMsg("Configura tu API Key en Ajustes antes de usar el escáner IA."); setEstado("error"); return; }
     if (!imgData) return;
     setEstado("analizando");
     setProgreso(0);
@@ -1083,7 +1104,7 @@ const IaScannerModal = ({ onClose, onRead }) => {
       setProgreso(Math.round(p));
     }, 300);
     try {
-      const raw = await analizarConIA(imgData.base64, imgData.mimeType, apiKey.trim(), providerId);
+      const raw = await analizarConIA(imgData.base64, imgData.mimeType);
       clearInterval(interval);
       setProgreso(100);
       const items = matchItems(raw.items || []);
@@ -2069,19 +2090,26 @@ const Reportes = () => {
 const Ajustes = () => {
   const [providerId, setProviderId] = useStateA(() => localStorage.getItem("ia_provider") || "gemini");
   const [apiKey, setApiKey] = useStateA(() => localStorage.getItem("ia_api_key") || "");
+  const [modelo, setModelo] = useStateA(() => { const id = localStorage.getItem("ia_provider") || "gemini"; return localStorage.getItem("ia_model_" + id) || (IA_PRESETS.find(p => p.id === id) || IA_PRESETS[0]).model; });
+  const [urlApi, setUrlApi] = useStateA(() => { const id = localStorage.getItem("ia_provider") || "gemini"; return localStorage.getItem("ia_url_" + id) || (IA_PRESETS.find(p => p.id === id) || IA_PRESETS[0]).url; });
+  const [formato, setFormato] = useStateA(() => { const id = localStorage.getItem("ia_provider") || "gemini"; return localStorage.getItem("ia_format_" + id) || (IA_PRESETS.find(p => p.id === id) || IA_PRESETS[0]).format; });
   const [showKey, setShowKey] = useStateA(false);
   const [saved, setSaved] = useStateA(false);
   const [testing, setTesting] = useStateA(false);
-  const [testResult, setTestResult] = useStateA(null); // null | "ok" | "error"
+  const [testResult, setTestResult] = useStateA(null);
 
-  const prov = IA_PROVIDERS.find(p => p.id === providerId) || IA_PROVIDERS[0];
+  const preset = IA_PRESETS.find(p => p.id === providerId) || IA_PRESETS[IA_PRESETS.length - 1];
+  const isCustom = providerId === "custom";
+  const canEditUrl = isCustom || !preset.url;
 
   const cambiarProveedor = (id) => {
+    const pr = IA_PRESETS.find(p => p.id === id) || IA_PRESETS[IA_PRESETS.length - 1];
     setProviderId(id);
     localStorage.setItem("ia_provider", id);
-    // Cargar key guardada para este proveedor (cada proveedor tiene su key)
-    const savedKey = localStorage.getItem("ia_key_" + id) || "";
-    setApiKey(savedKey);
+    setApiKey(localStorage.getItem("ia_key_" + id) || "");
+    setModelo(localStorage.getItem("ia_model_" + id) || pr.model);
+    setUrlApi(localStorage.getItem("ia_url_" + id) || pr.url);
+    setFormato(localStorage.getItem("ia_format_" + id) || pr.format);
     setSaved(false);
     setTestResult(null);
   };
@@ -2089,6 +2117,9 @@ const Ajustes = () => {
   const guardar = () => {
     localStorage.setItem("ia_api_key", apiKey.trim());
     localStorage.setItem("ia_key_" + providerId, apiKey.trim());
+    localStorage.setItem("ia_model_" + providerId, modelo.trim());
+    localStorage.setItem("ia_url_" + providerId, urlApi.trim());
+    localStorage.setItem("ia_format_" + providerId, formato);
     setSaved(true);
     setTestResult(null);
     setTimeout(() => setSaved(false), 2500);
@@ -2107,18 +2138,22 @@ const Ajustes = () => {
     setTesting(true);
     setTestResult(null);
     try {
-      if (providerId === "openai") {
-        const r = await fetch("https://api.openai.com/v1/models", { headers: { "Authorization": `Bearer ${apiKey.trim()}` } });
+      if (formato === "gemini") {
+        const m = modelo.trim() || "gemini-2.0-flash";
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}?key=${apiKey.trim()}`);
         if (!r.ok) throw new Error();
-      } else if (providerId === "claude") {
-        const r = await fetch("https://api.anthropic.com/v1/messages", {
+      } else if (formato === "claude") {
+        const endpoint = urlApi.trim() || "https://api.anthropic.com/v1/messages";
+        const r = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": apiKey.trim(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 10, messages: [{ role: "user", content: "ping" }] }),
+          body: JSON.stringify({ model: modelo.trim(), max_tokens: 10, messages: [{ role: "user", content: "ping" }] }),
         });
         if (!r.ok) throw new Error();
       } else {
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash?key=${apiKey.trim()}`);
+        const endpoint = urlApi.trim() || "https://api.openai.com/v1/chat/completions";
+        const base = endpoint.replace(/\/chat\/completions\/?$/, "/models");
+        const r = await fetch(base, { headers: { "Authorization": `Bearer ${apiKey.trim()}` } });
         if (!r.ok) throw new Error();
       }
       setTestResult("ok");
@@ -2137,7 +2172,6 @@ const Ajustes = () => {
         </div>
       </div>
 
-      {/* Sección: Inteligencia Artificial */}
       <div className="card" style={{ marginTop: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
@@ -2150,20 +2184,58 @@ const Ajustes = () => {
         <div style={{ background: "var(--surface-2)", borderRadius: 8, padding: 16, border: "1px solid var(--border)" }}>
           {/* Selector de proveedor */}
           <label style={{ display: "block", fontWeight: 500, fontSize: 13, marginBottom: 8 }}>Proveedor de IA</label>
-          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-            {IA_PROVIDERS.map(p => (
+          <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+            {IA_PRESETS.map(p => (
               <button key={p.id}
                 className={"btn sm" + (providerId === p.id ? " primary" : " ghost")}
                 onClick={() => cambiarProveedor(p.id)}
-                style={{ fontSize: 12, fontWeight: 600 }}
-              >
-                {p.name}
-              </button>
+                style={{ fontSize: 12, fontWeight: providerId === p.id ? 600 : 400 }}
+              >{p.name}</button>
             ))}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <span className="muted" style={{ fontSize: 12 }}>Modelo activo:</span>
-            <span className="mono" style={{ fontSize: 12, padding: "3px 8px", borderRadius: 4, background: "var(--bg)", border: "1px solid var(--border)" }}>{prov.model}</span>
+
+          {/* Formato de API (solo visible si es custom o si el user quiere cambiar) */}
+          {isCustom && (
+            <div className="field" style={{ margin: "0 0 12px" }}>
+              <label style={{ fontSize: 13 }}>Formato de API</label>
+              <select value={formato} onChange={e => setFormato(e.target.value)} style={{ fontSize: 13 }}>
+                <option value="openai">OpenAI Compatible (la mayoría de APIs)</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="claude">Anthropic Claude</option>
+              </select>
+              <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
+                La mayoría de APIs (Groq, Together, Mistral, DeepSeek, Ollama, LM Studio, etc.) usan formato OpenAI Compatible.
+              </div>
+            </div>
+          )}
+
+          {/* URL del endpoint */}
+          {(isCustom || canEditUrl) && (
+            <div className="field" style={{ margin: "0 0 12px" }}>
+              <label style={{ fontSize: 13 }}>URL del endpoint</label>
+              <input
+                className="mono"
+                value={urlApi}
+                onChange={e => { setUrlApi(e.target.value); setSaved(false); }}
+                placeholder={formato === "openai" ? "https://api.ejemplo.com/v1/chat/completions" : formato === "claude" ? "https://api.anthropic.com/v1/messages" : ""}
+                style={{ fontSize: 12 }}
+              />
+              {formato === "openai" && (
+                <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>Debe terminar en /chat/completions</div>
+              )}
+            </div>
+          )}
+
+          {/* Modelo */}
+          <div className="field" style={{ margin: "0 0 12px" }}>
+            <label style={{ fontSize: 13 }}>Modelo</label>
+            <input
+              className="mono"
+              value={modelo}
+              onChange={e => { setModelo(e.target.value); setSaved(false); }}
+              placeholder="nombre-del-modelo"
+              style={{ fontSize: 12 }}
+            />
           </div>
 
           {/* API Key */}
@@ -2174,7 +2246,7 @@ const Ajustes = () => {
                 type={showKey ? "text" : "password"}
                 value={apiKey}
                 onChange={e => { setApiKey(e.target.value); setSaved(false); setTestResult(null); }}
-                placeholder={prov.placeholder}
+                placeholder={preset.placeholder}
                 style={{ width: "100%", fontSize: 13, padding: "8px 40px 8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "monospace" }}
               />
               <button
@@ -2183,20 +2255,18 @@ const Ajustes = () => {
                 title={showKey ? "Ocultar" : "Mostrar"}
               >{showKey ? "🙈" : "👁"}</button>
             </div>
-            <button className="btn primary sm" onClick={guardar} disabled={!apiKey.trim()}>Guardar</button>
+            <button className="btn primary sm" onClick={guardar} disabled={!apiKey.trim() || !modelo.trim()}>Guardar</button>
             {apiKey && (
               <button className="btn ghost sm" onClick={borrarKey} title="Borrar API Key"><Icon name="x" size={14}/></button>
             )}
           </div>
 
-          {/* Feedback guardado */}
           {saved && (
             <div style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
-              <Icon name="check" size={14}/> API Key de {prov.name} guardada correctamente
+              <Icon name="check" size={14}/> Configuración guardada
             </div>
           )}
 
-          {/* Botón probar conexión */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, marginBottom: 10 }}>
             <button className="btn sm ghost" onClick={probarConexion} disabled={!apiKey.trim() || testing}>
               {testing ? "Probando…" : "Probar conexión"}
@@ -2207,15 +2277,13 @@ const Ajustes = () => {
               </span>
             )}
             {testResult === "error" && (
-              <span style={{ color: "#EF4444", fontSize: 12, fontWeight: 500 }}>
-                API Key inválida o sin permisos
-              </span>
+              <span style={{ color: "#EF4444", fontSize: 12, fontWeight: 500 }}>API Key inválida o sin permisos</span>
             )}
           </div>
 
           <p className="muted" style={{ fontSize: 11, marginTop: 4, lineHeight: 1.5 }}>
-            La API Key se almacena solo en este navegador. Se usa para el escáner IA de facturas en Ingreso de mercancía.
-            Obtén tu key en <a href={prov.link} target="_blank" rel="noopener" style={{ color: "var(--primary)" }}>{prov.linkLabel}</a>.
+            La configuración se almacena solo en este navegador.
+            {preset.link && <> Obtén tu key en <a href={preset.link} target="_blank" rel="noopener" style={{ color: "var(--primary)" }}>{preset.linkLabel}</a>.</>}
           </p>
         </div>
       </div>
