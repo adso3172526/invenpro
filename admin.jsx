@@ -22,6 +22,7 @@ const NAV = [
   { id: "proveedores", label: "Proveedores",        icon: "store",    color: "#A16207" },
   { id: "cajeros",     label: "Cajeros y turnos",   icon: "users",    color: "#9CA3AF" },
   { id: "reportes",    label: "Reporte de ventas",  icon: "chart",    color: "#8B5CF6" },
+  { id: "ajustes",     label: "Ajustes",            icon: "settings", color: "#6B7280", rol: "admin" },
 ];
 
 const Sidebar = ({ active, setActive, user, onLogout }) => {
@@ -50,7 +51,7 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
           <img src="logo.png" alt="InvenPro" style={{ height: 36, objectFit: "contain" }}/>
         </div>
         <div className="nav-cards">
-          {NAV.map(n => (
+          {NAV.filter(n => !n.rol || (user && user.rol === n.rol)).map(n => (
             <div key={n.id}
                  className={"nav-card" + (active === n.id ? " active" : "")}
                  style={{ "--nav-c": n.color }}
@@ -908,13 +909,7 @@ const IaScannerModal = ({ onClose, onRead }) => {
   const [imgData, setImgData] = useStateA(null); // { base64, mimeType }
   const [resultado, setResultado] = useStateA(null);
   const [errorMsg, setErrorMsg] = useStateA("");
-  const [apiKey, setApiKey] = useStateA(() => localStorage.getItem("gemini_api_key") || "");
   const fileRef = React.useRef(null);
-
-  const guardarKey = (key) => {
-    setApiKey(key);
-    if (key) localStorage.setItem("gemini_api_key", key);
-  };
 
   const seleccionarImagen = (e) => {
     const file = e.target.files?.[0];
@@ -930,7 +925,8 @@ const IaScannerModal = ({ onClose, onRead }) => {
   };
 
   const analizar = async () => {
-    if (!apiKey.trim()) { setErrorMsg("Ingresa tu API Key de Gemini primero."); setEstado("error"); return; }
+    const apiKey = localStorage.getItem("gemini_api_key") || "";
+    if (!apiKey.trim()) { setErrorMsg("Configura tu API Key de Gemini en Ajustes antes de usar el escáner IA."); setEstado("error"); return; }
     if (!imgData) return;
     setEstado("analizando");
     setProgreso(0);
@@ -968,17 +964,6 @@ const IaScannerModal = ({ onClose, onRead }) => {
       <p className="muted" style={{ marginTop: 0, marginBottom: 10, fontSize: 13 }}>
         Sube o toma una foto clara de la factura del proveedor. La IA leerá automáticamente proveedor, productos, cantidades y costos.
       </p>
-      {/* API Key input */}
-      <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center" }}>
-        <input
-          type="password"
-          placeholder="Gemini API Key"
-          value={apiKey}
-          onChange={e => guardarKey(e.target.value)}
-          style={{ flex: 1, fontSize: 12, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)" }}
-        />
-        <span className="muted" style={{ fontSize: 10, whiteSpace: "nowrap" }}>Se guarda en tu navegador</span>
-      </div>
       {/* Hidden file input */}
       <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={seleccionarImagen}/>
       <div className="scanner-frame">
@@ -1922,4 +1907,96 @@ const Reportes = () => {
   );
 };
 
-Object.assign(window, { Sidebar, Hub, Dashboard, Inventario, Ingreso, Vencimientos, Proveedores, Cajeros, Reportes });
+// =================== Ajustes (solo admin) ===================
+const Ajustes = () => {
+  const [geminiKey, setGeminiKey] = useStateA(() => localStorage.getItem("gemini_api_key") || "");
+  const [showKey, setShowKey] = useStateA(false);
+  const [saved, setSaved] = useStateA(false);
+
+  const guardar = () => {
+    localStorage.setItem("gemini_api_key", geminiKey.trim());
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const borrarKey = () => {
+    localStorage.removeItem("gemini_api_key");
+    setGeminiKey("");
+    setSaved(false);
+  };
+
+  return (
+    <>
+      <div className="page-h">
+        <div>
+          <h2><Icon name="settings" size={20}/> Ajustes</h2>
+          <p className="sub">Configuración general del sistema</p>
+        </div>
+      </div>
+
+      {/* Sección: Inteligencia Artificial */}
+      <div className="card" style={{ marginTop: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 15 }}>Inteligencia Artificial</div>
+            <div className="muted" style={{ fontSize: 12 }}>Configura la API para el escáner de facturas con IA</div>
+          </div>
+        </div>
+
+        <div style={{ background: "var(--surface-2)", borderRadius: 8, padding: 16, border: "1px solid var(--border)" }}>
+          <label style={{ display: "block", fontWeight: 500, fontSize: 13, marginBottom: 8 }}>
+            Proveedor de IA
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <span style={{ padding: "6px 12px", borderRadius: 6, background: "var(--primary)", color: "#fff", fontSize: 12, fontWeight: 600 }}>
+              Google Gemini Flash
+            </span>
+            <span className="muted" style={{ fontSize: 11 }}>Modelo: gemini-2.0-flash</span>
+          </div>
+
+          <label style={{ display: "block", fontWeight: 500, fontSize: 13, marginBottom: 6 }}>
+            API Key
+          </label>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+            <div style={{ flex: 1, position: "relative" }}>
+              <input
+                type={showKey ? "text" : "password"}
+                value={geminiKey}
+                onChange={e => { setGeminiKey(e.target.value); setSaved(false); }}
+                placeholder="AIzaSy..."
+                style={{ width: "100%", fontSize: 13, padding: "8px 40px 8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "monospace" }}
+              />
+              <button
+                onClick={() => setShowKey(v => !v)}
+                style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 11 }}
+                title={showKey ? "Ocultar" : "Mostrar"}
+              >
+                {showKey ? "🙈" : "👁"}
+              </button>
+            </div>
+            <button className="btn primary sm" onClick={guardar} disabled={!geminiKey.trim()}>
+              Guardar
+            </button>
+            {geminiKey && (
+              <button className="btn ghost sm" onClick={borrarKey} title="Borrar API Key">
+                <Icon name="x" size={14}/>
+              </button>
+            )}
+          </div>
+          {saved && (
+            <div style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+              <Icon name="check" size={14}/> API Key guardada correctamente
+            </div>
+          )}
+          <p className="muted" style={{ fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
+            La API Key se almacena solo en este navegador (localStorage). Se usa para el escáner IA de facturas en Ingreso de mercancía.
+            Puedes obtener una key gratuita en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{ color: "var(--primary)" }}>Google AI Studio</a>.
+          </p>
+        </div>
+      </div>
+    </>
+  );
+};
+
+Object.assign(window, { Sidebar, Hub, Dashboard, Inventario, Ingreso, Vencimientos, Proveedores, Cajeros, Reportes, Ajustes });

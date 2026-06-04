@@ -100,6 +100,7 @@ const App = () => {
             {adminPage === "proveedores" && <Proveedores/>}
             {adminPage === "cajeros" && <Cajeros/>}
             {adminPage === "reportes" && <Reportes/>}
+            {adminPage === "ajustes" && <Ajustes/>}
           </div>
         </div>
         <ThemeToggle theme={theme} setTheme={setTheme}/>
