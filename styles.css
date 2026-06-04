@@ -500,54 +500,58 @@ input, select, textarea { font: inherit; color: inherit; }
     animation: fade .2s ease;
   }
 
-  /* Sidebar como overlay desde la izquierda */
+  /* Sidebar como overlay desde la izquierda — 50% pantalla */
   .sidebar {
     position: fixed; left: 0; top: 0; bottom: 0;
-    width: 72px; height: 100vh;
+    width: 50vw; height: 100vh;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     z-index: 70;
     box-shadow: 4px 0 20px rgba(0,0,0,0.1);
     flex-direction: column;
-    padding: 0 8px 8px;
+    padding: 0 14px 14px;
     overflow-y: auto;
   }
   .sidebar.open { transform: translateX(0); }
 
   /* Header del menú móvil */
   .mobile-menu-h {
-    display: flex; align-items: center; justify-content: center;
-    padding: 8px 0; border-bottom: 1px solid var(--border);
-    margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
   }
-  .sidebar .brand { display: none !important; } /* ya hay logo en menu-h */
+  .sidebar .brand { display: none !important; }
 
-  /* Nav cards compactas — solo iconos, mitad de ancho */
+  /* Nav cards — ancho completo dentro del 50vw */
   .sidebar .nav-cards {
-    display: flex; flex-direction: column; gap: 4px;
-    flex: none; align-items: center;
+    display: flex; flex-direction: column; gap: 6px;
+    flex: none; align-items: stretch;
     width: 100%;
   }
-  .sidebar .nav-card { width: 48px; border-radius: 8px; }
-  .nav-card-label-mobile { display: none !important; }
-  .nav-card-top { padding: 10px; }
+  .sidebar .nav-card { width: 100%; border-radius: 8px; }
+  .nav-card-label-mobile { display: inline !important; font-size: 12px; }
+  .nav-card-top { padding: 10px 12px; display: flex; align-items: center; gap: 10px; justify-content: flex-start; }
   .nav-card-top svg { width: 18px; height: 18px; }
-  .nav-card-badge { font-size: 7px; padding: 0 4px; top: 2px; right: 2px; }
+  .nav-card-badge { font-size: 8px; padding: 1px 5px; top: auto; right: 10px; }
 
-  /* User box compacto para sidebar angosto */
+  /* User box */
   .sidebar .user {
-    flex-direction: column; align-items: center;
-    margin-top: 12px; padding: 6px; gap: 6px;
+    flex-direction: column; align-items: stretch;
+    margin-top: 16px; padding: 10px; gap: 8px;
     text-align: center;
   }
-  .sidebar .user .avatar { width: 28px; height: 28px; font-size: 11px; }
-  .user-info-mobile { display: none; }
+  .sidebar .user .avatar { width: 32px; height: 32px; font-size: 12px; align-self: center; }
+  .user-info-mobile {
+    display: block; flex: none; min-width: 0; text-align: center;
+  }
+  .name-m { font-weight: 600; font-size: 12px; line-height: 1.2; }
+  .role-m { font-size: 10px; color: var(--text-3); }
   .sidebar .user .flex-1 { display: none; }
   .sidebar .user .btn {
-    width: 100%; padding: 6px 4px; justify-content: center;
-    font-size: 10px; gap: 2px;
+    width: 100%; padding: 8px 6px; justify-content: center;
+    font-size: 11px; gap: 4px;
   }
-  .user-logout-label { display: none; }
+  .user-logout-label { display: inline; font-size: 11px; }
 
   /* Main */
   .main { min-width: 0; }
@@ -941,8 +945,8 @@ input, select, textarea { font: inherit; color: inherit; }
   .login-footer .pitch { display: none; }
   .product-grid { grid-template-columns: 1fr; }
   .product .thumb { height: 60px; }
-  /* Sidebar en pantalla pequeña — mantener compacto */
-  .sidebar { width: 72px; }
+  /* Sidebar en pantalla pequeña — mitad de pantalla */
+  .sidebar { width: 50vw; }
   /* Modal action buttons stack */
   .modal-f { flex-direction: column; }
   .modal-f .btn { width: 100%; }
