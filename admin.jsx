@@ -833,80 +833,240 @@ const QrScannerModal = ({ onClose, onRead }) => {
 };
 
 // =================== Escáner IA (foto de factura) ===================
-const IaScannerModal = ({ onClose, onRead }) => {
-  const [estado, setEstado] = useStateA("listo"); // listo | capturando | analizando | exito
-  const [progreso, setProgreso] = useStateA(0);
-  const tomarFoto = () => {
-    setEstado("capturando");
-    setTimeout(() => {
-      setEstado("analizando");
-      let p = 0;
-      const interval = setInterval(() => {
-        p += 8 + Math.random()*10;
-        if (p >= 100) { p = 100; clearInterval(interval); setEstado("exito"); setTimeout(() => onRead(MOCK_OCR_IA), 900); }
-        setProgreso(Math.round(p));
-      }, 220);
-    }, 800);
+
+// Fuzzy string similarity (SequenceMatcher-style ratio)
+const similar = (a, b) => {
+  if (!a || !b) return 0;
+  a = a.toLowerCase().trim();
+  b = b.toLowerCase().trim();
+  if (a === b) return 1;
+  const longer = a.length >= b.length ? a : b;
+  const shorter = a.length < b.length ? a : b;
+  if (longer.length === 0) return 1;
+  // Find longest common subsequence length
+  const m = shorter.length, n = longer.length;
+  const dp = Array.from({ length: m + 1 }, () => new Uint16Array(n + 1));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = shorter[i-1] === longer[j-1]
+        ? dp[i-1][j-1] + 1
+        : Math.max(dp[i-1][j], dp[i][j-1]);
+  return (2 * dp[m][n]) / (m + n);
+};
+
+// Match Gemini items against inventory
+const matchItems = (geminiItems) => {
+  const productos = (window.MOCK && window.MOCK.productos) || [];
+  return geminiItems.map(item => {
+    let bestMatch = null, bestScore = 0;
+    for (const p of productos) {
+      const score = similar(item.nombre, p.nombre);
+      if (score > bestScore) { bestScore = score; bestMatch = p; }
+    }
+    if (bestScore > 0.7 && bestMatch) {
+      return { ...item, sku: bestMatch.sku, encontrado: true, confianza: Math.round(bestScore * 100) / 100 };
+    }
+    return { ...item, sku: null, encontrado: false, nuevo: true, confianza: Math.round(bestScore * 100) / 100 };
+  });
+};
+
+// Call Gemini Flash Vision API
+const analizarConGemini = async (base64, mimeType, apiKey) => {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const body = {
+    contents: [{
+      parts: [
+        { inlineData: { mimeType, data: base64 } },
+        { text: `Analiza esta factura/remisión. Extrae JSON estricto:
+{ "proveedor": "...", "nit": "...", "factura": "...", "fecha": "...", "vendedor": "...", "celular": "...",
+  "items": [{ "nombre": "...", "qty": 0, "costo": 0, "vence": "YYYY-MM-DD o null" }] }
+Solo JSON, sin markdown ni explicaciones. Si un campo no es visible, usa null. qty y costo deben ser números.` }
+      ]
+    }]
   };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini API error ${res.status}: ${err}`);
+  }
+  const json = await res.json();
+  const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Respuesta vacía de Gemini");
+  // Strip markdown fences if present
+  const clean = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  return JSON.parse(clean);
+};
+
+const IaScannerModal = ({ onClose, onRead }) => {
+  const [estado, setEstado] = useStateA("listo"); // listo | preview | analizando | exito | error
+  const [progreso, setProgreso] = useStateA(0);
+  const [imgSrc, setImgSrc] = useStateA(null);
+  const [imgData, setImgData] = useStateA(null); // { base64, mimeType }
+  const [resultado, setResultado] = useStateA(null);
+  const [errorMsg, setErrorMsg] = useStateA("");
+  const [apiKey, setApiKey] = useStateA(() => localStorage.getItem("gemini_api_key") || "");
+  const fileRef = React.useRef(null);
+
+  const guardarKey = (key) => {
+    setApiKey(key);
+    if (key) localStorage.setItem("gemini_api_key", key);
+  };
+
+  const seleccionarImagen = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImgSrc(reader.result);
+      const b64 = reader.result.split(",")[1];
+      setImgData({ base64: b64, mimeType: file.type || "image/jpeg" });
+      setEstado("preview");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const analizar = async () => {
+    if (!apiKey.trim()) { setErrorMsg("Ingresa tu API Key de Gemini primero."); setEstado("error"); return; }
+    if (!imgData) return;
+    setEstado("analizando");
+    setProgreso(0);
+    // Simulated progress while waiting for API
+    let p = 0;
+    const interval = setInterval(() => {
+      p += 3 + Math.random() * 5;
+      if (p > 90) p = 90;
+      setProgreso(Math.round(p));
+    }, 300);
+    try {
+      const raw = await analizarConGemini(imgData.base64, imgData.mimeType, apiKey.trim());
+      clearInterval(interval);
+      setProgreso(100);
+      const items = matchItems(raw.items || []);
+      const data = { ...raw, items };
+      setResultado(data);
+      setEstado("exito");
+      setTimeout(() => onRead(data), 1200);
+    } catch (err) {
+      clearInterval(interval);
+      setErrorMsg(err.message || "Error al analizar la imagen.");
+      setEstado("error");
+    }
+  };
+
+  const reintentar = () => {
+    setEstado(imgSrc ? "preview" : "listo");
+    setErrorMsg("");
+    setProgreso(0);
+  };
+
   return (
     <Modal title="Fotografiar factura" onClose={onClose} lg>
-      <p className="muted" style={{ marginTop: 0, marginBottom: 14, fontSize: 13 }}>
-        Toma una foto clara de la factura del proveedor. Una IA leerá automáticamente proveedor, productos, cantidades y costos.
+      <p className="muted" style={{ marginTop: 0, marginBottom: 10, fontSize: 13 }}>
+        Sube o toma una foto clara de la factura del proveedor. La IA leerá automáticamente proveedor, productos, cantidades y costos.
       </p>
+      {/* API Key input */}
+      <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center" }}>
+        <input
+          type="password"
+          placeholder="Gemini API Key"
+          value={apiKey}
+          onChange={e => guardarKey(e.target.value)}
+          style={{ flex: 1, fontSize: 12, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)" }}
+        />
+        <span className="muted" style={{ fontSize: 10, whiteSpace: "nowrap" }}>Se guarda en tu navegador</span>
+      </div>
+      {/* Hidden file input */}
+      <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={seleccionarImagen}/>
       <div className="scanner-frame">
         <div className="scanner-viewport" style={{ background: "#1a1f2e" }}>
           {estado === "listo" && (
-            <div className="scanner-placeholder" style={{ color: "#fff" }}>
+            <div className="scanner-placeholder" style={{ color: "#fff", cursor: "pointer" }} onClick={() => fileRef.current?.click()}>
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
-              <div style={{ marginTop: 12, fontSize: 13 }}>Cámara lista</div>
-              <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>Encuadra la factura completa dentro del marco</div>
+              <div style={{ marginTop: 12, fontSize: 13 }}>Toca para seleccionar imagen</div>
+              <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>Cámara en móvil · archivo en desktop</div>
             </div>
           )}
-          {(estado === "capturando" || estado === "analizando") && (
+          {estado === "preview" && imgSrc && (
+            <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <img src={imgSrc} alt="Factura" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 4 }}/>
+            </div>
+          )}
+          {estado === "analizando" && (
             <>
-              <div className="invoice-preview">
-                <div className="invoice-line w-100"/>
-                <div className="invoice-line w-60"/>
-                <div className="invoice-line w-80"/>
-                <div className="invoice-line w-40"/>
-                <div className="invoice-line w-90"/>
-                <div className="invoice-line w-70"/>
-                <div className="invoice-line w-50"/>
-              </div>
-              {estado === "analizando" && (
-                <div className="ai-overlay">
-                  <div className="ai-status">
-                    <div className="ai-spinner"/>
-                    Analizando con IA… {progreso}%
-                  </div>
-                  <div className="ai-progress"><span style={{ width: progreso + "%" }}/></div>
-                  <div className="ai-checks">
-                    {progreso > 20 && <div>✓ Proveedor identificado</div>}
-                    {progreso > 50 && <div>✓ {Math.min(3, Math.floor(progreso/30))} productos detectados</div>}
-                    {progreso > 75 && <div>✓ Cantidades y costos extraídos</div>}
-                  </div>
+              {imgSrc && (
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.25 }}>
+                  <img src={imgSrc} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}/>
                 </div>
               )}
+              <div className="ai-overlay">
+                <div className="ai-status">
+                  <div className="ai-spinner"/>
+                  Analizando con IA… {progreso}%
+                </div>
+                <div className="ai-progress"><span style={{ width: progreso + "%" }}/></div>
+                <div className="ai-checks">
+                  {progreso > 15 && <div>✓ Imagen enviada a Gemini</div>}
+                  {progreso > 40 && <div>✓ Extrayendo datos de factura</div>}
+                  {progreso > 70 && <div>✓ Identificando productos</div>}
+                  {progreso >= 100 && <div>✓ Cruzando con inventario</div>}
+                </div>
+              </div>
             </>
           )}
-          {estado === "exito" && (
+          {estado === "exito" && resultado && (
             <div className="scanner-success">
               <Icon name="check" size={40}/>
               <div style={{ fontWeight: 600, marginTop: 8 }}>Análisis completado</div>
-              <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{MOCK_OCR_IA.items.length} productos detectados</div>
+              <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
+                {resultado.items.length} productos detectados · {resultado.items.filter(i => i.encontrado).length} encontrados en inventario
+              </div>
+            </div>
+          )}
+          {estado === "error" && (
+            <div className="scanner-placeholder" style={{ color: "#fff" }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              <div style={{ marginTop: 10, fontSize: 13, color: "#EF4444" }}>Error al analizar</div>
+              <div className="muted" style={{ fontSize: 11, marginTop: 4, maxWidth: 280, textAlign: "center", lineHeight: 1.4 }}>{errorMsg}</div>
             </div>
           )}
         </div>
       </div>
       <div className="modal-f" style={{ marginTop: 16, borderRadius: 8, borderTop: "1px solid var(--border)", background: "var(--surface-2)" }}>
-        <button className="btn ghost" onClick={onClose} disabled={estado === "analizando"}>Cancelar</button>
-        <button className="btn primary" onClick={tomarFoto} disabled={estado !== "listo"}>
-          <Icon name="plus" size={14}/>
-          {estado === "listo" ? "Tomar foto" : "Procesando…"}
+        <button className="btn ghost" onClick={estado === "error" ? reintentar : onClose} disabled={estado === "analizando"}>
+          {estado === "error" ? "Reintentar" : "Cancelar"}
         </button>
+        {estado === "listo" && (
+          <button className="btn primary" onClick={() => fileRef.current?.click()}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            Seleccionar imagen
+          </button>
+        )}
+        {estado === "preview" && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn ghost" onClick={() => { setImgSrc(null); setImgData(null); setEstado("listo"); }}>Cambiar</button>
+            <button className="btn primary" onClick={analizar}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
+              Analizar con IA
+            </button>
+          </div>
+        )}
+        {estado === "error" && (
+          <button className="btn primary" onClick={() => { setEstado("listo"); setImgSrc(null); setImgData(null); setErrorMsg(""); }}>
+            Nueva imagen
+          </button>
+        )}
       </div>
     </Modal>
   );
