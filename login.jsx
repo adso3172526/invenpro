@@ -49,14 +49,6 @@ const Login = ({ onLogin }) => {
             <Icon name="arrowRight" size={16} />
           </button>
 
-          <details style={{ marginTop: 16, fontSize: 11, color: "var(--text-3)" }}>
-            <summary style={{ cursor: "pointer", userSelect: "none" }}>Cuentas de demostración</summary>
-            <div style={{ marginTop: 8, padding: 10, background: "var(--surface-2)", borderRadius: 6, lineHeight: 1.7 }}>
-              <div><b>admin</b> / admin123 · Administrador</div>
-              <div><b>supervisor</b> / super123 · Supervisor</div>
-              <div><b>jeferson.ortiz</b> / cajero123 · Cajero</div>
-            </div>
-          </details>
         </form>
       </div>
       <div className="login-footer">
