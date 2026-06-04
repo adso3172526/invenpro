@@ -936,6 +936,8 @@ input, select, textarea { font: inherit; color: inherit; }
   .tbl-cards tr td:first-child .row { gap: 10px; }
   .tbl-cards tr td.num, .tbl-cards tr td.num::before { text-align: left !important; }
   .tbl-cards .chip { display: inline-flex; }
+}
+
 @media (max-width: 380px) {
   .kpi-grid { grid-template-columns: 1fr; }
   .topbar .crumb .sub, .topbar .crumb .chip { display: none; }
