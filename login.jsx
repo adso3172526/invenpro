@@ -5,15 +5,13 @@ const Login = ({ onLogin }) => {
   const [shake, setShake] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e?.preventDefault();
     setError("");
     if (!user || !pass) {
       setShake(true); setTimeout(() => setShake(false), 400); return;
     }
-    const u = (window.MOCK.usuarios_sistema || []).find(
-      x => x.usuario.toLowerCase() === user.toLowerCase().trim() && x.pass === pass
-    );
+    const u = await DB.login(user.trim(), pass);
     if (!u) {
       setError("Usuario o contraseña incorrectos.");
       setShake(true); setTimeout(() => setShake(false), 400); return;

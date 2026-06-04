@@ -616,7 +616,18 @@ const Ingreso = () => {
         <Modal title="Confirmar ingreso de mercancía" lg onClose={() => { setShowForm(false); setOrigen(null); }} footer={
           <>
             <button className="btn ghost" onClick={() => { setShowForm(false); setOrigen(null); }}>Cancelar</button>
-            <button className="btn accent" disabled={items.length === 0} onClick={() => {
+            <button className="btn accent" disabled={items.length === 0} onClick={async () => {
+              const ingreso = {
+                id: "ING-" + Date.now(),
+                fecha: new Date().toISOString().slice(0, 10),
+                proveedor: proveedor,
+                items: items.length,
+                costo: total,
+                recibe: "Administrador",
+                factura: factura,
+              };
+              await DB.createIngreso(ingreso, items);
+              await hydrateData();
               setShowForm(false); setItems([]); setVendedor(""); setCelular(""); setOrigen(null);
               setToast("Ingreso registrado · stock actualizado");
             }}><Icon name="check"/> Confirmar ingreso</button>
@@ -1245,21 +1256,27 @@ const Proveedores = () => {
   const activos = list.filter(p => p.estado === "activo").length;
   const inactivos = list.length - activos;
   const pagProv = usePagination(filtered, 10);
-  const guardar = (data) => {
+  const guardar = async (data) => {
     if (data.id) {
-      setList(ps => ps.map(p => p.id === data.id ? { ...p, ...data } : p));
+      await DB.updateProveedor(data.id, data);
       setToast("Proveedor actualizado");
     } else {
       const nextId = "PRV-" + String(list.length + 1).padStart(3, "0");
-      setList(ps => [...ps, { ...data, id: nextId, ingresos: 0, ultimoIngreso: null, estado: "activo" }]);
+      const nuevo = { ...data, id: nextId, ingresos: 0, ultimoIngreso: null, estado: "activo" };
+      await DB.createProveedor(nuevo);
       setToast("Proveedor creado");
     }
+    await hydrateData();
+    setList(MOCK.proveedores);
     setEditing(null);
   };
 
-  const toggleEstado = (p) => {
-    setList(ps => ps.map(x => x.id === p.id ? { ...x, estado: x.estado === "activo" ? "inactivo" : "activo" } : x));
+  const toggleEstado = async (p) => {
+    const nuevoEstado = p.estado === "activo" ? "inactivo" : "activo";
+    await DB.updateProveedor(p.id, { estado: nuevoEstado });
     setToast(p.estado === "activo" ? "Proveedor dado de baja" : "Proveedor reactivado");
+    await hydrateData();
+    setList(MOCK.proveedores);
     setConfirmBaja(null);
   };
 

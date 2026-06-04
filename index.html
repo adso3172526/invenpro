@@ -12,9 +12,17 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
 <script src="data.js"></script>
 </head>
 <body>
+<div id="loading" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#fff);z-index:9999;font-family:Geist,sans-serif;color:var(--text-2,#666)">
+  <div style="text-align:center">
+    <img src="logo.png" alt="InvenPro" style="height:40px;margin-bottom:16px"/>
+    <div style="font-size:14px">Cargando datos…</div>
+  </div>
+</div>
 <div id="root"></div>
 <script type="text/babel" src="ui.jsx"></script>
 <script type="text/babel" src="login.jsx"></script>

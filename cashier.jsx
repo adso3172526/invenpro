@@ -103,8 +103,8 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
   };
   const removeLine = (sku) => setCart(c => c.filter(l => l.sku !== sku));
 
-  const completePay = (metodo, recibido) => {
-    // Descontar inventario
+  const completePay = async (metodo, recibido) => {
+    // Descontar inventario localmente para UI inmediata
     setProductos(prev => prev.map(p => {
       const l = cart.find(x => x.sku === p.sku);
       return l ? { ...p, stock: Math.max(0, p.stock - l.q) } : p;
@@ -125,6 +125,8 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
     setDone(factura);
     setPay(null);
     setCart([]);
+    // Persistir en Supabase (no bloquea la UI)
+    DB.createFactura(factura, factura.items).catch(err => console.error("POS persist:", err));
   };
 
   const closeShift = () => {

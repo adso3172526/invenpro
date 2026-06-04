@@ -95,4 +95,13 @@ const App = () => {
   return null;
 };
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+(async () => {
+  try {
+    await window.hydrateData();
+  } catch (e) {
+    console.error("Error al hidratar datos:", e);
+  }
+  const el = document.getElementById("loading");
+  if (el) el.remove();
+  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+})();
