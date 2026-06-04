@@ -210,26 +210,33 @@
     },
 
     async saveConfig(clave, valor) {
+      const v = String(valor ?? "");
       const { error } = await window.db
         .from("configuracion")
-        .upsert({ clave, valor }, { onConflict: "clave" });
+        .upsert({ clave, valor: v }, { onConflict: "clave" });
       if (error) console.error("saveConfig:", error);
       // Actualizar cache local
       if (window.MOCK && window.MOCK.configuracion) {
-        window.MOCK.configuracion[clave] = valor;
+        window.MOCK.configuracion[clave] = v;
       }
     },
 
     async saveConfigBatch(entries) {
       // entries = { clave1: valor1, clave2: valor2, ... }
-      const rows = Object.entries(entries).map(([clave, valor]) => ({ clave, valor }));
+      // Asegurar que todos los valores sean strings (columna TEXT NOT NULL)
+      const rows = Object.entries(entries).map(([clave, valor]) => ({
+        clave,
+        valor: String(valor ?? ""),
+      }));
       const { error } = await window.db
         .from("configuracion")
         .upsert(rows, { onConflict: "clave" });
       if (error) console.error("saveConfigBatch:", error);
       // Actualizar cache local
       if (window.MOCK && window.MOCK.configuracion) {
-        Object.assign(window.MOCK.configuracion, entries);
+        for (const { clave, valor } of rows) {
+          window.MOCK.configuracion[clave] = valor;
+        }
       }
     },
   };

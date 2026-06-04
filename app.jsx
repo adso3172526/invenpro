@@ -27,7 +27,9 @@ const App = () => {
   useEffectApp(() => { _ssWrite({ shift }); }, [shift]);
   useEffectApp(() => { _ssWrite({ adminPage }); }, [adminPage]);
 
-  const onLogin = (u) => {
+  const onLogin = async (u) => {
+    // Re-hidratar datos desde Supabase para tener config actualizada
+    try { await window.hydrateData(); } catch (e) { console.error("hydrateData on login:", e); }
     setUser({
       nombre: u.nombre,
       rol: u.rol,
