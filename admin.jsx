@@ -1328,7 +1328,7 @@ const Proveedores = () => {
         </div>
 
         <div className="tbl-wrap">
-          <table className="tbl">
+          <table className="tbl prov-table">
             <thead>
               <tr>
                 <th>Proveedor</th><th>NIT</th><th>Categoría</th><th>Contacto</th>

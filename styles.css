@@ -1735,13 +1735,13 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 
 /* --- 7. Tablas en pantallas angostas --- */
 @media (max-width: 768px) {
-  /* Ocultar columnas Contacto, Términos, Último en proveedores */
-  .prov-table th:nth-child(3),
-  .prov-table td:nth-child(3),
+  /* Ocultar columnas Contacto(4), Términos(5), Último(8) en proveedores */
   .prov-table th:nth-child(4),
   .prov-table td:nth-child(4),
   .prov-table th:nth-child(5),
-  .prov-table td:nth-child(5) { display: none; }
+  .prov-table td:nth-child(5),
+  .prov-table th:nth-child(8),
+  .prov-table td:nth-child(8) { display: none; }
   /* Scroll horizontal mejorado para todas las tablas */
   .tbl-wrap {
     overflow-x: auto;
