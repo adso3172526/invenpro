@@ -503,55 +503,51 @@ input, select, textarea { font: inherit; color: inherit; }
   /* Sidebar como overlay desde la izquierda */
   .sidebar {
     position: fixed; left: 0; top: 0; bottom: 0;
-    width: 120px; height: 100vh;
+    width: 72px; height: 100vh;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     z-index: 70;
     box-shadow: 4px 0 20px rgba(0,0,0,0.1);
     flex-direction: column;
-    padding: 0 12px 12px;
+    padding: 0 8px 8px;
     overflow-y: auto;
   }
   .sidebar.open { transform: translateX(0); }
 
   /* Header del menú móvil */
   .mobile-menu-h {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 0; border-bottom: 1px solid var(--border);
-    margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
   }
   .sidebar .brand { display: none !important; } /* ya hay logo en menu-h */
 
-  /* Nav cards en columna vertical compacta — mitad de tamaño */
+  /* Nav cards compactas — solo iconos, mitad de ancho */
   .sidebar .nav-cards {
     display: flex; flex-direction: column; gap: 4px;
-    flex: none; align-items: stretch;
+    flex: none; align-items: center;
     width: 100%;
   }
-  .sidebar .nav-card { width: 100%; border-radius: 6px; }
+  .sidebar .nav-card { width: 48px; border-radius: 8px; }
   .nav-card-label-mobile { display: none !important; }
-  .nav-card-top { padding: 6px; }
-  .nav-card-top svg { width: 16px; height: 16px; }
-  .nav-card-badge { font-size: 7px; padding: 0 4px; top: 2px; right: 3px; }
+  .nav-card-top { padding: 10px; }
+  .nav-card-top svg { width: 18px; height: 18px; }
+  .nav-card-badge { font-size: 7px; padding: 0 4px; top: 2px; right: 2px; }
 
-  /* User box: avatar + texto + botón apilados en columna */
+  /* User box compacto para sidebar angosto */
   .sidebar .user {
-    flex-direction: column; align-items: stretch;
-    margin-top: 16px; padding: 10px; gap: 8px;
-    text-align: left;
+    flex-direction: column; align-items: center;
+    margin-top: 12px; padding: 6px; gap: 6px;
+    text-align: center;
   }
-  .sidebar .user .avatar { width: 32px; height: 32px; font-size: 12px; align-self: center; }
-  .user-info-mobile {
-    display: block; flex: none; min-width: 0; text-align: center;
-  }
-  .name-m { font-weight: 600; font-size: 12px; line-height: 1.2; }
-  .role-m { font-size: 10px; color: var(--text-3); }
+  .sidebar .user .avatar { width: 28px; height: 28px; font-size: 11px; }
+  .user-info-mobile { display: none; }
   .sidebar .user .flex-1 { display: none; }
   .sidebar .user .btn {
-    width: 100%; padding: 8px 6px; justify-content: center;
-    font-size: 11px; gap: 4px;
+    width: 100%; padding: 6px 4px; justify-content: center;
+    font-size: 10px; gap: 2px;
   }
-  .user-logout-label { display: inline; font-size: 11px; }
+  .user-logout-label { display: none; }
 
   /* Main */
   .main { min-width: 0; }
@@ -945,8 +941,8 @@ input, select, textarea { font: inherit; color: inherit; }
   .login-footer .pitch { display: none; }
   .product-grid { grid-template-columns: 1fr; }
   .product .thumb { height: 60px; }
-  /* Sidebar menu en pantalla pequeña full-width */
-  .sidebar { width: 100vw; }
+  /* Sidebar en pantalla pequeña — mantener compacto */
+  .sidebar { width: 72px; }
   /* Modal action buttons stack */
   .modal-f { flex-direction: column; }
   .modal-f .btn { width: 100%; }
