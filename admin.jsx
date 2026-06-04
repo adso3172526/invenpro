@@ -612,7 +612,12 @@ const Ingreso = () => {
         <IaScannerModal onClose={() => setShowIaScanner(false)} onRead={(data) => aplicarDatosExtraidos(data, "ia")}/>
       )}
 
-      {showForm && (
+      {showForm && (() => {
+        const provActual = proveedores.find(x => x.nombre === proveedor);
+        const existentes = items.filter(it => !it.nuevo);
+        const nuevos = items.filter(it => it.nuevo);
+        const getStock = (sku) => { const p = MOCK.productos.find(x => x.sku === sku); return p ? p.stock : null; };
+        return (
         <Modal title="Confirmar ingreso de mercancía" lg onClose={() => { setShowForm(false); setOrigen(null); }} footer={
           <>
             <button className="btn ghost" onClick={() => { setShowForm(false); setOrigen(null); }}>Cancelar</button>
@@ -657,36 +662,92 @@ const Ingreso = () => {
                 </div>
               </div>
             </div>
-          )}          <div className="grid-2">
-            <div className="field">
-              <label>Proveedor</label>
-              <select value={proveedor} onChange={e => setProveedor(e.target.value)}>
-                {proveedores.map(p => <option key={p.nit}>{p.nombre}</option>)}
-              </select>
-              {(() => {
-                const p = proveedores.find(x => x.nombre === proveedor);
-                return p ? (
-                  <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>NIT {p.nit} · {p.tel}</div>
-                ) : null;
-              })()}
+          )}
+
+          {/* ── Datos del proveedor ── */}
+          <div className="card" style={{ padding: 16, marginBottom: 14, border: "1px solid var(--border)", background: "var(--surface-2)", borderRadius: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <Icon name="store" size={16}/>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>Datos del proveedor</span>
+              <button className="btn sm ghost" style={{ marginLeft: "auto", fontSize: 11 }} onClick={() => setShowProv(true)}>
+                <Icon name="plus" size={12}/> Nuevo proveedor
+              </button>
             </div>
-            <div className="field">
-              <label>N° factura proveedor</label>
-              <input className="mono" value={factura} onChange={e => setFactura(e.target.value)}/>
-            </div>
-            <div className="field">
-              <label>Nombre del vendedor</label>
-              <input value={vendedor} onChange={e => setVendedor(e.target.value)} placeholder="Ej: Carlos Pérez"/>
-            </div>
-            <div className="field">
-              <label>Celular vendedor</label>
-              <input className="mono" value={celular} onChange={e => setCelular(e.target.value.replace(/[^\d\s+()-]/g,""))} placeholder="300 123 4567"/>
-            </div>
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label>Fecha y hora de recibo</label>
-              <input type="datetime-local" value={recibido} onChange={e => setRecibido(e.target.value)}/>
+            <div className="grid-2" style={{ gap: 10 }}>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Proveedor</label>
+                <select value={proveedor} onChange={e => setProveedor(e.target.value)}>
+                  {proveedores.map(p => <option key={p.nit}>{p.nombre}</option>)}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>NIT / Identificación</label>
+                <input className="mono" value={provActual ? provActual.nit : ""} onChange={e => {
+                  if (provActual) setProveedores(ps => ps.map(p => p.nombre === proveedor ? { ...p, nit: e.target.value } : p));
+                }} placeholder="900.000.000-0"/>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Teléfono</label>
+                <input className="mono" value={provActual ? provActual.tel : ""} onChange={e => {
+                  if (provActual) setProveedores(ps => ps.map(p => p.nombre === proveedor ? { ...p, tel: e.target.value.replace(/[^\d\s+()-]/g,"") } : p));
+                }} placeholder="(4) 444 1820"/>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Dirección</label>
+                <input value={provActual ? (provActual.direccion || "") : ""} onChange={e => {
+                  if (provActual) setProveedores(ps => ps.map(p => p.nombre === proveedor ? { ...p, direccion: e.target.value } : p));
+                }} placeholder="Cra 50 #30-20, Medellín"/>
+              </div>
             </div>
           </div>
+
+          {/* ── Datos de la factura ── */}
+          <div className="card" style={{ padding: 16, marginBottom: 14, border: "1px solid var(--border)", background: "var(--surface-2)", borderRadius: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>Datos de la factura</span>
+            </div>
+            <div className="grid-2" style={{ gap: 10 }}>
+              <div className="field" style={{ margin: 0 }}>
+                <label>N° factura proveedor</label>
+                <input className="mono" value={factura} onChange={e => setFactura(e.target.value)}/>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Fecha y hora de recibo</label>
+                <input type="datetime-local" value={recibido} onChange={e => setRecibido(e.target.value)}/>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Nombre del vendedor</label>
+                <input value={vendedor} onChange={e => setVendedor(e.target.value)} placeholder="Ej: Carlos Pérez"/>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Celular vendedor</label>
+                <input className="mono" value={celular} onChange={e => setCelular(e.target.value.replace(/[^\d\s+()-]/g,""))} placeholder="300 123 4567"/>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Resumen de items ── */}
+          {items.length > 0 && (origen === "ia" || origen === "qr") && (
+            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+              <div style={{ flex: 1, padding: "10px 14px", borderRadius: 8, background: "#ECFDF5", border: "1px solid #A7F3D0", display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name="check" size={16}/>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "#065F46" }}>{existentes.length} en bodega</div>
+                  <div style={{ fontSize: 11, color: "#047857" }}>Se actualizará el stock</div>
+                </div>
+              </div>
+              {nuevos.length > 0 && (
+                <div style={{ flex: 1, padding: "10px 14px", borderRadius: 8, background: "#FFF7ED", border: "1px solid #FED7AA", display: "flex", alignItems: "center", gap: 8 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C2410C" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: "#9A3412" }}>{nuevos.length} nuevo(s)</div>
+                    <div style={{ fontSize: 11, color: "#C2410C" }}>Se agregarán al inventario</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <ItemAdder onAdd={add}/>
 
@@ -694,21 +755,39 @@ const Ingreso = () => {
             <div className="card mt-2">
               <div className="tbl-wrap">
                 <table className="tbl">
-                  <thead><tr><th>Producto</th><th className="num">Cantidad</th><th className="num">Costo unit.</th><th>Vence</th><th className="num">Subtotal</th><th></th></tr></thead>
+                  <thead><tr><th>Producto</th><th className="num">Stock actual</th><th className="num">Cantidad</th><th className="num">Costo unit.</th><th>Vence</th><th className="num">Subtotal</th><th></th></tr></thead>
                   <tbody>
-                    {items.map((it, i) => (
+                    {items.map((it, i) => {
+                      const stockActual = getStock(it.sku);
+                      return (
                       <tr key={i} className={it.nuevo ? "row-nuevo" : ""}>
                         <td>
-                          <div style={{ fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
-                            {it.nombre}
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <input
+                              value={it.nombre}
+                              onChange={e => actualizarItem(i, "nombre", e.target.value)}
+                              style={{ fontWeight: 500, border: "1px solid transparent", background: "transparent", color: "var(--text)", padding: "2px 4px", borderRadius: 4, fontSize: 13, width: "100%", minWidth: 120 }}
+                              onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; }}
+                              onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; }}
+                            />
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                            <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>
                             {it.nuevo && <span className="chip warn" style={{ fontSize: 9 }}>NUEVO</span>}
+                            {!it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46" }}>EN BODEGA</span>}
                             {it.confianza !== undefined && it.confianza < 0.9 && (
                               <span className="chip" style={{ fontSize: 9, background: "#FFF1D6", color: "#8C6A1E" }}>
                                 IA {Math.round(it.confianza*100)}%
                               </span>
                             )}
                           </div>
-                          <div className="muted mono" style={{ fontSize: 11 }}>{it.sku}</div>
+                        </td>
+                        <td className="num">
+                          {stockActual !== null ? (
+                            <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>{stockActual}</span>
+                          ) : (
+                            <span className="muted" style={{ fontSize: 11 }}>—</span>
+                          )}
                         </td>
                         <td className="num">
                           <input className="cell-input mono" value={it.qty} onChange={e => actualizarItem(i, "qty", parseInt(e.target.value.replace(/\D/g,"")) || 0)}/>
@@ -722,18 +801,20 @@ const Ingreso = () => {
                         <td className="num mono" style={{ fontWeight: 600 }}>{window.fmtCOP(it.qty * it.costo)}</td>
                         <td><button className="btn sm ghost" onClick={() => setItems(items.filter((_,j) => j !== i))}><Icon name="x" size={13}/></button></td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
-              <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", background: "var(--surface-2)" }}>
+              <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--surface-2)" }}>
                 <span className="muted">{items.length} producto(s) · {items.reduce((s,i)=>s+i.qty,0)} unidades</span>
                 <span className="mono" style={{ fontWeight: 600, fontSize: 18 }}>{window.fmtCOP(total)}</span>
               </div>
             </div>
           )}
         </Modal>
-      )}
+        );
+      })()}
 
       {showProv && (
         <Modal title="Crear proveedor" onClose={() => setShowProv(false)} footer={
@@ -906,6 +987,8 @@ const IaScannerModal = ({ onClose, onRead }) => {
   const [estado, setEstado] = useStateA("listo"); // listo | preview | analizando | exito | error
   const [progreso, setProgreso] = useStateA(0);
   const [imgSrc, setImgSrc] = useStateA(null);
+  const [fileName, setFileName] = useStateA("");
+  const [isPdf, setIsPdf] = useStateA(false);
   const [imgData, setImgData] = useStateA(null); // { base64, mimeType }
   const [resultado, setResultado] = useStateA(null);
   const [errorMsg, setErrorMsg] = useStateA("");
@@ -914,6 +997,9 @@ const IaScannerModal = ({ onClose, onRead }) => {
   const seleccionarImagen = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const pdf = file.type === "application/pdf";
+    setIsPdf(pdf);
+    setFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
       setImgSrc(reader.result);
@@ -965,7 +1051,7 @@ const IaScannerModal = ({ onClose, onRead }) => {
         Sube o toma una foto clara de la factura del proveedor. La IA leerá automáticamente proveedor, productos, cantidades y costos.
       </p>
       {/* Hidden file input */}
-      <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={seleccionarImagen}/>
+      <input ref={fileRef} type="file" accept="image/*,.pdf" capture="environment" style={{ display: "none" }} onChange={seleccionarImagen}/>
       <div className="scanner-frame">
         <div className="scanner-viewport" style={{ background: "#1a1f2e" }}>
           {estado === "listo" && (
@@ -974,18 +1060,28 @@ const IaScannerModal = ({ onClose, onRead }) => {
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
-              <div style={{ marginTop: 12, fontSize: 13 }}>Toca para seleccionar imagen</div>
-              <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>Cámara en móvil · archivo en desktop</div>
+              <div style={{ marginTop: 12, fontSize: 13 }}>Toca para seleccionar archivo</div>
+              <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>Foto, imagen PNG/JPG o PDF · cámara en móvil</div>
             </div>
           )}
           {estado === "preview" && imgSrc && (
             <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <img src={imgSrc} alt="Factura" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 4 }}/>
+              {isPdf ? (
+                <div style={{ textAlign: "center", color: "#fff" }}>
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  <div style={{ marginTop: 8, fontSize: 13, fontWeight: 500 }}>{fileName}</div>
+                  <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>PDF listo para analizar</div>
+                </div>
+              ) : (
+                <img src={imgSrc} alt="Factura" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 4 }}/>
+              )}
             </div>
           )}
           {estado === "analizando" && (
             <>
-              {imgSrc && (
+              {imgSrc && !isPdf && (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.25 }}>
                   <img src={imgSrc} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}/>
                 </div>
@@ -1040,7 +1136,7 @@ const IaScannerModal = ({ onClose, onRead }) => {
         )}
         {estado === "preview" && (
           <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn ghost" onClick={() => { setImgSrc(null); setImgData(null); setEstado("listo"); }}>Cambiar</button>
+            <button className="btn ghost" onClick={() => { setImgSrc(null); setImgData(null); setIsPdf(false); setFileName(""); setEstado("listo"); }}>Cambiar</button>
             <button className="btn primary" onClick={analizar}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
               Analizar con IA
@@ -1048,7 +1144,7 @@ const IaScannerModal = ({ onClose, onRead }) => {
           </div>
         )}
         {estado === "error" && (
-          <button className="btn primary" onClick={() => { setEstado("listo"); setImgSrc(null); setImgData(null); setErrorMsg(""); }}>
+          <button className="btn primary" onClick={() => { setEstado("listo"); setImgSrc(null); setImgData(null); setIsPdf(false); setFileName(""); setErrorMsg(""); }}>
             Nueva imagen
           </button>
         )}
