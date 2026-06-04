@@ -952,33 +952,91 @@ const matchItems = (geminiItems) => {
   });
 };
 
-// Call Gemini Flash Vision API
-const analizarConGemini = async (base64, mimeType, apiKey) => {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-  const body = {
-    contents: [{
-      parts: [
-        { inlineData: { mimeType, data: base64 } },
-        { text: `Analiza esta factura/remisión. Extrae JSON estricto:
+// Catálogo de proveedores de IA
+const IA_PROVIDERS = [
+  { id: "gemini",   name: "Google Gemini Flash",  model: "gemini-2.0-flash",  placeholder: "AIzaSy...",        link: "https://aistudio.google.com/apikey",              linkLabel: "Google AI Studio" },
+  { id: "openai",   name: "OpenAI GPT-4o",        model: "gpt-4o",            placeholder: "sk-proj-...",      link: "https://platform.openai.com/api-keys",            linkLabel: "OpenAI Platform" },
+  { id: "claude",   name: "Anthropic Claude",      model: "claude-sonnet-4-20250514",  placeholder: "sk-ant-...", link: "https://console.anthropic.com/settings/keys", linkLabel: "Anthropic Console" },
+];
+
+const PROMPT_FACTURA = `Analiza esta factura/remisión. Extrae JSON estricto:
 { "proveedor": "...", "nit": "...", "factura": "...", "fecha": "...", "vendedor": "...", "celular": "...",
   "items": [{ "nombre": "...", "qty": 0, "costo": 0, "vence": "YYYY-MM-DD o null" }] }
-Solo JSON, sin markdown ni explicaciones. Si un campo no es visible, usa null. qty y costo deben ser números.` }
-      ]
-    }]
-  };
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Gemini API error ${res.status}: ${err}`);
+Solo JSON, sin markdown ni explicaciones. Si un campo no es visible, usa null. qty y costo deben ser números.`;
+
+// Call AI Vision API (multi-provider)
+// Parse API error into friendly message
+const parseApiError = (status, body, provider) => {
+  try {
+    const json = JSON.parse(body);
+    const msg = json.error?.message || json.error?.type || "";
+    if (status === 429 || msg.includes("quota") || msg.includes("rate")) {
+      return `Límite de uso alcanzado en ${provider}. Espera unos segundos e intenta de nuevo, o cambia de proveedor en Ajustes.`;
+    }
+    if (status === 401 || status === 403 || msg.includes("auth") || msg.includes("key")) {
+      return `API Key de ${provider} inválida o sin permisos. Revísala en Ajustes.`;
+    }
+    if (status === 400) {
+      return `${provider} rechazó la solicitud. La imagen puede ser demasiado grande o el formato no es compatible.`;
+    }
+    if (msg) return `${provider}: ${msg.slice(0, 150)}`;
+  } catch {}
+  if (status === 429) return `Límite de uso alcanzado en ${provider}. Espera e intenta de nuevo.`;
+  if (status === 401 || status === 403) return `API Key de ${provider} inválida. Revísala en Ajustes.`;
+  if (status >= 500) return `Servidor de ${provider} no disponible. Intenta más tarde.`;
+  return `Error de ${provider} (${status}). Intenta de nuevo.`;
+};
+
+const analizarConIA = async (base64, mimeType, apiKey, providerId) => {
+  let text;
+  if (providerId === "openai") {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: [
+          { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64}` } },
+          { type: "text", text: PROMPT_FACTURA }
+        ]}],
+        max_tokens: 2048,
+      }),
+    });
+    if (!res.ok) { const err = await res.text(); throw new Error(parseApiError(res.status, err, "OpenAI")); }
+    const json = await res.json();
+    text = json.choices?.[0]?.message?.content;
+  } else if (providerId === "claude") {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2048,
+        messages: [{ role: "user", content: [
+          { type: "image", source: { type: "base64", media_type: mimeType, data: base64 } },
+          { type: "text", text: PROMPT_FACTURA }
+        ]}],
+      }),
+    });
+    if (!res.ok) { const err = await res.text(); throw new Error(parseApiError(res.status, err, "Claude")); }
+    const json = await res.json();
+    text = json.content?.[0]?.text;
+  } else {
+    // Gemini (default)
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [
+        { inlineData: { mimeType, data: base64 } },
+        { text: PROMPT_FACTURA }
+      ]}]}),
+    });
+    if (!res.ok) { const err = await res.text(); throw new Error(parseApiError(res.status, err, "Gemini")); }
+    const json = await res.json();
+    text = json.candidates?.[0]?.content?.parts?.[0]?.text;
   }
-  const json = await res.json();
-  const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Respuesta vacía de Gemini");
-  // Strip markdown fences if present
+  if (!text) throw new Error("La IA no devolvió resultado. Intenta con una imagen más clara.");
   const clean = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
   return JSON.parse(clean);
 };
@@ -1011,12 +1069,13 @@ const IaScannerModal = ({ onClose, onRead }) => {
   };
 
   const analizar = async () => {
-    const apiKey = localStorage.getItem("gemini_api_key") || "";
-    if (!apiKey.trim()) { setErrorMsg("Configura tu API Key de Gemini en Ajustes antes de usar el escáner IA."); setEstado("error"); return; }
+    const providerId = localStorage.getItem("ia_provider") || "gemini";
+    const apiKey = localStorage.getItem("ia_api_key") || "";
+    const provName = (IA_PROVIDERS.find(p => p.id === providerId) || IA_PROVIDERS[0]).name;
+    if (!apiKey.trim()) { setErrorMsg("Configura tu API Key en Ajustes antes de usar el escáner IA."); setEstado("error"); return; }
     if (!imgData) return;
     setEstado("analizando");
     setProgreso(0);
-    // Simulated progress while waiting for API
     let p = 0;
     const interval = setInterval(() => {
       p += 3 + Math.random() * 5;
@@ -1024,7 +1083,7 @@ const IaScannerModal = ({ onClose, onRead }) => {
       setProgreso(Math.round(p));
     }, 300);
     try {
-      const raw = await analizarConGemini(imgData.base64, imgData.mimeType, apiKey.trim());
+      const raw = await analizarConIA(imgData.base64, imgData.mimeType, apiKey.trim(), providerId);
       clearInterval(interval);
       setProgreso(100);
       const items = matchItems(raw.items || []);
@@ -1034,7 +1093,10 @@ const IaScannerModal = ({ onClose, onRead }) => {
       setTimeout(() => onRead(data), 1200);
     } catch (err) {
       clearInterval(interval);
-      setErrorMsg(err.message || "Error al analizar la imagen.");
+      const msg = err.name === "TypeError" && err.message.includes("fetch")
+        ? "Sin conexión a internet. Verifica tu red e intenta de nuevo."
+        : err.message || "Error al analizar la imagen.";
+      setErrorMsg(msg);
       setEstado("error");
     }
   };
@@ -2005,20 +2067,65 @@ const Reportes = () => {
 
 // =================== Ajustes (solo admin) ===================
 const Ajustes = () => {
-  const [geminiKey, setGeminiKey] = useStateA(() => localStorage.getItem("gemini_api_key") || "");
+  const [providerId, setProviderId] = useStateA(() => localStorage.getItem("ia_provider") || "gemini");
+  const [apiKey, setApiKey] = useStateA(() => localStorage.getItem("ia_api_key") || "");
   const [showKey, setShowKey] = useStateA(false);
   const [saved, setSaved] = useStateA(false);
+  const [testing, setTesting] = useStateA(false);
+  const [testResult, setTestResult] = useStateA(null); // null | "ok" | "error"
+
+  const prov = IA_PROVIDERS.find(p => p.id === providerId) || IA_PROVIDERS[0];
+
+  const cambiarProveedor = (id) => {
+    setProviderId(id);
+    localStorage.setItem("ia_provider", id);
+    // Cargar key guardada para este proveedor (cada proveedor tiene su key)
+    const savedKey = localStorage.getItem("ia_key_" + id) || "";
+    setApiKey(savedKey);
+    setSaved(false);
+    setTestResult(null);
+  };
 
   const guardar = () => {
-    localStorage.setItem("gemini_api_key", geminiKey.trim());
+    localStorage.setItem("ia_api_key", apiKey.trim());
+    localStorage.setItem("ia_key_" + providerId, apiKey.trim());
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTestResult(null);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   const borrarKey = () => {
-    localStorage.removeItem("gemini_api_key");
-    setGeminiKey("");
+    localStorage.removeItem("ia_api_key");
+    localStorage.removeItem("ia_key_" + providerId);
+    setApiKey("");
     setSaved(false);
+    setTestResult(null);
+  };
+
+  const probarConexion = async () => {
+    if (!apiKey.trim()) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      if (providerId === "openai") {
+        const r = await fetch("https://api.openai.com/v1/models", { headers: { "Authorization": `Bearer ${apiKey.trim()}` } });
+        if (!r.ok) throw new Error();
+      } else if (providerId === "claude") {
+        const r = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": apiKey.trim(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 10, messages: [{ role: "user", content: "ping" }] }),
+        });
+        if (!r.ok) throw new Error();
+      } else {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash?key=${apiKey.trim()}`);
+        if (!r.ok) throw new Error();
+      }
+      setTestResult("ok");
+    } catch {
+      setTestResult("error");
+    }
+    setTesting(false);
   };
 
   return (
@@ -2036,58 +2143,79 @@ const Ajustes = () => {
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
           <div>
             <div style={{ fontWeight: 600, fontSize: 15 }}>Inteligencia Artificial</div>
-            <div className="muted" style={{ fontSize: 12 }}>Configura la API para el escáner de facturas con IA</div>
+            <div className="muted" style={{ fontSize: 12 }}>Configura el proveedor y API Key para el escáner de facturas</div>
           </div>
         </div>
 
         <div style={{ background: "var(--surface-2)", borderRadius: 8, padding: 16, border: "1px solid var(--border)" }}>
-          <label style={{ display: "block", fontWeight: 500, fontSize: 13, marginBottom: 8 }}>
-            Proveedor de IA
-          </label>
+          {/* Selector de proveedor */}
+          <label style={{ display: "block", fontWeight: 500, fontSize: 13, marginBottom: 8 }}>Proveedor de IA</label>
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+            {IA_PROVIDERS.map(p => (
+              <button key={p.id}
+                className={"btn sm" + (providerId === p.id ? " primary" : " ghost")}
+                onClick={() => cambiarProveedor(p.id)}
+                style={{ fontSize: 12, fontWeight: 600 }}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <span style={{ padding: "6px 12px", borderRadius: 6, background: "var(--primary)", color: "#fff", fontSize: 12, fontWeight: 600 }}>
-              Google Gemini Flash
-            </span>
-            <span className="muted" style={{ fontSize: 11 }}>Modelo: gemini-2.0-flash</span>
+            <span className="muted" style={{ fontSize: 12 }}>Modelo activo:</span>
+            <span className="mono" style={{ fontSize: 12, padding: "3px 8px", borderRadius: 4, background: "var(--bg)", border: "1px solid var(--border)" }}>{prov.model}</span>
           </div>
 
-          <label style={{ display: "block", fontWeight: 500, fontSize: 13, marginBottom: 6 }}>
-            API Key
-          </label>
+          {/* API Key */}
+          <label style={{ display: "block", fontWeight: 500, fontSize: 13, marginBottom: 6 }}>API Key</label>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
             <div style={{ flex: 1, position: "relative" }}>
               <input
                 type={showKey ? "text" : "password"}
-                value={geminiKey}
-                onChange={e => { setGeminiKey(e.target.value); setSaved(false); }}
-                placeholder="AIzaSy..."
+                value={apiKey}
+                onChange={e => { setApiKey(e.target.value); setSaved(false); setTestResult(null); }}
+                placeholder={prov.placeholder}
                 style={{ width: "100%", fontSize: 13, padding: "8px 40px 8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "monospace" }}
               />
               <button
                 onClick={() => setShowKey(v => !v)}
                 style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 11 }}
                 title={showKey ? "Ocultar" : "Mostrar"}
-              >
-                {showKey ? "🙈" : "👁"}
-              </button>
+              >{showKey ? "🙈" : "👁"}</button>
             </div>
-            <button className="btn primary sm" onClick={guardar} disabled={!geminiKey.trim()}>
-              Guardar
-            </button>
-            {geminiKey && (
-              <button className="btn ghost sm" onClick={borrarKey} title="Borrar API Key">
-                <Icon name="x" size={14}/>
-              </button>
+            <button className="btn primary sm" onClick={guardar} disabled={!apiKey.trim()}>Guardar</button>
+            {apiKey && (
+              <button className="btn ghost sm" onClick={borrarKey} title="Borrar API Key"><Icon name="x" size={14}/></button>
             )}
           </div>
+
+          {/* Feedback guardado */}
           {saved && (
-            <div style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-              <Icon name="check" size={14}/> API Key guardada correctamente
+            <div style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
+              <Icon name="check" size={14}/> API Key de {prov.name} guardada correctamente
             </div>
           )}
-          <p className="muted" style={{ fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
-            La API Key se almacena solo en este navegador (localStorage). Se usa para el escáner IA de facturas en Ingreso de mercancía.
-            Puedes obtener una key gratuita en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{ color: "var(--primary)" }}>Google AI Studio</a>.
+
+          {/* Botón probar conexión */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, marginBottom: 10 }}>
+            <button className="btn sm ghost" onClick={probarConexion} disabled={!apiKey.trim() || testing}>
+              {testing ? "Probando…" : "Probar conexión"}
+            </button>
+            {testResult === "ok" && (
+              <span style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                <Icon name="check" size={14}/> Conexión exitosa
+              </span>
+            )}
+            {testResult === "error" && (
+              <span style={{ color: "#EF4444", fontSize: 12, fontWeight: 500 }}>
+                API Key inválida o sin permisos
+              </span>
+            )}
+          </div>
+
+          <p className="muted" style={{ fontSize: 11, marginTop: 4, lineHeight: 1.5 }}>
+            La API Key se almacena solo en este navegador. Se usa para el escáner IA de facturas en Ingreso de mercancía.
+            Obtén tu key en <a href={prov.link} target="_blank" rel="noopener" style={{ color: "var(--primary)" }}>{prov.linkLabel}</a>.
           </p>
         </div>
       </div>
