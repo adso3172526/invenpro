@@ -462,7 +462,6 @@ const Ingreso = () => {
           <p className="sub">Registra entradas a la bodega y actualiza inventario y costos.</p>
         </div>
         <div className="row">
-          <button className="btn" onClick={() => setShowProv(true)}><Icon name="users" size={14}/> Crear proveedor</button>
           <button className="btn primary" onClick={() => setShowSelector(true)}><Icon name="plus" size={14}/> Nuevo ingreso</button>
         </div>
       </div>
