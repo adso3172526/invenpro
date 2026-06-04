@@ -1291,18 +1291,18 @@ const Proveedores = () => {
         </div>
       </div>
 
-      <div className="grid-3 mt-2">
-        <div className="card stat">
-          <div className="muted" style={{ fontSize: 12 }}>Total proveedores</div>
-          <div className="big mono">{list.length}</div>
+      <div className="kpi-grid mt-2" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+        <div className="kpi">
+          <div className="label"><Icon name="users" size={14}/> Total proveedores</div>
+          <div className="val">{list.length}</div>
         </div>
-        <div className="card stat">
-          <div className="muted" style={{ fontSize: 12 }}>Activos</div>
-          <div className="big mono" style={{ color: "var(--good)" }}>{activos}</div>
+        <div className="kpi">
+          <div className="label"><Icon name="check" size={14}/> Activos</div>
+          <div className="val" style={{ color: "var(--good)" }}>{activos}</div>
         </div>
-        <div className="card stat">
-          <div className="muted" style={{ fontSize: 12 }}>Dados de baja</div>
-          <div className="big mono muted">{inactivos}</div>
+        <div className="kpi">
+          <div className="label"><Icon name="x" size={14}/> Dados de baja</div>
+          <div className="val" style={{ color: "var(--text-3)" }}>{inactivos}</div>
         </div>
       </div>
 
