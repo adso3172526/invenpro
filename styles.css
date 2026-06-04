@@ -1641,3 +1641,111 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   display: flex; justify-content: space-between; padding: 2px 0;
 }
 .receipt hr { border: 0; border-top: 1px dashed var(--border-strong); margin: 8px 0; }
+
+/* ============================================================
+   RESPONSIVE v2 — Mejoras de responsividad
+   ============================================================ */
+
+/* --- 1. POS layout en tablets (768–900px) --- */
+@media (max-width: 900px) {
+  .pos { grid-template-columns: 1fr 300px; }
+  .pos-left { padding: 16px 18px; gap: 12px; }
+  .cart-h { padding: 12px 14px; }
+  .cart-h h3 { font-size: 14px; }
+  .cart-totals { padding: 12px 14px; }
+  .cart-totals .row { font-size: 12px; }
+  .cart-totals .row.total { font-size: 20px; }
+  .cart-totals .ops { gap: 6px; }
+}
+@media (max-width: 768px) {
+  .pos { grid-template-columns: 1fr; height: auto; min-height: calc(100vh - 100px); }
+  .cart { max-height: none; }
+}
+
+/* --- 2. POS en móvil — carrito y catálogo mejorados --- */
+@media (max-width: 640px) {
+  .cat-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab { flex-shrink: 0; }
+  .product-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+  .cart-line .qty button { min-height: 36px; min-width: 36px; width: 36px; height: 36px; }
+  .cart-totals .pay { padding: 12px 16px; font-size: 15px; }
+}
+
+/* --- 3. Proveedores toolbar en tablet/móvil --- */
+@media (max-width: 900px) {
+  .prov-toolbar { flex-direction: column !important; align-items: stretch !important; }
+  .prov-toolbar > * { width: 100%; }
+}
+@media (max-width: 768px) {
+  .prov-filters { flex-direction: column !important; align-items: stretch !important; }
+  .prov-filters > * { width: 100%; }
+  .prov-filters .search { min-width: 0; }
+}
+
+/* --- 4. Shift-open card — cash suggestions scroll --- */
+@media (max-width: 380px) {
+  .shift-open-card .cash-suggestions { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
+  .shift-open-card .cash-suggestions::-webkit-scrollbar { display: none; }
+  .shift-open-card .cash-suggestions button { flex-shrink: 0; }
+}
+
+/* --- 5. Topbar POS en tablets --- */
+@media (max-width: 900px) {
+  .topbar .actions .muted.mono,
+  .topbar .actions .mono { font-size: 11px; }
+  .topbar .crumb .sub { font-size: 11px; }
+}
+@media (max-width: 768px) {
+  .topbar .crumb .chip { display: none; }
+  .topbar .crumb .sub { display: none; }
+}
+
+/* --- 6. Dashboard en tablets --- */
+@media (max-width: 900px) {
+  .dash-kpi { gap: 10px; }
+  .dash-row .chart-bars { min-height: 180px; }
+  .dash-row > .card { min-height: 280px; }
+}
+
+/* --- 7. Tablas en pantallas angostas --- */
+@media (max-width: 768px) {
+  /* Ocultar columnas Contacto, Términos, Último en proveedores */
+  .prov-table th:nth-child(3),
+  .prov-table td:nth-child(3),
+  .prov-table th:nth-child(4),
+  .prov-table td:nth-child(4),
+  .prov-table th:nth-child(5),
+  .prov-table td:nth-child(5) { display: none; }
+  /* Scroll horizontal mejorado para todas las tablas */
+  .tbl-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table.tbl { min-width: 500px; }
+  table.tbl th, table.tbl td { padding: 10px 12px; font-size: 12px; }
+}
+
+/* --- 8. Touch targets mejorados --- */
+@media (hover: none) and (pointer: coarse) {
+  .btn { min-height: 44px; }
+  input, select, textarea { min-height: 44px; }
+  .cart-line .qty button { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
+}
+@media (max-width: 640px) {
+  .keypad button { min-height: 52px; }
+}
+
+/* --- 9. Landscape móvil --- */
+@media (max-height: 768px) and (orientation: landscape) and (max-width: 1024px) {
+  .pos { grid-template-columns: 1fr 280px; height: auto; }
+  .pos-left { padding: 12px 14px; gap: 10px; }
+  .cart-h { padding: 10px 12px; }
+  .cart-totals { padding: 10px 12px; }
+  .cart-totals .row.total { font-size: 18px; }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  .login-form-wrap { padding: 18px 20px; }
+  .login-form h2 { font-size: 18px; margin-bottom: 12px; }
+  .login-form .field { margin-bottom: 10px; }
+}
