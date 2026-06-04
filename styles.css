@@ -503,7 +503,7 @@ input, select, textarea { font: inherit; color: inherit; }
   /* Sidebar como overlay desde la izquierda */
   .sidebar {
     position: fixed; left: 0; top: 0; bottom: 0;
-    width: 150px; height: 100vh;
+    width: 120px; height: 100vh;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     z-index: 70;
@@ -522,16 +522,17 @@ input, select, textarea { font: inherit; color: inherit; }
   }
   .sidebar .brand { display: none !important; } /* ya hay logo en menu-h */
 
-  /* Nav cards en columna vertical compacta (solo iconos) */
+  /* Nav cards en columna vertical compacta — mitad de tamaño */
   .sidebar .nav-cards {
-    display: flex; flex-direction: column; gap: 6px;
+    display: flex; flex-direction: column; gap: 4px;
     flex: none; align-items: stretch;
     width: 100%;
   }
-  .sidebar .nav-card { width: 100%; }
+  .sidebar .nav-card { width: 100%; border-radius: 6px; }
   .nav-card-label-mobile { display: none !important; }
-  .nav-card-top { padding: 8px 8px; }
-  .nav-card-top svg { width: 20px; height: 20px; }
+  .nav-card-top { padding: 6px; }
+  .nav-card-top svg { width: 16px; height: 16px; }
+  .nav-card-badge { font-size: 7px; padding: 0 4px; top: 2px; right: 3px; }
 
   /* User box: avatar + texto + botón apilados en columna */
   .sidebar .user {
@@ -604,10 +605,10 @@ input, select, textarea { font: inherit; color: inherit; }
   .modal-b { max-height: calc(100vh - 130px); overflow-y: auto; }
 
   /* Nav móvil más compacto */
-  .nav-card-top { padding: 12px 8px; }
-  .nav-card-top svg { width: 24px; height: 24px; }
-  .nav-card-badge { font-size: 8px; padding: 1px 4px; }
-  .nav-card-label-mobile { font-size: 11px; padding: 6px 4px; }
+  .nav-card-top { padding: 5px; }
+  .nav-card-top svg { width: 14px; height: 14px; }
+  .nav-card-badge { font-size: 7px; padding: 0 3px; }
+  .nav-card-label-mobile { font-size: 10px; padding: 4px 3px; }
 
   /* Toolbar de búsqueda */
   .pos-search { padding: 10px 12px; }
