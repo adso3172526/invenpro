@@ -687,7 +687,7 @@ const Ingreso = () => {
 
   const iniciarManual = () => {
     setItems([]); setVendedor(""); setCelular("");
-    setFactura(""); setProveedor(proveedores[0]?.nombre || "");
+    setFactura(""); setProveedor("");
     const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     setRecibido(d.toISOString().slice(0,16));
     setOrigen("manual");
@@ -992,6 +992,7 @@ const Ingreso = () => {
               <div className="field" style={{ margin: 0 }}>
                 <label>Proveedor</label>
                 <select value={proveedor} onChange={e => setProveedor(e.target.value)}>
+                  <option value="">Seleccionar…</option>
                   {proveedores.map(p => <option key={p.nit}>{p.nombre}</option>)}
                 </select>
               </div>
