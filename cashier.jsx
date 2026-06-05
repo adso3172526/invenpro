@@ -136,19 +136,46 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
 
   return (
     <div className="tw-min-h-screen tw-flex tw-flex-col tw-bg-bg">
-      {/* Topbar */}
-      <div className="topbar tw-flex tw-items-center tw-gap-2 max-md:tw-px-3 max-md:tw-py-2 max-md:tw-min-h-0 max-md:tw-h-auto">
+      {/* Topbar — Desktop */}
+      <div className="topbar tw-hidden md:tw-flex tw-items-center tw-gap-2">
         <div className="crumb tw-flex-1 tw-min-w-0">
-          <img src="logo.png" alt="InvenPro" className="tw-h-[22px] tw-object-contain tw-hidden sm:tw-block"/>
-          <h1 className="max-md:tw-text-sm">Caja {shift.caja.replace("Caja ", "")}</h1>
-          <span className="muted tw-hidden sm:tw-inline">·</span>
-          <span className="sub tw-hidden sm:tw-inline">{cajero.nombre}</span>
-          <span className="chip good tw-hidden sm:tw-inline-flex"><span className="dot"/> Turno abierto</span>
+          <img src="logo.png" alt="InvenPro" className="tw-h-[22px] tw-object-contain"/>
+          <h1>Caja {shift.caja.replace("Caja ", "")}</h1>
+          <span className="muted">·</span>
+          <span className="sub">{cajero.nombre}</span>
+          <span className="chip good"><span className="dot"/> Turno abierto</span>
         </div>
-        <div className="actions tw-flex tw-items-center tw-gap-1.5 sm:tw-gap-2">
-          <span className="muted mono tw-text-xs tw-hidden sm:tw-inline">{shiftStats.trans} ventas · {window.fmtCOP(shiftStats.ventas)}</span>
-          <button className="btn sm max-md:tw-px-2 max-md:tw-py-1.5" onClick={onLogout} title="Salir sin cerrar turno"><Icon name="arrowRight" size={14}/> <span className="tw-hidden sm:tw-inline">Salir</span></button>
-          <button className="btn sm max-md:tw-px-2 max-md:tw-py-1.5" onClick={() => setClosing(true)}><Icon name="logout" size={14}/> <span className="tw-hidden sm:tw-inline">Cerrar turno</span></button>
+        <div className="actions tw-flex tw-items-center tw-gap-2">
+          <span className="muted mono tw-text-xs">{shiftStats.trans} ventas · {window.fmtCOP(shiftStats.ventas)}</span>
+          <button className="btn sm" onClick={onLogout} title="Salir sin cerrar turno"><Icon name="arrowRight" size={14}/> Salir</button>
+          <button className="btn sm" onClick={() => setClosing(true)}><Icon name="logout" size={14}/> Cerrar turno</button>
+        </div>
+      </div>
+
+      {/* Topbar — Mobile: app-style header */}
+      <div className="md:tw-hidden tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-2.5 tw-bg-surface tw-border-b tw-border-border">
+        <div className="tw-flex tw-items-center tw-gap-2.5">
+          <div className="tw-w-8 tw-h-8 tw-rounded-full tw-bg-accent-soft tw-text-accent tw-grid tw-place-items-center">
+            <Icon name="store" size={15}/>
+          </div>
+          <div>
+            <div className="tw-text-sm tw-font-bold tw-leading-tight">{shift.caja}</div>
+            <div className="tw-text-[10px] tw-text-txt-3">{cajero.nombre}</div>
+          </div>
+        </div>
+        <div className="tw-flex tw-items-center tw-gap-1">
+          {shiftStats.trans > 0 && (
+            <div className="tw-text-right tw-mr-2">
+              <div className="mono tw-text-[11px] tw-font-semibold tw-text-accent">{window.fmtCOP(shiftStats.ventas)}</div>
+              <div className="tw-text-[9px] tw-text-txt-3">{shiftStats.trans} ventas</div>
+            </div>
+          )}
+          <button className="tw-w-8 tw-h-8 tw-rounded-lg tw-border tw-border-border tw-bg-surface tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-2 tw-transition-colors" onClick={onLogout} title="Salir">
+            <Icon name="arrowRight" size={14}/>
+          </button>
+          <button className="tw-w-8 tw-h-8 tw-rounded-lg tw-border tw-border-border tw-bg-surface tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-2 tw-transition-colors" onClick={() => setClosing(true)} title="Cerrar turno">
+            <Icon name="logout" size={14}/>
+          </button>
         </div>
       </div>
 
@@ -260,17 +287,18 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
           </div>
         </div>
 
-        {/* ===== Mobile: buscador → carrito → catálogo ===== */}
-        <div className="tw-flex tw-flex-col md:tw-hidden tw-flex-1 tw-min-h-0">
-          {/* Buscador */}
-          <div className="tw-px-2.5 tw-pt-2.5 tw-pb-1.5">
-            <div className="pos-search tw-py-2 tw-px-3">
+        {/* ===== Mobile: diseño tipo app nativa ===== */}
+        <div className="tw-flex tw-flex-col md:tw-hidden tw-flex-1 tw-min-h-0 tw-bg-bg">
+
+          {/* Buscador con estilo pill */}
+          <div className="tw-px-3 tw-pt-3 tw-pb-2">
+            <div className="tw-flex tw-items-center tw-gap-2 tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-px-3 tw-py-2.5 tw-shadow-sm">
               <Icon name="search" size={16}/>
               <input
-                placeholder="Escanea o busca producto…"
+                placeholder="Buscar producto o escanear código…"
                 value={q}
                 onChange={e => setQ(e.target.value)}
-                className="tw-text-sm"
+                className="tw-flex-1 tw-border-0 tw-bg-transparent tw-outline-none tw-text-sm"
                 onKeyDown={e => {
                   if (e.key === "Enter") {
                     const term = q.trim();
@@ -283,88 +311,107 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
                   }
                 }}
               />
+              {q && (
+                <button className="tw-bg-transparent tw-border-0 tw-p-0 tw-cursor-pointer tw-text-txt-3" onClick={() => setQ("")}><Icon name="x" size={14}/></button>
+              )}
             </div>
           </div>
 
-          {/* Carrito compacto */}
-          <div className="tw-bg-surface tw-border-y tw-border-border tw-flex tw-flex-col">
-            <div className="tw-flex tw-items-center tw-justify-between tw-px-3 tw-py-1.5 tw-border-b tw-border-border">
-              <div className="tw-flex tw-items-center tw-gap-1.5">
-                <Icon name="cart" size={13}/>
-                <span className="tw-text-xs tw-font-semibold">Carrito</span>
-                {cart.length > 0 && <span className="chip accent tw-text-[10px] tw-py-0 tw-leading-tight">{totals.items}</span>}
-              </div>
-              {cart.length > 0 && (
-                <button className="btn sm danger tw-px-1.5 tw-py-0.5 tw-text-[10px]" onClick={() => setCart([])}><Icon name="trash" size={11}/></button>
-              )}
+          {/* Categorías — pills horizontales */}
+          <div className="tw-px-3 tw-pb-2">
+            <div className="tw-flex tw-gap-1.5 tw-overflow-x-auto tw-pb-0.5" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+              {CATEGORIAS.map(c => (
+                <button key={c}
+                  className={"tw-shrink-0 tw-text-[11px] tw-font-medium tw-py-1.5 tw-px-3 tw-rounded-full tw-border tw-cursor-pointer tw-transition-all "
+                    + (cat === c
+                      ? "tw-bg-accent tw-text-white tw-border-accent tw-shadow-sm"
+                      : "tw-bg-surface tw-text-txt-2 tw-border-border hover:tw-border-accent")}
+                  onClick={() => setCat(c)}>{c}</button>
+              ))}
             </div>
-            {cart.length === 0 ? (
-              <div className="tw-text-center tw-text-txt-3 tw-text-[10px] tw-py-1">Escanea o selecciona productos</div>
-            ) : (
-              <div className="tw-max-h-[25vh] tw-overflow-y-auto tw-px-2.5 tw-py-0.5">
-                {cart.map((l, i) => (
-                  <div key={l.sku} className={"tw-flex tw-items-center tw-justify-between tw-gap-2 tw-py-1" + (i < cart.length - 1 ? " tw-border-b tw-border-dashed tw-border-border" : "")}>
-                    <div className="tw-flex-1 tw-min-w-0">
-                      <div className="tw-text-[11px] tw-font-medium tw-leading-tight tw-truncate">{l.nombre}</div>
-                      <div className="tw-flex tw-items-center tw-gap-1.5 tw-mt-0.5">
-                        <div className="tw-inline-flex tw-items-center tw-border tw-border-border tw-rounded tw-overflow-hidden">
-                          <button className="tw-bg-transparent tw-border-0 tw-w-6 tw-h-5 tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-cursor-pointer" onClick={() => setQty(l.sku, -1)}><Icon name="minus" size={9}/></button>
-                          <span className="tw-px-1 tw-tabular-nums tw-text-[10px] tw-font-medium">{l.q}</span>
-                          <button className="tw-bg-transparent tw-border-0 tw-w-6 tw-h-5 tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-cursor-pointer" onClick={() => setQty(l.sku, +1)}><Icon name="plus" size={9}/></button>
-                        </div>
-                        <span className="mono tw-text-[10px] tw-text-txt-3">× {window.fmtCOP(l.precio)}</span>
-                      </div>
+          </div>
+
+          {/* Productos — grid con tarjetas bonitas */}
+          <div className="tw-flex-1 tw-overflow-y-auto tw-px-3 tw-pb-3">
+            <div className="tw-grid tw-grid-cols-3 tw-gap-2">
+              {pagProd.slice.map(p => {
+                const inCart = cart.find(l => l.sku === p.sku);
+                return (
+                  <button key={p.sku}
+                    className={"tw-relative tw-bg-surface tw-border tw-rounded-xl tw-p-2.5 tw-text-left tw-flex tw-flex-col tw-gap-1.5 active:tw-scale-[0.96] tw-transition-all tw-cursor-pointer disabled:tw-opacity-30 disabled:tw-cursor-not-allowed "
+                      + (inCart ? "tw-border-accent tw-shadow-sm" : "tw-border-border")}
+                    onClick={() => addToCart(p)} disabled={p.stock <= 0}>
+                    {inCart && (
+                      <span className="tw-absolute tw-top-[-6px] tw-right-[-4px] tw-bg-accent tw-text-white tw-text-[9px] tw-font-bold tw-w-[18px] tw-h-[18px] tw-rounded-full tw-grid tw-place-items-center tw-shadow-sm">{inCart.q}</span>
+                    )}
+                    <div className="tw-text-[11px] tw-font-semibold tw-leading-snug tw-line-clamp-2 tw-min-h-[2.6em]">{p.nombre}</div>
+                    <div className="mono tw-text-xs tw-font-bold tw-text-accent">{window.fmtCOP(p.precio)}</div>
+                    <div className="tw-flex tw-items-center tw-justify-between tw-gap-1">
+                      <span className={"tw-text-[9px] tw-font-medium " + (p.stock < p.min ? "tw-text-bad" : "tw-text-txt-3")}>{p.stock} {p.unidad}</span>
+                      {p.stock <= p.min && p.stock > 0 && <span className="tw-text-[8px] tw-text-warn tw-font-semibold">Bajo</span>}
                     </div>
-                    <div className="tw-flex tw-items-center tw-gap-2 tw-shrink-0">
-                      <span className="mono tw-font-semibold tw-text-[11px] tw-tabular-nums">{window.fmtCOP(l.q * l.precio)}</span>
-                      <button className="tw-text-txt-3 tw-bg-transparent tw-border-0 tw-p-0 tw-cursor-pointer hover:tw-text-bad" onClick={() => removeLine(l.sku)} title="Quitar"><Icon name="x" size={12}/></button>
+                  </button>
+                );
+              })}
+            </div>
+            {filtered.length === 0 && (
+              <div className="tw-text-center tw-py-10">
+                <div className="tw-w-12 tw-h-12 tw-rounded-full tw-bg-surface-2 tw-grid tw-place-items-center tw-mx-auto tw-mb-2 tw-text-txt-3">
+                  <Icon name="search" size={22}/>
+                </div>
+                <div className="tw-text-sm tw-font-medium tw-text-txt-2">Sin resultados</div>
+                <div className="tw-text-xs tw-text-txt-3">No encontramos "{q}"</div>
+              </div>
+            )}
+            {filtered.length > 0 && <Pagination {...pagProd} label="productos"/>}
+          </div>
+
+          {/* Carrito flotante / bottom bar */}
+          <div className="tw-shrink-0 tw-bg-surface tw-border-t tw-border-border tw-shadow-lg">
+            {cart.length === 0 ? (
+              /* Empty: barra mínima con icono */
+              <div className="tw-flex tw-items-center tw-justify-center tw-gap-2 tw-py-2.5 tw-text-txt-3">
+                <Icon name="cart" size={15}/>
+                <span className="tw-text-xs">Carrito vacío</span>
+              </div>
+            ) : (<>
+              {/* Items del carrito — expandible */}
+              <div className="tw-max-h-[30vh] tw-overflow-y-auto">
+                {cart.map((l, i) => (
+                  <div key={l.sku} className={"tw-flex tw-items-center tw-gap-2.5 tw-px-4 tw-py-2" + (i < cart.length - 1 ? " tw-border-b tw-border-border" : "")}>
+                    <div className="tw-w-8 tw-h-8 tw-rounded-lg tw-bg-accent-soft tw-text-accent tw-grid tw-place-items-center tw-shrink-0">
+                      <span className="tw-text-[11px] tw-font-bold">{l.q}</span>
+                    </div>
+                    <div className="tw-flex-1 tw-min-w-0">
+                      <div className="tw-text-xs tw-font-medium tw-leading-tight tw-truncate">{l.nombre}</div>
+                      <div className="mono tw-text-[10px] tw-text-txt-3">{window.fmtCOP(l.precio)} c/u</div>
+                    </div>
+                    <div className="tw-flex tw-items-center tw-gap-1.5 tw-shrink-0">
+                      <div className="tw-inline-flex tw-items-center tw-border tw-border-border tw-rounded-lg tw-overflow-hidden tw-bg-surface-2">
+                        <button className="tw-bg-transparent tw-border-0 tw-w-7 tw-h-7 tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-3 tw-transition-colors" onClick={() => setQty(l.sku, -1)}><Icon name="minus" size={10}/></button>
+                        <span className="tw-px-1 tw-tabular-nums tw-text-[11px] tw-font-semibold tw-min-w-[20px] tw-text-center">{l.q}</span>
+                        <button className="tw-bg-transparent tw-border-0 tw-w-7 tw-h-7 tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-3 tw-transition-colors" onClick={() => setQty(l.sku, +1)}><Icon name="plus" size={10}/></button>
+                      </div>
+                      <span className="mono tw-font-semibold tw-text-xs tw-tabular-nums tw-min-w-[60px] tw-text-right">{window.fmtCOP(l.q * l.precio)}</span>
+                      <button className="tw-text-txt-3 tw-bg-transparent tw-border-0 tw-p-0 tw-cursor-pointer hover:tw-text-bad tw-transition-colors" onClick={() => removeLine(l.sku)}><Icon name="x" size={14}/></button>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-            <div className="tw-px-2.5 tw-py-1.5 tw-border-t tw-border-border tw-bg-surface-2 tw-flex tw-items-center tw-gap-2">
-              <div className="tw-flex-1">
-                <div className="tw-flex tw-justify-between tw-items-baseline">
-                  <span className="tw-text-[10px] tw-text-txt-3">{totals.items} ítem{totals.items !== 1 ? "s" : ""}</span>
-                  <span className="mono tw-font-bold tw-text-sm tw-tabular-nums">{window.fmtCOP(totals.total)}</span>
-                </div>
-              </div>
-              <button className="btn accent tw-py-1.5 tw-px-4 tw-text-xs tw-font-semibold tw-shrink-0 tw-rounded-lg" disabled={cart.length === 0} onClick={() => setPay("modal")}>
-                Cobrar
-              </button>
-            </div>
-          </div>
-
-          {/* Categorías — scroll horizontal */}
-          <div className="tw-px-2.5 tw-pt-2 tw-pb-1">
-            <div className="cat-tabs tw-flex-nowrap tw-overflow-x-auto tw-gap-1.5" style={{ scrollbarWidth: "none" }}>
-              {CATEGORIAS.map(c => (
-                <button key={c} className={"cat-tab tw-shrink-0 tw-text-[11px] tw-py-1 tw-px-2.5" + (cat === c ? " active" : "")} onClick={() => setCat(c)}>{c}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Productos — grid compacto */}
-          <div className="tw-flex-1 tw-overflow-y-auto tw-px-2.5 tw-pb-2">
-            <div className="tw-grid tw-grid-cols-3 tw-gap-1.5">
-              {pagProd.slice.map(p => (
-                <button key={p.sku} className="tw-bg-surface tw-border tw-border-border tw-rounded-lg tw-p-2 tw-text-left tw-flex tw-flex-col tw-gap-1 active:tw-scale-[0.97] tw-transition-transform disabled:tw-opacity-40"
-                  onClick={() => addToCart(p)} disabled={p.stock <= 0}>
-                  <div className="tw-text-[11px] tw-font-semibold tw-leading-tight tw-line-clamp-2">{p.nombre}</div>
-                  <div className="tw-flex tw-items-baseline tw-justify-between tw-gap-1">
-                    <span className="mono tw-text-[11px] tw-font-bold tw-text-accent">{window.fmtCOP(p.precio)}</span>
-                    <span className={"tw-text-[9px] " + (p.stock < p.min ? "tw-text-bad" : "tw-text-txt-3")}>{p.stock}</span>
-                  </div>
+              {/* Footer: total + cobrar */}
+              <div className="tw-flex tw-items-center tw-gap-3 tw-px-4 tw-py-3 tw-border-t tw-border-border tw-bg-surface-2">
+                <button className="tw-bg-transparent tw-border tw-border-border tw-rounded-lg tw-w-8 tw-h-8 tw-grid tw-place-items-center tw-cursor-pointer tw-text-bad hover:tw-bg-bad-soft tw-transition-colors tw-shrink-0" onClick={() => setCart([])} title="Vaciar carrito">
+                  <Icon name="trash" size={14}/>
                 </button>
-              ))}
-            </div>
-            {filtered.length === 0 && (
-              <div className="tw-text-center tw-text-txt-3 tw-text-xs tw-py-6">
-                <Icon name="search" size={20}/><br/>Sin resultados para "{q}"
+                <div className="tw-flex-1">
+                  <div className="tw-text-[10px] tw-text-txt-3">{totals.items} producto{totals.items !== 1 ? "s" : ""}</div>
+                  <div className="mono tw-text-lg tw-font-bold tw-tracking-tight tw-leading-tight">{window.fmtCOP(totals.total)}</div>
+                </div>
+                <button className="tw-bg-accent tw-text-white tw-border-0 tw-rounded-xl tw-py-2.5 tw-px-5 tw-text-sm tw-font-bold tw-cursor-pointer tw-shadow-sm active:tw-scale-[0.97] tw-transition-transform tw-flex tw-items-center tw-gap-1.5" onClick={() => setPay("modal")}>
+                  <Icon name="cart" size={15}/> Cobrar
+                </button>
               </div>
-            )}
-            <Pagination {...pagProd} label="productos"/>
+            </>)}
           </div>
         </div>
       </div>
