@@ -258,7 +258,7 @@ const Inventario = () => {
     return [...list].sort((a, b) => (a.codigoBarras ? 1 : 0) - (b.codigoBarras ? 1 : 0));
   }, [productos, q, cat, estado]);
 
-  const pag = usePagination(rows, 10);
+  const pag = usePagination(rows, 8);
 
   const asignarCodigo = async (sku) => {
     const codigo = (barcodeInputs[sku] || "").trim();
@@ -1886,32 +1886,33 @@ const Vencimientos = () => {
 
   return (
     <>
-      <div className="page-h">
+      <div className="page-h tw-flex tw-flex-col sm:tw-flex-row tw-gap-3 sm:tw-items-center sm:tw-justify-between">
         <div>
           <h2>Control de vencimientos</h2>
           <p className="sub">Productos próximos a vencer agrupados por urgencia.</p>
         </div>
-        <div className="row">
-          <button className="btn" onClick={() => setShowConfig(true)}><Icon name="settings" size={14}/> Configurar alertas</button>
-          <button className="btn primary" onClick={enviarTodas}><Icon name="bell" size={14}/> Enviar alertas</button>
+        <div className="tw-flex tw-gap-2 tw-w-full sm:tw-w-auto">
+          <button className="btn tw-flex-1 sm:tw-flex-none" onClick={() => setShowConfig(true)}><Icon name="settings" size={14}/> Configurar alertas</button>
+          <button className="btn primary tw-flex-1 sm:tw-flex-none" onClick={enviarTodas}><Icon name="bell" size={14}/> Enviar alertas</button>
         </div>
       </div>
 
-      <div className="grid-2 mb-3" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+      <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 tw-mb-3">
         {[
           { id: "critico",    lbl: `Crítico · ≤ ${umbrales.critico} días`,                          n: buckets.critico.length,    c: "bad" },
           { id: "atencion",   lbl: `Atención · ${umbrales.critico+1}-${umbrales.atencion} días`,    n: buckets.atencion.length,   c: "warn" },
           { id: "preventivo", lbl: `Preventivo · ${umbrales.atencion+1}-${umbrales.preventivo} días`, n: buckets.preventivo.length, c: "accent" },
           { id: "ok",         lbl: `Sin riesgo · más de ${umbrales.preventivo}d`,                   n: buckets.ok.length,         c: "good" },
         ].map(b => (
-          <button key={b.id} className="kpi" style={{ textAlign: "left", borderColor: tab === b.id ? "var(--accent)" : undefined, cursor: "pointer" }} onClick={() => setTab(b.id)}>
-            <div className="label"><span className={"chip " + b.c}><span className="dot"/></span>{b.lbl}</div>
+          <button key={b.id} className="kpi" style={{ textAlign: "left", borderColor: tab === b.id ? "var(--accent)" : undefined, background: tab === b.id ? "var(--accent-soft)" : undefined, cursor: "pointer" }} onClick={() => setTab(b.id)}>
+            <div className="label tw-text-xs tw-truncate"><span className={"chip " + b.c}><span className="dot"/></span>{b.lbl}</div>
             <div className="val">{b.n}</div>
           </button>
         ))}
       </div>
 
-      <div className="card">
+      {/* Desktop: tabla */}
+      <div className="card tw-hidden md:tw-block">
         <div className="card-h">
           <h3>{visible.length} producto(s)</h3>
           <div className="muted" style={{ fontSize: 12 }}>Ordenados por fecha de vencimiento</div>
@@ -1944,62 +1945,87 @@ const Vencimientos = () => {
         <Pagination {...pagVis} label="productos"/>
       </div>
 
+      {/* Mobile: tarjetas */}
+      <div className="tw-block md:tw-hidden">
+        <div className="tw-flex tw-items-center tw-justify-between tw-mb-2">
+          <span className="tw-font-semibold tw-text-sm">{visible.length} producto(s)</span>
+          <span className="muted tw-text-xs">Por fecha de vencimiento</span>
+        </div>
+        {visible.length === 0 ? (
+          <div className="card"><div className="empty-state"><div className="icon"><Icon name="check" size={22}/></div>Sin productos en este grupo.</div></div>
+        ) : (
+          <div className="tw-flex tw-flex-col tw-gap-2.5">
+            {pagVis.slice.map(p => {
+              const d = window.daysFromNow(p.vence);
+              const cls = d < 0 ? "bad" : d <= umbrales.critico ? "bad" : d <= umbrales.atencion ? "warn" : d <= umbrales.preventivo ? "accent" : "good";
+              const borderMap = { bad: "var(--bad)", warn: "var(--warn)", accent: "var(--accent)", good: "var(--good)" };
+              return (
+                <div key={p.sku} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm" style={{ borderLeftWidth: 3, borderLeftColor: borderMap[cls] }}>
+                  <div className="tw-flex tw-items-start tw-justify-between tw-gap-2 tw-mb-2">
+                    <div>
+                      <div className="tw-font-medium tw-text-sm">{p.nombre}</div>
+                      <div className="muted mono tw-text-xs">{p.sku} · {p.categoria}</div>
+                    </div>
+                    <span className={"chip " + cls + " tw-whitespace-nowrap"}>{d < 0 ? `Hace ${-d}d` : d === 0 ? "Hoy" : `${d} días`}</span>
+                  </div>
+                  <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-text-xs">
+                    <div><span className="muted">Stock:</span> <span className="mono tw-font-medium">{p.stock} {p.unidad}</span></div>
+                    <div><span className="muted">Vence:</span> <span className="mono tw-font-medium">{p.vence}</span></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <Pagination {...pagVis} label="productos"/>
+      </div>
+
       {showConfig && (
         <Modal title="Configurar alertas de vencimiento" lg onClose={() => setShowConfig(false)}>
-          <h4 style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600 }}>Umbrales de notificación</h4>
-          <p className="muted" style={{ margin: "0 0 12px", fontSize: 12 }}>
+          <h4 className="tw-m-0 tw-mb-2 tw-text-[13px] tw-font-semibold">Umbrales de notificación</h4>
+          <p className="muted tw-m-0 tw-mb-3 tw-text-xs">
             Días antes del vencimiento en que el sistema enviará una alerta. Los umbrales se ordenan automáticamente del más urgente al más preventivo.
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 18 }}>
-            <div style={{ border: "1px solid var(--bad-soft)", background: "color-mix(in oklab, var(--bad-soft) 50%, transparent)", borderRadius: 8, padding: 12 }}>
-              <div className="muted" style={{ fontSize: 11, marginBottom: 4, color: "var(--bad)" }}>🔴 Crítico</div>
-              <div className="row" style={{ gap: 6, alignItems: "center" }}>
-                <input className="mono" type="number" min="1" max="30" value={umbrales.critico} onChange={e => ajustarUmbral("critico", e.target.value)} style={{ width: 60, padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", fontSize: 14, fontWeight: 600 }}/>
-                <span className="muted" style={{ fontSize: 12 }}>días</span>
+          <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-3 tw-gap-2 tw-mb-4">
+            {[
+              { key: "critico", lbl: "Crítico", emoji: "🔴", color: "bad", min: 1, max: 30, desc: "Acción urgente" },
+              { key: "atencion", lbl: "Atención", emoji: "🟡", color: "warn", min: 2, max: 60, desc: "Atención requerida" },
+              { key: "preventivo", lbl: "Preventivo", emoji: "🔵", color: "accent", min: 3, max: 180, desc: "Aviso anticipado" },
+            ].map(t => (
+              <div key={t.key} className="tw-border tw-rounded-lg tw-p-3" style={{ borderColor: `var(--${t.color}-soft)`, background: `color-mix(in oklab, var(--${t.color}-soft) 50%, transparent)` }}>
+                <div className="muted tw-text-[11px] tw-mb-1" style={{ color: `var(--${t.color})` }}>{t.emoji} {t.lbl}</div>
+                <div className="tw-flex tw-items-center tw-gap-1.5">
+                  <input className="mono tw-w-[60px] tw-py-1.5 tw-px-2 tw-rounded-md tw-border tw-border-border tw-text-sm tw-font-semibold" type="number" min={t.min} max={t.max} value={umbrales[t.key]} onChange={e => ajustarUmbral(t.key, e.target.value)}/>
+                  <span className="muted tw-text-xs">días</span>
+                </div>
+                <div className="muted tw-text-[10px] tw-mt-1">{t.desc}</div>
               </div>
-              <div className="muted" style={{ fontSize: 10, marginTop: 4 }}>Acción urgente</div>
-            </div>
-            <div style={{ border: "1px solid var(--warn-soft)", background: "color-mix(in oklab, var(--warn-soft) 50%, transparent)", borderRadius: 8, padding: 12 }}>
-              <div className="muted" style={{ fontSize: 11, marginBottom: 4, color: "var(--warn)" }}>🟡 Atención</div>
-              <div className="row" style={{ gap: 6, alignItems: "center" }}>
-                <input className="mono" type="number" min="2" max="60" value={umbrales.atencion} onChange={e => ajustarUmbral("atencion", e.target.value)} style={{ width: 60, padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", fontSize: 14, fontWeight: 600 }}/>
-                <span className="muted" style={{ fontSize: 12 }}>días</span>
-              </div>
-              <div className="muted" style={{ fontSize: 10, marginTop: 4 }}>Atención requerida</div>
-            </div>
-            <div style={{ border: "1px solid var(--accent-soft)", background: "color-mix(in oklab, var(--accent-soft) 50%, transparent)", borderRadius: 8, padding: 12 }}>
-              <div className="muted" style={{ fontSize: 11, marginBottom: 4, color: "var(--accent)" }}>🔵 Preventivo</div>
-              <div className="row" style={{ gap: 6, alignItems: "center" }}>
-                <input className="mono" type="number" min="3" max="180" value={umbrales.preventivo} onChange={e => ajustarUmbral("preventivo", e.target.value)} style={{ width: 60, padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", fontSize: 14, fontWeight: 600 }}/>
-                <span className="muted" style={{ fontSize: 12 }}>días</span>
-              </div>
-              <div className="muted" style={{ fontSize: 10, marginTop: 4 }}>Aviso anticipado</div>
-            </div>
+            ))}
           </div>
 
-          <h4 style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600 }}>Destinatarios de las alertas</h4>
-          <p className="muted" style={{ margin: "0 0 12px", fontSize: 12 }}>
+          <h4 className="tw-m-0 tw-mb-2 tw-text-[13px] tw-font-semibold">Destinatarios de las alertas</h4>
+          <p className="muted tw-m-0 tw-mb-3 tw-text-xs">
             Estos correos recibirán las notificaciones automáticas a {umbrales.preventivo}, {umbrales.atencion} y {umbrales.critico} días.
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "end", marginBottom: 12 }}>
-            <div className="field" style={{ margin: 0 }}>
+          <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-[1fr_1fr_auto] tw-gap-2 tw-items-end tw-mb-3">
+            <div className="field tw-m-0">
               <label>Correo</label>
               <input value={nuevoEmail} onChange={e => setNuevoEmail(e.target.value)} placeholder="nombre@empresa.co" onKeyDown={e => { if (e.key === "Enter") agregarDest(); }}/>
             </div>
-            <div className="field" style={{ margin: 0 }}>
-              <label>Nombre <span className="muted" style={{ fontWeight: 400 }}>(opcional)</span></label>
+            <div className="field tw-m-0">
+              <label>Nombre <span className="muted tw-font-normal">(opcional)</span></label>
               <input value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)} placeholder="Ej: Bodega" onKeyDown={e => { if (e.key === "Enter") agregarDest(); }}/>
             </div>
-            <button className="btn primary" onClick={agregarDest}><Icon name="plus" size={14}/> Agregar</button>
+            <button className="btn primary tw-w-full sm:tw-w-auto" onClick={agregarDest}><Icon name="plus" size={14}/> Agregar</button>
           </div>
-          <div style={{ border: "1px solid var(--border)", borderRadius: 8, maxHeight: 240, overflowY: "auto" }}>
+          <div className="tw-border tw-border-border tw-rounded-lg tw-max-h-[240px] tw-overflow-y-auto">
             {destinatarios.length === 0 ? (
-              <div className="empty-state" style={{ padding: 24 }}>Sin destinatarios aún.</div>
+              <div className="empty-state tw-p-6">Sin destinatarios aún.</div>
             ) : destinatarios.map(d => (
-              <div key={d.email} className="row" style={{ justifyContent: "space-between", padding: "8px 12px", borderBottom: "1px solid var(--border)" }}>
+              <div key={d.email} className="tw-flex tw-items-center tw-justify-between tw-px-3 tw-py-2 tw-border-b tw-border-border last:tw-border-b-0">
                 <div>
-                  <div style={{ fontWeight: 500, fontSize: 13 }}>{d.nombre}</div>
-                  <div className="mono muted" style={{ fontSize: 11 }}>{d.email}</div>
+                  <div className="tw-font-medium tw-text-[13px]">{d.nombre}</div>
+                  <div className="mono muted tw-text-[11px]">{d.email}</div>
                 </div>
                 <button className="btn sm ghost" onClick={() => eliminarDest(d.email)}><Icon name="trash" size={13}/></button>
               </div>
