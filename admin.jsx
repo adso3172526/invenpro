@@ -955,7 +955,7 @@ const matchItems = (geminiItems) => {
 // Catálogo de proveedores de IA
 // Presets de proveedores IA (el usuario puede agregar personalizados)
 const IA_PRESETS = [
-  { id: "gemini",   name: "Gemini",    format: "gemini",  model: "gemini-2.0-flash",         url: "",                                                          placeholder: "AIzaSy...",   link: "https://aistudio.google.com/apikey",         linkLabel: "Google AI Studio" },
+  { id: "gemini",   name: "Gemini",    format: "gemini",  model: "gemini-2.0-flash",         url: "https://generativelanguage.googleapis.com/v1beta",          placeholder: "AIzaSy...",   link: "https://aistudio.google.com/apikey",         linkLabel: "Google AI Studio" },
   { id: "openai",   name: "OpenAI",    format: "openai",  model: "gpt-4o",                   url: "https://api.openai.com/v1/chat/completions",                placeholder: "sk-proj-...", link: "https://platform.openai.com/api-keys",       linkLabel: "OpenAI Platform" },
   { id: "claude",   name: "Claude",    format: "claude",  model: "claude-sonnet-4-20250514", url: "https://api.anthropic.com/v1/messages",                     placeholder: "sk-ant-...",  link: "https://console.anthropic.com/settings/keys",linkLabel: "Anthropic Console" },
   { id: "groq",     name: "Groq",      format: "openai",  model: "llama-4-scout-17b-16e-instruct", url: "https://api.groq.com/openai/v1/chat/completions",    placeholder: "gsk_...",     link: "https://console.groq.com/keys",              linkLabel: "Groq Console" },
@@ -963,17 +963,28 @@ const IA_PRESETS = [
   { id: "custom",   name: "Otro",      format: "openai",  model: "",                         url: "",                                                          placeholder: "tu-api-key",  link: "",                                           linkLabel: "" },
 ];
 
-// Load full provider config (preset + user overrides from localStorage)
+// Auto-detectar formato y modelo desde la URL
+const detectFromUrl = (url) => {
+  const u = (url || "").toLowerCase();
+  for (const p of IA_PRESETS) {
+    if (p.url && u.includes(new URL(p.url).hostname)) return { format: p.format, model: p.model, provider: p.id };
+  }
+  if (u.includes("googleapis.com") || u.includes("generativelanguage")) return { format: "gemini", model: "gemini-2.0-flash", provider: "gemini" };
+  if (u.includes("anthropic.com")) return { format: "claude", model: "claude-sonnet-4-20250514", provider: "claude" };
+  return { format: "openai", model: "gpt-4o", provider: "custom" };
+};
+
+// Load full provider config — auto-detecta formato y modelo desde la URL
 const getIAConfig = () => {
   const cfg = (window.MOCK && window.MOCK.configuracion) || {};
-  const id = cfg.ia_provider || "gemini";
-  const preset = IA_PRESETS.find(p => p.id === id) || IA_PRESETS[0];
+  const url = cfg.ia_url || "";
+  const detected = detectFromUrl(url);
   return {
-    ...preset,
-    format: cfg.ia_format || preset.format,
-    model: cfg.ia_model || preset.model,
-    url: cfg.ia_url || preset.url,
+    format: cfg.ia_format || detected.format,
+    model: cfg.ia_model || detected.model,
+    url: url,
     apiKey: cfg.ia_api_key || "",
+    name: detected.provider,
   };
 };
 
@@ -1035,9 +1046,16 @@ const analizarConIA = async (base64, mimeType) => {
     text = json.content?.[0]?.text;
 
   } else if (cfg.format === "gemini") {
-    const url = cfg.url
-      ? `${cfg.url}?key=${cfg.apiKey}`
-      : `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${cfg.apiKey}`;
+    // Construir URL de Gemini: normalizar lo que el usuario ponga
+    const buildGeminiUrl = () => {
+      const model = cfg.model || "gemini-2.0-flash";
+      if (!cfg.url) return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cfg.apiKey}`;
+      let u = cfg.url.split("?")[0].replace(/\/+$/, ""); // quitar query params y trailing slashes
+      if (!u.includes("/models/")) u += `/models/${model}:generateContent`;
+      else if (!u.includes(":generateContent")) u += ":generateContent";
+      return u + `?key=${cfg.apiKey}`;
+    };
+    const url = buildGeminiUrl();
     const res = await fetch(url, {
       method: "POST",
       signal: controller.signal,
@@ -2105,41 +2123,24 @@ const Reportes = () => {
 // =================== Ajustes (solo admin) ===================
 const Ajustes = () => {
   const cfg = (window.MOCK && window.MOCK.configuracion) || {};
-  const initId = cfg.ia_provider || "gemini";
-  const initPreset = IA_PRESETS.find(p => p.id === initId) || IA_PRESETS[0];
-
-  const [providerId, setProviderId] = useStateA(initId);
   const [apiKey, setApiKey] = useStateA(cfg.ia_api_key || "");
-  const [modelo, setModelo] = useStateA(cfg.ia_model || initPreset.model);
-  const [urlApi, setUrlApi] = useStateA(cfg.ia_url || initPreset.url);
-  const [formato, setFormato] = useStateA(cfg.ia_format || initPreset.format);
+  const [urlApi, setUrlApi] = useStateA(cfg.ia_url || "");
   const [showKey, setShowKey] = useStateA(false);
   const [saved, setSaved] = useStateA(false);
   const [saving, setSaving] = useStateA(false);
   const [testing, setTesting] = useStateA(false);
   const [testResult, setTestResult] = useStateA(null);
 
-  const preset = IA_PRESETS.find(p => p.id === providerId) || IA_PRESETS[IA_PRESETS.length - 1];
-
-  const cambiarProveedor = (id) => {
-    const pr = IA_PRESETS.find(p => p.id === id) || IA_PRESETS[IA_PRESETS.length - 1];
-    setProviderId(id);
-    setModelo(pr.model);
-    setUrlApi(pr.url);
-    setFormato(pr.format);
-    setApiKey("");
-    setSaved(false);
-    setTestResult(null);
-  };
+  const detected = detectFromUrl(urlApi);
 
   const guardar = async () => {
     setSaving(true);
     await DB.saveConfigBatch({
-      ia_provider: providerId,
+      ia_provider: detected.provider,
       ia_api_key: apiKey.trim(),
-      ia_model: modelo.trim(),
+      ia_model: detected.model,
       ia_url: urlApi.trim(),
-      ia_format: formato,
+      ia_format: detected.format,
     });
     setSaving(false);
     setSaved(true);
@@ -2155,28 +2156,25 @@ const Ajustes = () => {
   };
 
   const probarConexion = async () => {
-    if (!apiKey.trim()) return;
+    if (!apiKey.trim() || !urlApi.trim()) return;
     setTesting(true);
     setTestResult(null);
     try {
-      if (formato === "gemini") {
-        const m = modelo.trim() || "gemini-2.0-flash";
-        const base = urlApi.trim()
-          ? urlApi.trim().replace(/(:generateContent)?\??.*$/, "") + `?key=${apiKey.trim()}`
-          : `https://generativelanguage.googleapis.com/v1beta/models/${m}?key=${apiKey.trim()}`;
-        const r = await fetch(base);
+      if (detected.format === "gemini") {
+        let u = urlApi.trim().split("?")[0].replace(/\/+$/, "");
+        if (!u.includes("/models/")) u += `/models/${detected.model}`;
+        else u = u.replace(/:generateContent$/, "");
+        const r = await fetch(u + `?key=${apiKey.trim()}`);
         if (!r.ok) throw new Error();
-      } else if (formato === "claude") {
-        const endpoint = urlApi.trim() || "https://api.anthropic.com/v1/messages";
-        const r = await fetch(endpoint, {
+      } else if (detected.format === "claude") {
+        const r = await fetch(urlApi.trim(), {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": apiKey.trim(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-          body: JSON.stringify({ model: modelo.trim(), max_tokens: 10, messages: [{ role: "user", content: "ping" }] }),
+          body: JSON.stringify({ model: detected.model, max_tokens: 10, messages: [{ role: "user", content: "ping" }] }),
         });
         if (!r.ok) throw new Error();
       } else {
-        const endpoint = urlApi.trim() || "https://api.openai.com/v1/chat/completions";
-        const base = endpoint.replace(/\/chat\/completions\/?$/, "/models");
+        const base = urlApi.trim().replace(/\/chat\/completions\/?$/, "/models");
         const r = await fetch(base, { headers: { "Authorization": `Bearer ${apiKey.trim()}` } });
         if (!r.ok) throw new Error();
       }
@@ -2196,92 +2194,50 @@ const Ajustes = () => {
         </div>
       </div>
 
-      {/* ── Card: Proveedor de IA ── */}
+      {/* ── Card: Escáner IA ── */}
       <div className="card" style={{ marginTop: 16 }}>
         <div className="card-h">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
-            <h3>Proveedor de IA</h3>
+            <h3>Escáner IA de facturas</h3>
           </div>
-          <p className="sub">Escáner de facturas</p>
+          <p className="sub">Pega la URL y el token de tu proveedor de IA (Gemini, OpenAI, Claude, Groq, etc.)</p>
         </div>
         <div className="card-b">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 8 }}>
-            {IA_PRESETS.map(p => (
-              <button key={p.id}
-                className={"btn" + (providerId === p.id ? " primary" : " ghost")}
-                onClick={() => cambiarProveedor(p.id)}
-                style={{ fontSize: 12, fontWeight: providerId === p.id ? 600 : 400, width: "100%", padding: "10px 8px" }}
-              >{p.name}</button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Card: Configuración de conexión ── */}
-      <div className="card" style={{ marginTop: 12 }}>
-        <div className="card-h">
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Icon name="settings" size={16}/>
-            <h3>Configuración de conexión</h3>
-          </div>
-        </div>
-        <div className="card-b">
-          <div className="grid-2" style={{ gap: 12 }}>
-            <div className="field" style={{ margin: 0 }}>
-              <label>Formato de API</label>
-              <select value={formato} onChange={e => { setFormato(e.target.value); setSaved(false); }}>
-                <option value="openai">OpenAI Compatible</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="claude">Anthropic Claude</option>
-              </select>
-            </div>
-            <div className="field" style={{ margin: 0 }}>
-              <label>Modelo</label>
-              <input
-                className="mono"
-                value={modelo}
-                onChange={e => { setModelo(e.target.value); setSaved(false); }}
-                placeholder="nombre-del-modelo"
-              />
-            </div>
-          </div>
-          <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
-            <label>URL del endpoint</label>
+          <div className="field" style={{ margin: "0 0 12px 0" }}>
+            <label>Endpoint URL</label>
             <input
               className="mono"
               value={urlApi}
-              onChange={e => { setUrlApi(e.target.value); setSaved(false); }}
-              placeholder={formato === "gemini" ? "https://generativelanguage.googleapis.com/v1beta/models/MODELO:generateContent" : formato === "claude" ? "https://api.anthropic.com/v1/messages" : "https://api.ejemplo.com/v1/chat/completions"}
+              onChange={e => { setUrlApi(e.target.value); setSaved(false); setTestResult(null); }}
+              placeholder="https://generativelanguage.googleapis.com/v1beta"
               style={{ fontSize: 12 }}
             />
-            {formato === "gemini" && !urlApi && (
-              <span className="muted" style={{ fontSize: 10, marginTop: 4, display: "block" }}>Vacío = endpoint por defecto de Google AI</span>
-            )}
           </div>
-          <p className="muted" style={{ fontSize: 11, marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
-            Groq, Together, Mistral, DeepSeek, Ollama, LM Studio, OpenRouter usan formato OpenAI Compatible.
-          </p>
-        </div>
-      </div>
 
-      {/* ── Card: API Key ── */}
-      <div className="card" style={{ marginTop: 12 }}>
-        <div className="card-h">
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-            <h3>API Key</h3>
-          </div>
-        </div>
-        <div className="card-b">
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ flex: "1 1 200px", position: "relative", minWidth: 0 }}>
+          {urlApi && (
+            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+              <div className="field" style={{ margin: 0, flex: 1 }}>
+                <label>Proveedor detectado</label>
+                <input value={detected.format === "gemini" ? "Google Gemini" : detected.format === "claude" ? "Anthropic Claude" : "OpenAI Compatible"} readOnly style={{ background: "var(--surface-2)", color: "var(--text-3)", cursor: "default" }}/>
+              </div>
+              <div className="field" style={{ margin: 0, flex: 1 }}>
+                <label>Modelo</label>
+                <input value={detected.model} readOnly style={{ background: "var(--surface-2)", color: "var(--text-3)", cursor: "default", fontFamily: "monospace" }}/>
+              </div>
+            </div>
+          )}
+
+          <div className="field" style={{ margin: "0 0 12px 0" }}>
+            <label>API Key / Token</label>
+            <div style={{ position: "relative" }}>
               <input
                 type={showKey ? "text" : "password"}
+                className="mono"
                 value={apiKey}
                 onChange={e => { setApiKey(e.target.value); setSaved(false); setTestResult(null); }}
-                placeholder={preset.placeholder}
-                style={{ width: "100%", fontSize: 13, padding: "8px 36px 8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "monospace" }}
+                placeholder="tu-api-key"
+                style={{ width: "100%", paddingRight: 32 }}
               />
               <button
                 onClick={() => setShowKey(v => !v)}
@@ -2289,39 +2245,30 @@ const Ajustes = () => {
                 title={showKey ? "Ocultar" : "Mostrar"}
               >{showKey ? "🙈" : "👁"}</button>
             </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <button className="btn primary sm" onClick={guardar} disabled={!apiKey.trim() || !modelo.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
-              {apiKey && (
-                <button className="btn ghost sm" onClick={borrarKey} title="Borrar"><Icon name="x" size={14}/></button>
-              )}
-            </div>
           </div>
 
-          {saved && (
-            <div style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4, marginTop: 10 }}>
-              <Icon name="check" size={14}/> Configuración guardada en la nube
-            </div>
-          )}
-
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-            <button className="btn sm ghost" onClick={probarConexion} disabled={!apiKey.trim() || testing}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <button className="btn primary sm" onClick={guardar} disabled={!apiKey.trim() || !urlApi.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
+            <button className="btn sm ghost" onClick={probarConexion} disabled={!apiKey.trim() || !urlApi.trim() || testing}>
               {testing ? "Probando…" : "Probar conexión"}
             </button>
+            {apiKey && (
+              <button className="btn ghost sm" onClick={borrarKey} title="Borrar key"><Icon name="x" size={14}/></button>
+            )}
+            {saved && (
+              <span style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                <Icon name="check" size={14}/> Guardado
+              </span>
+            )}
             {testResult === "ok" && (
               <span style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                <Icon name="check" size={14}/> Conexión exitosa
+                <Icon name="check" size={14}/> Conexión OK
               </span>
             )}
             {testResult === "error" && (
-              <span style={{ color: "#EF4444", fontSize: 12, fontWeight: 500 }}>API Key inválida o sin permisos</span>
+              <span style={{ color: "#EF4444", fontSize: 12, fontWeight: 500 }}>URL o Key inválida</span>
             )}
           </div>
-
-          {preset.link && (
-            <p className="muted" style={{ fontSize: 11, marginTop: 10, marginBottom: 0, lineHeight: 1.5 }}>
-              Obtén tu key en <a href={preset.link} target="_blank" rel="noopener" style={{ color: "var(--primary)" }}>{preset.linkLabel}</a>.
-            </p>
-          )}
         </div>
       </div>
     </>
