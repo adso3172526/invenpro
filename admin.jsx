@@ -621,7 +621,6 @@ const Ingreso = () => {
       };
     }));
     setOrigen(modo);
-    setShowQrScanner(false);
     setShowIaScanner(false);
     setShowForm(true);
   };
