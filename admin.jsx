@@ -681,11 +681,12 @@ const Ingreso = () => {
         </div>
         <div className="tbl-wrap">
           <table className="tbl">
-            <thead><tr><th>N° ingreso</th><th>Fecha</th><th>Proveedor</th><th className="num">Items</th><th className="num">Costo total</th><th>Recibido por</th><th></th></tr></thead>
+            <thead><tr><th>N° ingreso</th><th>Factura</th><th>Fecha</th><th>Proveedor</th><th className="num">Items</th><th className="num">Costo total</th><th>Recibido por</th><th></th></tr></thead>
             <tbody>
               {pagIng.slice.map(i => (
                 <tr key={i.id} className="row-hover" style={{ cursor: "pointer" }} onClick={() => setVerIngreso(i)}>
                   <td className="mono">{i.id}</td>
+                  <td className="mono">{i.factura || "—"}</td>
                   <td>{i.fecha}</td>
                   <td>{i.proveedor}</td>
                   <td className="num mono">{i.items}</td>
@@ -695,7 +696,7 @@ const Ingreso = () => {
                 </tr>
               ))}
               {ingresosFiltrados.length === 0 && (
-                <tr><td colSpan="7" className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ingresos en el rango seleccionado</td></tr>
+                <tr><td colSpan="8" className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ingresos en el rango seleccionado</td></tr>
               )}
             </tbody>
           </table>
@@ -748,7 +749,11 @@ const Ingreso = () => {
 
       {showSelector && (
         <Modal title="¿Cómo deseas registrar el ingreso?" lg onClose={() => setShowSelector(false)}>
-          <p className="muted" style={{ marginTop: 0, marginBottom: 16, fontSize: 13 }}>
+          <div className="field" style={{ marginTop: 0, marginBottom: 16 }}>
+            <label>N° factura del proveedor</label>
+            <input className="mono" value={factura} onChange={e => setFactura(e.target.value)} placeholder="Ej: FV-1234"/>
+          </div>
+          <p className="muted" style={{ marginTop: 0, marginBottom: 12, fontSize: 13 }}>
             Selecciona el método de captura. En cualquiera podrás revisar y editar los datos antes de guardar.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
@@ -871,9 +876,6 @@ const Ingreso = () => {
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <Icon name="store" size={16}/>
               <span style={{ fontWeight: 600, fontSize: 14 }}>Datos del proveedor</span>
-              <button className="btn sm ghost" style={{ marginLeft: "auto", fontSize: 11 }} onClick={() => setShowProv(true)}>
-                <Icon name="plus" size={12}/> Nuevo proveedor
-              </button>
             </div>
             <div className="grid-2" style={{ gap: 10 }}>
               <div className="field" style={{ margin: 0 }}>
