@@ -1011,9 +1011,15 @@ const analizarConIA = async (base64, mimeType) => {
   const label = cfg.name || cfg.id;
   let text;
 
+  // Timeout de 60s para evitar que se quede colgado en 90%
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), 60000);
+
+  try {
   if (cfg.format === "claude") {
     const res = await fetch(cfg.url || "https://api.anthropic.com/v1/messages", {
       method: "POST",
+      signal: controller.signal,
       headers: { "Content-Type": "application/json", "x-api-key": cfg.apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
       body: JSON.stringify({
         model: cfg.model,
@@ -1029,9 +1035,12 @@ const analizarConIA = async (base64, mimeType) => {
     text = json.content?.[0]?.text;
 
   } else if (cfg.format === "gemini") {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${cfg.apiKey}`;
+    const url = cfg.url
+      ? `${cfg.url}?key=${cfg.apiKey}`
+      : `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${cfg.apiKey}`;
     const res = await fetch(url, {
       method: "POST",
+      signal: controller.signal,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents: [{ parts: [
         { inlineData: { mimeType, data: base64 } },
@@ -1047,6 +1056,7 @@ const analizarConIA = async (base64, mimeType) => {
     const endpoint = cfg.url || "https://api.openai.com/v1/chat/completions";
     const res = await fetch(endpoint, {
       method: "POST",
+      signal: controller.signal,
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${cfg.apiKey}` },
       body: JSON.stringify({
         model: cfg.model,
@@ -1061,10 +1071,15 @@ const analizarConIA = async (base64, mimeType) => {
     const json = await res.json();
     text = json.choices?.[0]?.message?.content;
   }
+  } catch (e) {
+    if (e.name === "AbortError") throw new Error(`${label} tardó demasiado (>60s). Intenta con una imagen más pequeña o cambia de proveedor IA en Ajustes.`);
+    throw e;
+  } finally { clearTimeout(tid); }
 
   if (!text) throw new Error("La IA no devolvió resultado. Intenta con una imagen más clara.");
   const clean = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-  return JSON.parse(clean);
+  try { return JSON.parse(clean); }
+  catch { throw new Error("La IA devolvió un formato inválido. Intenta con una foto más clara de la factura."); }
 };
 
 const IaScannerModal = ({ onClose, onRead }) => {
