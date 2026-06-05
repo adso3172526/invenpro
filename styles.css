@@ -743,11 +743,7 @@ input, select, textarea { font: inherit; color: inherit; }
   .product .thumb { height: 50px; }
   .product .name { font-size: 12px; }
   .product .meta { font-size: 10px; }
-  /* Cart en pos */
-  .cart-h { padding: 12px 14px; }
-  .cart-list { padding: 4px 12px; }
-  .cart-totals { padding: 12px 14px; }
-  .cart-totals .row.total { font-size: 18px; }
+  /* Cart — now Tailwind */
   /* Scanner modal viewport */
   .scanner-viewport { aspect-ratio: 4 / 3; }
   .scanner-frame { padding: 12px; }
@@ -1116,75 +1112,8 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 .product[disabled] { opacity: .5; cursor: not-allowed; }
 
 /* Cart panel */
-.cart {
-  background: var(--surface);
-  border-left: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  min-height: 0;
-}
-.cart-h {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--border);
-}
-.cart-h h3 { margin: 0; font-size: 15px; font-weight: 600; }
-.cart-h .ticket { font-size: 11px; color: var(--text-3); font-family: var(--mono); }
-.cart-list {
-  flex: 1; overflow-y: auto; padding: 6px 14px;
-}
-.cart-empty {
-  display: grid; place-items: center; height: 100%;
-  color: var(--text-3); text-align: center; padding: 24px;
-}
-.cart-empty .big {
-  width: 56px; height: 56px; border-radius: 999px;
-  background: var(--surface-2);
-  display: grid; place-items: center; margin: 0 auto 12px;
-}
-.cart-line {
-  display: grid; grid-template-columns: 1fr auto;
-  padding: 10px 6px;
-  border-bottom: 1px dashed var(--border);
-  gap: 6px;
-  align-items: center;
-}
-.cart-line:last-child { border-bottom: 0; }
-.cart-line .name { font-size: 13px; font-weight: 500; }
-.cart-line .sub { font-size: 11px; color: var(--text-3); }
-.cart-line .qty {
-  display: inline-flex; align-items: center;
-  border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
-  margin-top: 4px;
-}
-.cart-line .qty button {
-  background: transparent; border: 0; width: 24px; height: 24px;
-  display: grid; place-items: center;
-}
-.cart-line .qty button:hover { background: var(--surface-2); }
-.cart-line .qty span { padding: 0 8px; font-variant-numeric: tabular-nums; font-size: 12px; }
-.cart-line .line-price { font-weight: 600; font-variant-numeric: tabular-nums; }
-.cart-line .rm { color: var(--text-3); font-size: 11px; background: transparent; border: 0; padding: 0; margin-top: 2px; }
-.cart-line .rm:hover { color: var(--bad); }
-.cart-totals {
-  padding: 14px 20px;
-  border-top: 1px solid var(--border);
-  background: var(--surface-2);
-}
-.cart-totals .row {
-  display: flex; justify-content: space-between; padding: 4px 0;
-  font-size: 13px; color: var(--text-2);
-  font-variant-numeric: tabular-nums;
-}
-.cart-totals .row.total {
-  font-size: 22px; color: var(--text); font-weight: 600;
-  margin-top: 6px; padding-top: 10px;
-  border-top: 1px solid var(--border);
-  letter-spacing: -0.02em;
-}
-.cart-totals .ops {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;
-}
-.cart-totals .pay { margin-top: 8px; }
+/* Cart layout — structure only, visual styles handled by Tailwind in cashier.jsx */
+.cart { min-height: 0; }
 
 /* ============ Modal ============ */
 .modal-bg {
@@ -1598,12 +1527,7 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 @media (max-width: 900px) {
   .pos { grid-template-columns: 1fr 300px; }
   .pos-left { padding: 16px 18px; gap: 12px; }
-  .cart-h { padding: 12px 14px; }
-  .cart-h h3 { font-size: 14px; }
-  .cart-totals { padding: 12px 14px; }
-  .cart-totals .row { font-size: 12px; }
-  .cart-totals .row.total { font-size: 20px; }
-  .cart-totals .ops { gap: 6px; }
+  /* Cart — now Tailwind */
 }
 @media (max-width: 768px) {
   .pos { grid-template-columns: 1fr; height: auto; min-height: calc(100vh - 100px); }
@@ -1615,8 +1539,7 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   .cat-tabs::-webkit-scrollbar { display: none; }
   .cat-tab { flex-shrink: 0; }
   .product-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-  .cart-line .qty button { min-height: 36px; min-width: 36px; width: 36px; height: 36px; }
-  .cart-totals .pay { padding: 12px 16px; font-size: 15px; }
+  /* Cart touch — now Tailwind */
 }
 
 /* --- 3. Proveedores toolbar en tablet/móvil --- */
@@ -1671,7 +1594,7 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 @media (hover: none) and (pointer: coarse) {
   .btn { min-height: 44px; }
   input, select, textarea { min-height: 44px; }
-  .cart-line .qty button { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
+  /* Cart touch — now Tailwind */
 }
 @media (max-width: 640px) {
   .keypad button { min-height: 52px; }
@@ -1681,9 +1604,7 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 @media (max-height: 768px) and (orientation: landscape) and (max-width: 1024px) {
   .pos { grid-template-columns: 1fr 280px; height: auto; }
   .pos-left { padding: 12px 14px; gap: 10px; }
-  .cart-h { padding: 10px 12px; }
-  .cart-totals { padding: 10px 12px; }
-  .cart-totals .row.total { font-size: 18px; }
+  /* Cart landscape — now Tailwind */
 }
 @media (max-height: 600px) and (orientation: landscape) {
   .login-form-wrap { padding: 18px 20px; }
