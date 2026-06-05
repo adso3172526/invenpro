@@ -300,7 +300,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
             </div>
             {cart.length === 0 ? (
               <div className="tw-text-center tw-text-txt-3 tw-text-[10px] tw-py-1">Escanea o selecciona productos</div>
-            ) : (<>
+            ) : (
               <div className="tw-max-h-[25vh] tw-overflow-y-auto tw-px-2.5 tw-py-0.5">
                 {cart.map((l, i) => (
                   <div key={l.sku} className={"tw-flex tw-items-center tw-justify-between tw-gap-2 tw-py-1" + (i < cart.length - 1 ? " tw-border-b tw-border-dashed tw-border-border" : "")}>
@@ -322,18 +322,18 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
                   </div>
                 ))}
               </div>
-              <div className="tw-px-2.5 tw-py-1.5 tw-border-t tw-border-border tw-bg-surface-2 tw-flex tw-items-center tw-gap-2">
-                <div className="tw-flex-1">
-                  <div className="tw-flex tw-justify-between tw-items-baseline">
-                    <span className="tw-text-[10px] tw-text-txt-3">{totals.items} ítem{totals.items !== 1 ? "s" : ""}</span>
-                    <span className="mono tw-font-bold tw-text-sm tw-tabular-nums">{window.fmtCOP(totals.total)}</span>
-                  </div>
+            )}
+            <div className="tw-px-2.5 tw-py-1.5 tw-border-t tw-border-border tw-bg-surface-2 tw-flex tw-items-center tw-gap-2">
+              <div className="tw-flex-1">
+                <div className="tw-flex tw-justify-between tw-items-baseline">
+                  <span className="tw-text-[10px] tw-text-txt-3">{totals.items} ítem{totals.items !== 1 ? "s" : ""}</span>
+                  <span className="mono tw-font-bold tw-text-sm tw-tabular-nums">{window.fmtCOP(totals.total)}</span>
                 </div>
-                <button className="btn accent tw-py-1.5 tw-px-4 tw-text-xs tw-font-semibold tw-shrink-0 tw-rounded-lg" onClick={() => setPay("modal")}>
-                  Cobrar
-                </button>
               </div>
-            </>)}
+              <button className="btn accent tw-py-1.5 tw-px-4 tw-text-xs tw-font-semibold tw-shrink-0 tw-rounded-lg" disabled={cart.length === 0} onClick={() => setPay("modal")}>
+                Cobrar
+              </button>
+            </div>
           </div>
 
           {/* Categorías — scroll horizontal */}
