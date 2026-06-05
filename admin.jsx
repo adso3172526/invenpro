@@ -410,10 +410,16 @@ const Ingreso = () => {
   const ingresosFiltrados = MOCK.ingresos.filter(i => i.fecha >= desde && i.fecha <= hasta);
   const pagIng = usePagination(ingresosFiltrados, 10);
 
-  const add = (sku, qty, costo, vence) => {
+  const add = (sku, qty, costo, vence, nombreManual) => {
     const p = MOCK.productos.find(x => x.sku === sku);
-    const nombre = p ? p.nombre : sku;
-    setItems(it => [...it, { sku, nombre, qty: parseInt(qty)||0, costo: parseInt(costo)||0, vence, nuevo: !p }]);
+    const esNuevo = !p;
+    const nombre = p ? p.nombre : (nombreManual || sku);
+    const item = { sku, nombre, qty: parseInt(qty)||0, costo: parseInt(costo)||0, vence, nuevo: esNuevo };
+    if (esNuevo) {
+      item.categoria = "General";
+      item.precio = Math.round((parseInt(costo)||0) * 1.3);
+    }
+    setItems(it => [...it, item]);
   };
 
   const actualizarItem = (idx, campo, valor) => {
@@ -430,15 +436,20 @@ const Ingreso = () => {
     setFactura(data.factura);
     setVendedor(data.vendedor || "");
     setCelular(data.celular || "");
-    setItems(data.items.map(it => ({
-      sku: it.sku || ("NUEVO-" + Math.floor(Math.random()*9999)),
-      nombre: it.nombre,
-      qty: it.qty,
-      costo: it.costo,
-      vence: it.vence,
-      nuevo: !!it.nuevo || !it.encontrado,
-      confianza: it.confianza,
-    })));
+    setItems(data.items.map(it => {
+      const esNuevo = !!it.nuevo || !it.encontrado;
+      return {
+        sku: it.sku || ("NUEVO-" + Math.floor(Math.random()*9999)),
+        nombre: it.nombre,
+        qty: it.qty,
+        costo: it.costo,
+        vence: it.vence,
+        nuevo: esNuevo,
+        confianza: it.confianza,
+        categoria: esNuevo ? "General" : undefined,
+        precio: esNuevo ? Math.round((it.costo || 0) * 1.3) : undefined,
+      };
+    }));
     setOrigen(modo);
     setShowQrScanner(false);
     setShowIaScanner(false);
@@ -621,7 +632,40 @@ const Ingreso = () => {
         <Modal title="Confirmar ingreso de mercancía" lg onClose={() => { setShowForm(false); setOrigen(null); }} footer={
           <>
             <button className="btn ghost" onClick={() => { setShowForm(false); setOrigen(null); }}>Cancelar</button>
-            <button className="btn accent" disabled={items.length === 0} onClick={async () => {
+            <button className="btn accent" disabled={items.length === 0 || items.some(it => it.nuevo && (!it.sku || it.sku.startsWith("NUEVO-")))} onClick={async () => {
+              // Validar códigos de barras de productos nuevos
+              const nuevos = items.filter(it => it.nuevo);
+              const skusNuevos = nuevos.map(it => it.sku);
+              const duplicados = skusNuevos.filter((s, i) => skusNuevos.indexOf(s) !== i);
+              if (duplicados.length > 0) {
+                setToast("Hay códigos de barras duplicados: " + duplicados.join(", "));
+                return;
+              }
+              const existentes = skusNuevos.filter(s => MOCK.productos.find(p => p.sku === s));
+              if (existentes.length > 0) {
+                setToast("Estos códigos ya existen en inventario: " + existentes.join(", "));
+                return;
+              }
+              // Crear productos nuevos
+              for (const it of nuevos) {
+                const err = await DB.createProducto({
+                  sku: it.sku,
+                  nombre: it.nombre,
+                  categoria: it.categoria || "General",
+                  precio: it.precio || Math.round(it.costo * 1.3),
+                  costo: it.costo,
+                  stock: 0,
+                  min: 0,
+                  vence: it.vence || null,
+                  unidad: "und",
+                });
+                if (err) { setToast("Error creando producto: " + it.nombre); return; }
+              }
+              // Incrementar stock de todos los items
+              for (const it of items) {
+                await DB.incrementStock(it.sku, it.qty);
+              }
+              // Registrar ingreso
               const ingreso = {
                 id: "ING-" + Date.now(),
                 fecha: new Date().toISOString().slice(0, 10),
@@ -634,7 +678,7 @@ const Ingreso = () => {
               await DB.createIngreso(ingreso, items);
               await hydrateData();
               setShowForm(false); setItems([]); setVendedor(""); setCelular(""); setOrigen(null);
-              setToast("Ingreso registrado · stock actualizado");
+              setToast("Ingreso registrado · " + nuevos.length + " producto(s) creado(s) · stock actualizado");
             }}><Icon name="check"/> Confirmar ingreso</button>
           </>
         }>
@@ -749,13 +793,20 @@ const Ingreso = () => {
             </div>
           )}
 
+          {nuevos.some(it => !it.sku || it.sku.startsWith("NUEVO-")) && (
+            <div style={{ padding: "10px 14px", borderRadius: 8, background: "#FEF2F2", border: "1px solid #FECACA", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span style={{ fontSize: 12, color: "#991B1B" }}>Escanea o digita el código de barras de los productos nuevos para poder confirmar el ingreso.</span>
+            </div>
+          )}
+
           <ItemAdder onAdd={add}/>
 
           {items.length > 0 && (
             <div className="card mt-2">
               <div className="tbl-wrap">
                 <table className="tbl">
-                  <thead><tr><th>Producto</th><th className="num">Stock actual</th><th className="num">Cantidad</th><th className="num">Costo unit.</th><th>Vence</th><th className="num">Subtotal</th><th></th></tr></thead>
+                  <thead><tr><th>Producto</th><th className="num">Stock actual</th><th className="num">Cantidad</th><th className="num">Costo unit.</th><th>Vence</th><th className="num">Subtotal</th><th style={{minWidth:30}}></th></tr></thead>
                   <tbody>
                     {items.map((it, i) => {
                       const stockActual = getStock(it.sku);
@@ -772,7 +823,20 @@ const Ingreso = () => {
                             />
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
-                            <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>
+                            {it.nuevo ? (
+                              <input
+                                className="mono"
+                                value={it.sku.startsWith("NUEVO-") ? "" : it.sku}
+                                onChange={e => {
+                                  const v = e.target.value.replace(/\D/g,"");
+                                  actualizarItem(i, "sku", v || ("NUEVO-" + i));
+                                }}
+                                placeholder="Escanear código de barras…"
+                                style={{ fontSize: 11, padding: "2px 6px", border: "2px solid #F59E0B", background: "#FFFBEB", borderRadius: 4, width: 160 }}
+                              />
+                            ) : (
+                              <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>
+                            )}
                             {it.nuevo && <span className="chip warn" style={{ fontSize: 9 }}>NUEVO</span>}
                             {!it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46" }}>EN BODEGA</span>}
                             {it.confianza !== undefined && it.confianza < 0.9 && (
@@ -781,6 +845,30 @@ const Ingreso = () => {
                               </span>
                             )}
                           </div>
+                          {it.nuevo && (
+                            <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                              <select
+                                value={it.categoria || "General"}
+                                onChange={e => actualizarItem(i, "categoria", e.target.value)}
+                                style={{ fontSize: 11, padding: "2px 4px", borderRadius: 4, border: "1px solid var(--border)", maxWidth: 110 }}
+                              >
+                                {[...new Set(MOCK.productos.map(p => p.categoria))].sort().map(c => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                                <option value="General">General</option>
+                              </select>
+                              <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                <span style={{ fontSize: 10, color: "var(--text-3)" }}>Venta:</span>
+                                <input
+                                  className="mono"
+                                  value={it.precio || ""}
+                                  onChange={e => actualizarItem(i, "precio", parseInt(e.target.value.replace(/\D/g,"")) || 0)}
+                                  placeholder="Precio"
+                                  style={{ fontSize: 11, padding: "2px 4px", border: "1px solid var(--border)", borderRadius: 4, width: 70 }}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </td>
                         <td className="num">
                           {stockActual !== null ? (
@@ -1301,8 +1389,16 @@ const ItemAdder = ({ onAdd }) => {
             </div>
           )}
           {open && query && sugeridos.length === 0 && (
-            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--text-3)" }}>
-              Sin coincidencias
+            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontSize: 12, zIndex: 20 }}>
+              <div style={{ color: "var(--text-3)", marginBottom: 6 }}>Sin coincidencias</div>
+              <button className="btn sm warn" style={{ width: "100%", fontSize: 11 }} onMouseDown={() => {
+                const tempSku = "NUEVO-" + Math.floor(Math.random()*9999);
+                setSku(tempSku);
+                setCodigo("");
+                setOpen(false);
+              }}>
+                <Icon name="plus" size={11}/> Agregar como producto nuevo
+              </button>
             </div>
           )}
         </div>
@@ -1322,8 +1418,9 @@ const ItemAdder = ({ onAdd }) => {
           <label>Vence</label>
           <input type="date" value={vence} onChange={e => setVence(e.target.value)}/>
         </div>
-        <button className="btn primary" disabled={!sku || !qty || !codigo} onClick={() => {
-          onAdd(codigo, qty, costo, vence);
+        <button className="btn primary" disabled={!sku || !qty} onClick={() => {
+          const esNuevo = sku.startsWith("NUEVO-");
+          onAdd(esNuevo ? sku : (codigo || sku), qty, costo, vence, esNuevo ? query : undefined);
           setSku(""); setQuery(""); setCodigo(""); setQty(""); setCosto(""); setVence("");
         }}><Icon name="plus" size={14}/> Agregar</button>
       </div>

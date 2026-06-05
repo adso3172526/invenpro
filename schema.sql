@@ -185,3 +185,10 @@ BEGIN
   WHERE sku = p_sku;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION increment_stock(p_sku TEXT, p_qty INTEGER)
+RETURNS void AS $$
+BEGIN
+  UPDATE productos SET stock = stock + p_qty WHERE sku = p_sku;
+END;
+$$ LANGUAGE plpgsql;
