@@ -463,8 +463,6 @@ input, select, textarea { font: inherit; color: inherit; }
 @media (max-width: 1100px) {
   .page { padding: 18px 18px 48px; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .dash-row { grid-template-columns: 1fr !important; }
-  .dash { grid-template-rows: auto auto auto auto; }
   .grid-2 { grid-template-columns: 1fr !important; }
   .grid-3 { grid-template-columns: 1fr 1fr !important; }
 }
@@ -585,7 +583,6 @@ input, select, textarea { font: inherit; color: inherit; }
   .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .kpi { padding: 12px; }
   .kpi .val { font-size: 22px; }
-  .kpi .spark { display: none; }
   .grid-3 { grid-template-columns: 1fr !important; }
   .page { padding: 12px 12px 24px; }
 
@@ -625,7 +622,6 @@ input, select, textarea { font: inherit; color: inherit; }
 
 /* Pantalla en orientación landscape baja */
 @media (max-height: 600px) and (orientation: landscape) {
-  .dash { height: auto; min-height: 100vh; }
   .login-shell { min-height: 100vh; }
 }
 
@@ -929,37 +925,14 @@ input, select, textarea { font: inherit; color: inherit; }
 .page { padding: 24px 32px 60px; max-width: 1180px; margin: 0 auto; width: 100%; }
 .page:has(.dash) { padding: 14px 20px 24px; max-width: 1320px; }
 
-/* Dashboard fits in viewport */
-.dash {
-  min-height: auto;
-  display: grid;
-  grid-template-rows: auto auto auto;
-  gap: 12px;
-  width: 100%;
-  box-sizing: border-box;
-}
-.dash-h { margin: 0; padding: 10px 16px; }
-.dash-h h2 { font-size: 22px; }
-.dash-h .sub { font-size: 12px; }
-.dash-kpi { margin: 0 !important; gap: 10px; display: grid; grid-template-columns: repeat(4, 1fr); }
-.dash-kpi .kpi { padding: 14px 16px; }
+/* Dashboard — base structure (layout controlled by Tailwind) */
+.dash { width: 100%; box-sizing: border-box; }
+.dash-h { margin: 0; }
+.dash-kpi { margin: 0 !important; }
 .dash-kpi .kpi .val { font-size: 24px; }
 .dash-kpi .kpi .label { font-size: 11px; }
 .dash-kpi .kpi .delta { font-size: 11px; margin-top: 2px; }
 .dash-kpi .kpi .spark { width: 70px; }
-.dash-row {
-  display: grid; gap: 10px;
-}
-.dash-row > .card {
-  display: flex; flex-direction: column; overflow: hidden;
-  min-height: 280px;
-}
-.dash-row > .card > .card-h { flex: 0 0 auto; padding: 14px 18px; }
-.dash-row > .card > .card-h h3 { font-size: 15px; }
-.dash-row > .card > .card-h .sub { font-size: 12px; }
-.dash-row > .card > .card-b { flex: 1 1 auto; min-height: 0; }
-.dash-row > .card > .tbl-wrap { flex: 1 1 0; min-height: 0; overflow: auto; }
-.dash-row .chart-bars { height: 100%; min-height: 240px; padding: 8px 6px 0; }
 .dash-row .tbl td { padding: 12px 14px; }
 .page-h {
   display: flex; align-items: end; justify-content: space-between;
@@ -1675,12 +1648,6 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   .topbar .crumb .sub { display: none; }
 }
 
-/* --- 6. Dashboard en tablets --- */
-@media (max-width: 900px) {
-  .dash-kpi { gap: 10px; }
-  .dash-row .chart-bars { min-height: 180px; }
-  .dash-row > .card { min-height: 280px; }
-}
 
 /* --- 7. Tablas en pantallas angostas --- */
 @media (max-width: 768px) {
