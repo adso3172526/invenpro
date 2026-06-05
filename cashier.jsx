@@ -298,8 +298,8 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
               )}
             </div>
             {cart.length === 0 ? (
-              <div className="tw-text-center tw-text-txt-3 tw-text-xs tw-py-3">Escanea o selecciona productos</div>
-            ) : (
+              <div className="tw-text-center tw-text-txt-3 tw-text-[11px] tw-py-1.5">Escanea o selecciona productos</div>
+            ) : (<>
               <div className="tw-max-h-[28vh] tw-overflow-y-auto tw-px-3 tw-py-1">
                 {cart.map((l, i) => (
                   <div key={l.sku} className={"tw-grid tw-grid-cols-[1fr_auto] tw-items-center tw-gap-1 tw-py-1.5" + (i < cart.length - 1 ? " tw-border-b tw-border-dashed tw-border-border" : "")}>
@@ -319,16 +319,16 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
                   </div>
                 ))}
               </div>
-            )}
-            <div className="tw-px-3 tw-py-2 tw-border-t tw-border-border tw-bg-surface-2">
-              <div className="tw-flex tw-justify-between tw-items-center tw-mb-1.5">
-                <span className="tw-text-xs tw-text-txt-2">{totals.items} productos</span>
-                <span className="mono tw-font-semibold tw-tracking-tight">{window.fmtCOP(totals.total)}</span>
+              <div className="tw-px-3 tw-py-2 tw-border-t tw-border-border tw-bg-surface-2">
+                <div className="tw-flex tw-justify-between tw-items-center tw-mb-1.5">
+                  <span className="tw-text-xs tw-text-txt-2">{totals.items} productos</span>
+                  <span className="mono tw-font-semibold tw-tracking-tight">{window.fmtCOP(totals.total)}</span>
+                </div>
+                <button className="btn accent full tw-py-2.5 tw-text-sm tw-font-semibold" onClick={() => setPay("modal")}>
+                  <Icon name="cart" size={15}/> Cobrar {window.fmtCOP(totals.total)}
+                </button>
               </div>
-              <button className="btn accent full tw-py-2.5 tw-text-sm tw-font-semibold" disabled={cart.length === 0} onClick={() => setPay("modal")}>
-                <Icon name="cart" size={15}/> Cobrar {window.fmtCOP(totals.total)}
-              </button>
-            </div>
+            </>)}
           </div>
 
           {/* Categorías + Productos */}
