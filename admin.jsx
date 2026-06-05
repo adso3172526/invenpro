@@ -2103,38 +2103,40 @@ const Proveedores = () => {
 
       <div className="tw-grid tw-grid-cols-3 tw-gap-2 tw-mt-2">
         <div className="kpi">
-          <div className="label"><Icon name="users" size={14}/> Total proveedores</div>
+          <div className="label tw-text-[11px] sm:tw-text-xs"><Icon name="users" size={14}/> Total</div>
           <div className="val">{list.length}</div>
         </div>
         <div className="kpi">
-          <div className="label"><Icon name="check" size={14}/> Activos</div>
+          <div className="label tw-text-[11px] sm:tw-text-xs"><Icon name="check" size={14}/> Activos</div>
           <div className="val" style={{ color: "var(--good)" }}>{activos}</div>
         </div>
         <div className="kpi">
-          <div className="label"><Icon name="x" size={14}/> Dados de baja</div>
+          <div className="label tw-text-[11px] sm:tw-text-xs"><Icon name="x" size={14}/> Baja</div>
           <div className="val" style={{ color: "var(--text-3)" }}>{inactivos}</div>
         </div>
       </div>
 
       <div className="card tw-mt-2">
-        <div className="tw-flex tw-flex-wrap tw-items-center tw-justify-between tw-gap-2.5 tw-mb-3">
-          <div className="tw-flex tw-flex-wrap tw-gap-2 tw-flex-1 tw-min-w-[240px]">
-            <div className="search tw-flex-1 tw-min-w-[200px]">
+        <div className="tw-flex tw-flex-col sm:tw-flex-row tw-flex-wrap tw-items-stretch sm:tw-items-center tw-justify-between tw-gap-2.5 tw-mb-3">
+          <div className="tw-flex tw-flex-col sm:tw-flex-row tw-flex-wrap tw-gap-2 tw-flex-1">
+            <div className="search tw-flex-1 tw-min-w-0 sm:tw-min-w-[200px]">
               <Icon name="search" size={14}/>
-              <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar por nombre, NIT, contacto…"/>
+              <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar nombre, NIT, contacto…"/>
             </div>
-            <div className="select-pill"><span className="lbl">Estado</span>
-              <select value={estado} onChange={e => setEstado(e.target.value)}>
-                <option>Todos</option><option value="activo">Activos</option><option value="inactivo">Inactivos</option>
-              </select>
-            </div>
-            <div className="select-pill"><span className="lbl">Categoría</span>
-              <select value={categoria} onChange={e => setCategoria(e.target.value)}>
-                {categorias.map(c => <option key={c}>{c}</option>)}
-              </select>
+            <div className="tw-flex tw-gap-2">
+              <div className="select-pill tw-flex-1 sm:tw-flex-none"><span className="lbl">Estado</span>
+                <select value={estado} onChange={e => setEstado(e.target.value)}>
+                  <option>Todos</option><option value="activo">Activos</option><option value="inactivo">Inactivos</option>
+                </select>
+              </div>
+              <div className="select-pill tw-flex-1 sm:tw-flex-none"><span className="lbl">Categoría</span>
+                <select value={categoria} onChange={e => setCategoria(e.target.value)}>
+                  {categorias.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
             </div>
           </div>
-          <div className="muted mono tw-text-xs">{filtered.length} de {list.length}</div>
+          <div className="muted mono tw-text-xs tw-text-right">{filtered.length} de {list.length}</div>
         </div>
 
         {/* Desktop: tabla */}
@@ -2195,22 +2197,22 @@ const Proveedores = () => {
         </div>
 
         {/* Mobile: tarjetas */}
-        <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2.5">
+        <div className="tw-flex tw-flex-col tw-gap-2.5 md:tw-hidden">
           {pagProv.slice.map(p => (
-            <div key={p.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm">
+            <div key={p.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3 tw-shadow-sm">
               <div className="tw-flex tw-items-start tw-justify-between tw-gap-2 tw-mb-2">
-                <div className="tw-flex tw-items-center tw-gap-2.5">
+                <div className="tw-flex tw-items-center tw-gap-2.5 tw-min-w-0">
                   <div className="tw-w-8 tw-h-8 tw-rounded-lg tw-bg-accent-soft tw-grid tw-place-items-center tw-font-semibold tw-text-xs tw-shrink-0" style={{ color: "var(--accent-ink)" }}>
                     {p.nombre.split(" ").map(x => x[0]).slice(0,2).join("").toUpperCase()}
                   </div>
-                  <div>
-                    <div className="tw-font-medium tw-text-sm">{p.nombre}</div>
+                  <div className="tw-min-w-0">
+                    <div className="tw-font-medium tw-text-sm tw-truncate">{p.nombre}</div>
                     <div className="muted mono tw-text-[11px]">{p.id} · {p.ciudad}</div>
                   </div>
                 </div>
-                <span className={"chip " + (p.estado === "activo" ? "good" : "bad")}><span className="dot"/>{p.estado}</span>
+                <span className={"chip tw-shrink-0 " + (p.estado === "activo" ? "good" : "bad")}><span className="dot"/>{p.estado}</span>
               </div>
-              <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs tw-mb-2">
+              <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1.5 tw-text-xs tw-mb-3 tw-pl-[42px]">
                 <div><span className="muted">NIT:</span> <span className="mono">{p.nit}</span></div>
                 <div><span className="muted">Categoría:</span> {p.categoria}</div>
                 <div><span className="muted">Contacto:</span> {p.contacto}</div>
@@ -2218,7 +2220,7 @@ const Proveedores = () => {
                 <div><span className="muted">Términos:</span> <span className="mono">{p.terminos}</span></div>
                 <div><span className="muted">Ingresos:</span> <span className="mono">{p.ingresos}</span></div>
               </div>
-              <div className="tw-flex tw-justify-end tw-gap-1">
+              <div className="tw-flex tw-justify-end tw-gap-1.5 tw-border-t tw-border-border tw-pt-2.5 tw-mt-1">
                 <button className="btn sm ghost" onClick={() => setEditing(p)}><Icon name="edit" size={13}/> Editar</button>
                 <button className="btn sm ghost" onClick={() => setConfirmBaja(p)}>
                   <Icon name={p.estado === "activo" ? "trash" : "check"} size={13}/> {p.estado === "activo" ? "Baja" : "Reactivar"}
@@ -2243,7 +2245,7 @@ const Proveedores = () => {
 
       {confirmBaja && (
         <Modal title={confirmBaja.estado === "activo" ? "Dar de baja proveedor" : "Reactivar proveedor"}
-          onClose={() => setConfirmBaja(null)}
+          onClose={() => setConfirmBaja(null)} bottomSheet
           footer={
             <>
               <button className="btn ghost" onClick={() => setConfirmBaja(null)}>Cancelar</button>
@@ -2276,7 +2278,7 @@ const ProveedorForm = ({ inicial, onClose, onSave }) => {
   const valid = d.nombre && d.nit && d.contacto && d.tel;
 
   return (
-    <Modal title={inicial ? "Editar proveedor" : "Nuevo proveedor"} onClose={onClose} lg footer={
+    <Modal title={inicial ? "Editar proveedor" : "Nuevo proveedor"} onClose={onClose} lg bottomSheet footer={
       <>
         <button className="btn ghost" onClick={onClose}>Cancelar</button>
         <button className="btn primary" disabled={!valid} onClick={() => onSave(d)}>
