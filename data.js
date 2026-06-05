@@ -222,6 +222,16 @@
       return error;
     },
 
+    async updateProducto(sku, updates) {
+      const row = snakify(updates);
+      const { error } = await window.db
+        .from("productos")
+        .update(row)
+        .eq("sku", sku);
+      if (error) console.error("updateProducto:", error);
+      return error;
+    },
+
     generateSku() {
       const productos = (window.MOCK && window.MOCK.productos) || [];
       let max = 0;

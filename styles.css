@@ -1862,24 +1862,27 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   }
   .tbl-bodega tr td:first-child {
     font-size: 15px;
-    font-weight: 600;
     margin-bottom: 2px;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border) !important;
   }
+  /* Categoría + Stock en línea */
   .tbl-bodega tr td:nth-child(2),
-  .tbl-bodega tr td:nth-child(3),
   .tbl-bodega tr td:nth-child(4) {
     display: inline-block;
     margin-right: 10px;
     padding-top: 6px;
     font-size: 12px;
-    color: var(--text-2);
   }
+  /* Código de barras: bloque completo */
   .tbl-bodega tr td:nth-child(5) {
     padding-top: 10px;
     display: block;
   }
+  .tbl-bodega tr td:nth-child(5) > div { flex-direction: column; }
+  .tbl-bodega tr td:nth-child(5) .bodega-barcode-input { width: 100%; }
+  .tbl-bodega tr td:nth-child(5) .btn { width: 100%; justify-content: center; min-height: 44px; margin-top: 6px; }
+  /* Acción (ojo) */
   .tbl-bodega tr td:last-child {
     padding-top: 8px;
   }
@@ -1890,11 +1893,9 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
     font-size: 14px;
   }
 
-  /* Inventario Productos: ocultar columnas de bajo valor en móvil */
-  .tbl-inv th:nth-child(1),
-  .tbl-inv td:nth-child(1),
-  .tbl-inv th:nth-child(6),
-  .tbl-inv td:nth-child(6) { display: none; }
+  /* Bodega tabla: ocultar precio en móvil (se ve en modal) */
+  .tbl-bodega th:nth-child(3),
+  .tbl-bodega td:nth-child(3) { display: none; }
 
   /* Chip largo en ingreso: wrap */
   .chip-bodega-hint {

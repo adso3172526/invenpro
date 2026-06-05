@@ -224,29 +224,116 @@ const Dashboard = ({ go }) => {
   );
 };
 
-// =================== Inventario (con tabs: Productos + Bodega) ===================
-const InventarioProductos = () => {
+// =================== Inventario (Bodega unificada) ===================
+const Inventario = () => {
   const [q, setQ] = useStateA("");
   const [cat, setCat] = useStateA("Todos");
   const [estado, setEstado] = useStateA("Todos");
-  const rows = useMemoA(() => {
-    return MOCK.productos.filter(p => {
-      if (cat !== "Todos" && p.categoria !== cat) return false;
-      if (q) {
-        const qq = q.toLowerCase().trim();
-        if (!(p.nombre.toLowerCase().includes(qq) || p.sku.toLowerCase().includes(qq) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(qq)))) return false;
-      }
-      if (estado === "Bajo" && p.stock >= p.min) return false;
-      if (estado === "Sin stock" && p.stock > 0) return false;
-      return true;
-    });
-  }, [q, cat, estado]);
+  const [toast, setToast] = useStateA(null);
+  const [productos, setProductos] = useStateA(() => MOCK.productos.map(p => ({ ...p })));
+  const [barcodeInputs, setBarcodeInputs] = useStateA({});
+  const [editing, setEditing] = useStateA(null); // null | producto
+  const [saving, setSaving] = useStateA(false);
 
-  const totalValor = rows.reduce((s, p) => s + p.stock * p.costo, 0);
-  const bajo = MOCK.productos.filter(p => p.stock < p.min).length;
+  const sinCodigo = useMemoA(() => productos.filter(p => !p.codigoBarras).length, [productos]);
+  const bajo = useMemoA(() => productos.filter(p => p.stock < p.min).length, [productos]);
+  const totalValor = useMemoA(() => productos.reduce((s, p) => s + p.stock * p.costo, 0), [productos]);
+  const totalStock = useMemoA(() => productos.reduce((s, p) => s + p.stock, 0), [productos]);
+
+  const rows = useMemoA(() => {
+    let list = productos;
+    if (cat !== "Todos") list = list.filter(p => p.categoria === cat);
+    if (q) {
+      const qq = q.toLowerCase().trim();
+      list = list.filter(p => p.nombre.toLowerCase().includes(qq) || p.sku.toLowerCase().includes(qq) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(qq)));
+    }
+    if (estado === "Bajo") list = list.filter(p => p.stock < p.min);
+    if (estado === "Sin stock") list = list.filter(p => p.stock === 0);
+    if (estado === "Sin código") list = list.filter(p => !p.codigoBarras);
+    // Productos sin código primero
+    return [...list].sort((a, b) => (a.codigoBarras ? 1 : 0) - (b.codigoBarras ? 1 : 0));
+  }, [productos, q, cat, estado]);
+
   const pag = usePagination(rows, 10);
+
+  const asignarCodigo = async (sku) => {
+    const codigo = (barcodeInputs[sku] || "").trim();
+    if (!codigo) { setToast("Escanea o digita un código de barras"); return; }
+    const existente = productos.find(p => p.codigoBarras === codigo);
+    if (existente) { setToast(`Este código ya está asignado a "${existente.nombre}" (${existente.sku})`); return; }
+    const err = await DB.updateCodigoBarras(sku, codigo);
+    if (err) { setToast("Error al guardar: " + (err.message || "Intenta de nuevo")); return; }
+    setProductos(ps => ps.map(p => p.sku === sku ? { ...p, codigoBarras: codigo } : p));
+    const mp = MOCK.productos.find(p => p.sku === sku);
+    if (mp) mp.codigoBarras = codigo;
+    setBarcodeInputs(prev => { const next = { ...prev }; delete next[sku]; return next; });
+    setToast("Código de barras asignado correctamente");
+  };
+
+  const guardarProducto = async (draft) => {
+    setSaving(true);
+    // Validar código de barras único
+    if (draft.codigoBarras) {
+      const dup = productos.find(p => p.codigoBarras === draft.codigoBarras && p.sku !== draft.sku);
+      if (dup) { setToast(`Código de barras ya asignado a "${dup.nombre}"`); setSaving(false); return; }
+    }
+    const err = await DB.updateProducto(draft.sku, {
+      nombre: draft.nombre,
+      categoria: draft.categoria,
+      precio: draft.precio,
+      costo: draft.costo,
+      stock: draft.stock,
+      min: draft.min,
+      unidad: draft.unidad,
+      vence: draft.vence || null,
+      codigoBarras: draft.codigoBarras || null,
+    });
+    if (err) { setToast("Error al guardar: " + (err.message || "Intenta de nuevo")); setSaving(false); return; }
+    // Actualizar local
+    setProductos(ps => ps.map(p => p.sku === draft.sku ? { ...p, ...draft } : p));
+    const mp = MOCK.productos.find(p => p.sku === draft.sku);
+    if (mp) Object.assign(mp, draft);
+    setEditing(null);
+    setSaving(false);
+    setToast("Producto actualizado");
+  };
+
   return (
     <>
+      <div className="page-h">
+        <div>
+          <h2>Inventario / Bodega</h2>
+          <p className="sub">{productos.length} productos · {bajo} con stock bajo · valor en bodega {window.fmtCOP(totalValor)}</p>
+        </div>
+        <div className="row">
+          <button className="btn" onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
+            { name: "Inventario", rows: rows.map(p => ({
+              SKU: p.sku, "Código de barras": p.codigoBarras || "", Producto: p.nombre, Categoría: p.categoria,
+              Precio: p.precio, Costo: p.costo, Stock: p.stock, Mínimo: p.min, Unidad: p.unidad, Vence: p.vence || ""
+            })) },
+          ])}><Icon name="download" size={14}/> Exportar Excel</button>
+        </div>
+      </div>
+
+      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        <div className="kpi">
+          <div className="label"><Icon name="box" size={14}/> Total productos</div>
+          <div className="val">{productos.length}</div>
+        </div>
+        <div className="kpi">
+          <div className="label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Sin código de barras</div>
+          <div className="val" style={{ color: sinCodigo > 0 ? "#F59E0B" : "var(--good)" }}>{sinCodigo}</div>
+        </div>
+        <div className="kpi">
+          <div className="label"><Icon name="alert" size={14}/> Stock bajo</div>
+          <div className="val" style={{ color: bajo > 0 ? "var(--bad)" : "var(--good)" }}>{bajo}</div>
+        </div>
+        <div className="kpi">
+          <div className="label"><Icon name="truck" size={14}/> Stock total</div>
+          <div className="val">{totalStock.toLocaleString("es-CO")}</div>
+        </div>
+      </div>
+
       <div className="filterbar">
         <div className="search">
           <Icon name="search" size={16}/>
@@ -265,136 +352,8 @@ const InventarioProductos = () => {
             <option>Todos</option>
             <option>Bajo</option>
             <option>Sin stock</option>
+            <option>Sin código</option>
           </select>
-        </div>
-        <button className="btn" onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
-          { name: "Inventario", rows: rows.map(p => ({
-            SKU: p.sku, "Código de barras": p.codigoBarras || "", Producto: p.nombre, Categoría: p.categoria,
-            Precio: p.precio, Costo: p.costo, Stock: p.stock, Mínimo: p.min, Unidad: p.unidad, Vence: p.vence || ""
-          })) },
-        ])}><Icon name="download" size={14}/> Exportar</button>
-      </div>
-
-      <div className="card">
-        <div className="tbl-wrap">
-          <table className="tbl tbl-inv">
-            <thead>
-              <tr>
-                <th>SKU</th>
-                <th>Producto</th>
-                <th>Código barras</th>
-                <th>Categoría</th>
-                <th className="num">Precio</th>
-                <th className="num">Costo</th>
-                <th>Stock</th>
-                <th>Vencimiento</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {pag.slice.map(p => {
-                const stockPct = Math.min(100, (p.stock / (p.min * 3)) * 100);
-                const stockClass = p.stock === 0 ? "bad" : p.stock < p.min ? "warn" : "good";
-                const venceDays = window.daysFromNow(p.vence);
-                return (
-                  <tr key={p.sku} className="row-hover">
-                    <td className="mono muted">{p.sku}</td>
-                    <td style={{ fontWeight: 500 }}>{p.nombre}</td>
-                    <td>{p.codigoBarras ? <span className="mono" style={{ fontSize: 11 }}>{p.codigoBarras}</span> : <span className="muted" style={{ fontSize: 11 }}>Sin asignar</span>}</td>
-                    <td><span className="chip">{p.categoria}</span></td>
-                    <td className="num mono">{window.fmtCOP(p.precio)}</td>
-                    <td className="num mono muted">{window.fmtCOP(p.costo)}</td>
-                    <td style={{ width: 180 }}>
-                      <div className="row" style={{ justifyContent: "space-between", marginBottom: 4 }}>
-                        <span className="mono" style={{ fontSize: 12, fontWeight: 500 }}>{p.stock} {p.unidad}</span>
-                        <span className="muted mono" style={{ fontSize: 11 }}>mín {p.min}</span>
-                      </div>
-                      <div className={"progress " + stockClass}><span style={{ width: `${stockPct}%` }}/></div>
-                    </td>
-                    <td>
-                      {p.vence ? (
-                        <div>
-                          <div className="mono" style={{ fontSize: 12 }}>{p.vence}</div>
-                          {venceDays <= 14 && (
-                            <span className={"chip " + (venceDays <= 5 ? "bad" : "warn")} style={{ marginTop: 2 }}>
-                              {venceDays <= 0 ? "Vencido" : `En ${venceDays}d`}
-                            </span>
-                          )}
-                        </div>
-                      ) : <span className="muted">—</span>}
-                    </td>
-                    <td className="num">
-                      <button className="btn sm ghost"><Icon name="eye" size={13}/></button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <Pagination {...pag} label="productos"/>
-      </div>
-    </>
-  );
-};
-
-// =================== Bodega ===================
-const Bodega = () => {
-  const [filtro, setFiltro] = useStateA("pendientes");
-  const [toast, setToast] = useStateA(null);
-  const [productos, setProductos] = useStateA(() => MOCK.productos.map(p => ({ ...p })));
-  const [barcodeInputs, setBarcodeInputs] = useStateA({});
-
-  const sinCodigo = useMemoA(() => productos.filter(p => !p.codigoBarras), [productos]);
-  const totalStock = useMemoA(() => productos.reduce((s, p) => s + p.stock, 0), [productos]);
-
-  const visible = useMemoA(() => {
-    if (filtro === "pendientes") return productos.filter(p => !p.codigoBarras);
-    return [...productos].sort((a, b) => (a.codigoBarras ? 1 : 0) - (b.codigoBarras ? 1 : 0));
-  }, [productos, filtro]);
-
-  const pag = usePagination(visible, 10);
-
-  const asignarCodigo = async (sku) => {
-    const codigo = (barcodeInputs[sku] || "").trim();
-    if (!codigo) { setToast("Escanea o digita un código de barras"); return; }
-    // Validar unicidad
-    const existente = productos.find(p => p.codigoBarras === codigo);
-    if (existente) { setToast(`Este código ya está asignado a "${existente.nombre}" (${existente.sku})`); return; }
-    // Guardar en DB
-    const err = await DB.updateCodigoBarras(sku, codigo);
-    if (err) { setToast("Error al guardar: " + (err.message || "Intenta de nuevo")); return; }
-    // Actualizar local
-    setProductos(ps => ps.map(p => p.sku === sku ? { ...p, codigoBarras: codigo } : p));
-    const mp = MOCK.productos.find(p => p.sku === sku);
-    if (mp) mp.codigoBarras = codigo;
-    setBarcodeInputs(prev => { const next = { ...prev }; delete next[sku]; return next; });
-    setToast("Código de barras asignado correctamente");
-  };
-
-  return (
-    <>
-      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-        <div className="kpi">
-          <div className="label"><Icon name="box" size={14}/> Total productos</div>
-          <div className="val">{productos.length}</div>
-        </div>
-        <div className="kpi">
-          <div className="label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Sin código de barras</div>
-          <div className="val" style={{ color: sinCodigo.length > 0 ? "#F59E0B" : "var(--good)" }}>{sinCodigo.length}</div>
-        </div>
-        <div className="kpi">
-          <div className="label"><Icon name="truck" size={14}/> Stock total</div>
-          <div className="val">{totalStock.toLocaleString("es-CO")}</div>
-        </div>
-      </div>
-
-      <div className="filterbar">
-        <div className="tab-bar">
-          <button className={filtro === "pendientes" ? "on" : ""} onClick={() => setFiltro("pendientes")}>
-            Pendientes {sinCodigo.length > 0 && <span className="bodega-badge" style={{ marginLeft: 4 }}>{sinCodigo.length}</span>}
-          </button>
-          <button className={filtro === "todos" ? "on" : ""} onClick={() => setFiltro("todos")}>Todos</button>
         </div>
       </div>
 
@@ -404,44 +363,58 @@ const Bodega = () => {
             <thead>
               <tr>
                 <th>Producto</th>
-                <th>SKU</th>
                 <th>Categoría</th>
-                <th className="num">Stock</th>
+                <th className="num">Precio</th>
+                <th>Stock</th>
                 <th>Código de barras</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {pag.slice.map(p => (
-                <tr key={p.sku} className={!p.codigoBarras ? "row-sin-codigo" : "row-hover"}>
-                  <td style={{ fontWeight: 500 }}>{p.nombre}</td>
-                  <td className="mono muted" style={{ fontSize: 11 }}>{p.sku}</td>
-                  <td><span className="chip">{p.categoria}</span></td>
-                  <td className="num mono">{p.stock} {p.unidad}</td>
-                  <td>
-                    {p.codigoBarras ? (
-                      <span className="mono" style={{ fontSize: 12 }}>{p.codigoBarras}</span>
-                    ) : (
-                      <input
-                        className="bodega-barcode-input mono"
-                        value={barcodeInputs[p.sku] || ""}
-                        onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
-                        onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
-                        placeholder="Escanear código…"
-                      />
-                    )}
-                  </td>
-                  <td className="num">
-                    {!p.codigoBarras && (
-                      <button className="btn sm primary" onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
-                        <Icon name="check" size={13}/> Asignar
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {visible.length === 0 && (
-                <tr><td colSpan="6"><div className="empty-state"><div className="icon"><Icon name="check" size={22}/></div>Todos los productos tienen código de barras.</div></td></tr>
+              {pag.slice.map(p => {
+                const stockPct = Math.min(100, (p.stock / (Math.max(p.min, 1) * 3)) * 100);
+                const stockClass = p.stock === 0 ? "bad" : p.stock < p.min ? "warn" : "good";
+                return (
+                  <tr key={p.sku} className={!p.codigoBarras ? "row-sin-codigo" : "row-hover"}>
+                    <td>
+                      <div style={{ fontWeight: 500 }}>{p.nombre}</div>
+                      <div className="mono muted" style={{ fontSize: 11 }}>{p.sku}</div>
+                    </td>
+                    <td><span className="chip">{p.categoria}</span></td>
+                    <td className="num mono">{window.fmtCOP(p.precio)}</td>
+                    <td style={{ minWidth: 130 }}>
+                      <div className="row" style={{ justifyContent: "space-between", marginBottom: 4 }}>
+                        <span className="mono" style={{ fontSize: 12, fontWeight: 500 }}>{p.stock} {p.unidad}</span>
+                        <span className="muted mono" style={{ fontSize: 11 }}>mín {p.min}</span>
+                      </div>
+                      <div className={"progress " + stockClass}><span style={{ width: `${stockPct}%` }}/></div>
+                    </td>
+                    <td>
+                      {p.codigoBarras ? (
+                        <span className="mono" style={{ fontSize: 12 }}>{p.codigoBarras}</span>
+                      ) : (
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <input
+                            className="bodega-barcode-input mono"
+                            value={barcodeInputs[p.sku] || ""}
+                            onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
+                            onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
+                            placeholder="Escanear código…"
+                          />
+                          <button className="btn sm primary" onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
+                            <Icon name="check" size={13}/>
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                    <td className="num">
+                      <button className="btn sm ghost" onClick={() => setEditing({ ...p })} title="Ver / editar"><Icon name="eye" size={13}/></button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {rows.length === 0 && (
+                <tr><td colSpan="6"><div className="empty-state">Sin productos con los filtros aplicados.</div></td></tr>
               )}
             </tbody>
           </table>
@@ -449,37 +422,96 @@ const Bodega = () => {
         <Pagination {...pag} label="productos"/>
       </div>
 
+      {editing && <ProductoEditModal
+        producto={editing}
+        saving={saving}
+        onClose={() => setEditing(null)}
+        onSave={guardarProducto}
+      />}
+
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
     </>
   );
 };
 
-const Inventario = () => {
-  const [tab, setTab] = useStateA("productos");
-  const sinCodigo = useMemoA(() => MOCK.productos.filter(p => !p.codigoBarras).length, []);
-  const bajo = MOCK.productos.filter(p => p.stock < p.min).length;
-  const totalValor = MOCK.productos.reduce((s, p) => s + p.stock * p.costo, 0);
+const ProductoEditModal = ({ producto, saving, onClose, onSave }) => {
+  const [d, setD] = useStateA({ ...producto });
+  const set = (k, v) => setD(prev => ({ ...prev, [k]: v }));
+  const venceDays = d.vence ? window.daysFromNow(d.vence) : null;
 
   return (
-    <>
-      <div className="page-h">
-        <div>
-          <h2>Inventario</h2>
-          <p className="sub">{MOCK.productos.length} productos · {bajo} con stock bajo · valor en bodega {window.fmtCOP(totalValor)}</p>
+    <Modal title="Editar producto" lg onClose={onClose} footer={
+      <>
+        <button className="btn ghost" onClick={onClose}>Cancelar</button>
+        <button className="btn primary" disabled={saving || !d.nombre} onClick={() => onSave(d)}>
+          <Icon name="check" size={14}/> {saving ? "Guardando…" : "Guardar cambios"}
+        </button>
+      </>
+    }>
+      <div style={{ padding: "8px 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent-soft)", color: "var(--accent-ink)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14 }}>
+          {d.nombre ? d.nombre.charAt(0).toUpperCase() : "?"}
         </div>
-        <div className="row">
-          <div className="tab-bar">
-            <button className={tab === "productos" ? "on" : ""} onClick={() => setTab("productos")}>Productos</button>
-            <button className={tab === "bodega" ? "on" : ""} onClick={() => setTab("bodega")}>
-              Bodega {sinCodigo > 0 && <span className="bodega-badge" style={{ marginLeft: 4 }}>{sinCodigo}</span>}
-            </button>
-          </div>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 15 }}>{d.nombre || "Producto"}</div>
+          <div className="mono muted" style={{ fontSize: 11 }}>{d.sku}</div>
         </div>
       </div>
 
-      {tab === "productos" && <InventarioProductos/>}
-      {tab === "bodega" && <Bodega/>}
-    </>
+      <div className="grid-2">
+        <div className="field"><label>Nombre *</label>
+          <input value={d.nombre} onChange={e => set("nombre", e.target.value)} placeholder="Nombre del producto"/></div>
+        <div className="field"><label>Categoría</label>
+          <select value={d.categoria} onChange={e => set("categoria", e.target.value)}>
+            {CATEGORIAS.slice(1).map(c => <option key={c}>{c}</option>)}
+            <option value="General">General</option>
+          </select></div>
+      </div>
+
+      <div className="grid-2">
+        <div className="field"><label>Precio de venta</label>
+          <input className="mono" type="number" min="0" value={d.precio} onChange={e => set("precio", parseInt(e.target.value) || 0)}/></div>
+        <div className="field"><label>Costo</label>
+          <input className="mono" type="number" min="0" value={d.costo} onChange={e => set("costo", parseInt(e.target.value) || 0)}/></div>
+      </div>
+
+      <div className="grid-2">
+        <div className="field"><label>Stock actual</label>
+          <input className="mono" type="number" min="0" value={d.stock} onChange={e => set("stock", parseInt(e.target.value) || 0)}/></div>
+        <div className="field"><label>Stock mínimo</label>
+          <input className="mono" type="number" min="0" value={d.min} onChange={e => set("min", parseInt(e.target.value) || 0)}/></div>
+      </div>
+
+      <div className="grid-2">
+        <div className="field"><label>Unidad</label>
+          <select value={d.unidad} onChange={e => set("unidad", e.target.value)}>
+            <option value="und">und</option><option value="kg">kg</option><option value="g">g</option>
+            <option value="lb">lb</option><option value="lt">lt</option><option value="ml">ml</option>
+            <option value="paq">paq</option><option value="caja">caja</option>
+          </select></div>
+        <div className="field"><label>Vencimiento</label>
+          <input type="date" value={d.vence || ""} onChange={e => set("vence", e.target.value || null)}/>
+          {venceDays !== null && venceDays <= 14 && (
+            <span className={"chip mt-1 " + (venceDays <= 5 ? "bad" : "warn")} style={{ fontSize: 10 }}>
+              {venceDays <= 0 ? "Vencido" : `Vence en ${venceDays} días`}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="field">
+        <label>Código de barras</label>
+        <input className="mono bodega-barcode-input" style={{ width: "100%" }} value={d.codigoBarras || ""} onChange={e => set("codigoBarras", e.target.value || null)} placeholder="Escanear o digitar código de barras…"/>
+        {!d.codigoBarras && <span className="muted" style={{ fontSize: 11, marginTop: 4, display: "block" }}>Puedes asignarlo ahora o después desde la tabla.</span>}
+      </div>
+
+      {d.precio > 0 && d.costo > 0 && (
+        <div style={{ marginTop: 8, padding: "10px 14px", background: "var(--surface-2)", borderRadius: 8, fontSize: 12, display: "flex", justifyContent: "space-between" }}>
+          <span className="muted">Margen de ganancia</span>
+          <span className="mono" style={{ fontWeight: 600 }}>{Math.round(((d.precio - d.costo) / d.costo) * 100)}%</span>
+        </div>
+      )}
+    </Modal>
   );
 };
 
