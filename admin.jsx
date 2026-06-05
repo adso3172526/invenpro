@@ -2623,78 +2623,77 @@ const Ajustes = () => {
       </div>
 
       {/* ── Card: Escáner IA ── */}
-      <div className="card" style={{ marginTop: 16 }}>
+      <div className="card tw-mt-4">
         <div className="card-h">
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className="tw-flex tw-items-center tw-gap-2">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
             <h3>Escáner IA de facturas</h3>
           </div>
           <p className="sub">Pega la URL y el token de tu proveedor de IA (Gemini, OpenAI, Claude, Groq, etc.)</p>
         </div>
         <div className="card-b">
-          <div className="field" style={{ margin: "0 0 12px 0" }}>
+          <div className="field tw-mb-3" style={{ margin: 0 }}>
             <label>Endpoint URL</label>
             <input
-              className="mono"
+              className="mono tw-text-xs"
               value={urlApi}
               onChange={e => { setUrlApi(e.target.value); setSaved(false); setTestResult(null); }}
               placeholder="https://generativelanguage.googleapis.com/v1beta"
-              style={{ fontSize: 12 }}
             />
           </div>
 
           {urlApi && (
-            <div className="grid-2" style={{ gap: 10, marginBottom: 12 }}>
+            <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5 tw-mb-3">
               <div className="field" style={{ margin: 0 }}>
                 <label>Proveedor detectado</label>
-                <input value={detected.format === "gemini" ? "Google Gemini" : detected.format === "claude" ? "Anthropic Claude" : "OpenAI Compatible"} readOnly style={{ background: "var(--surface-2)", color: "var(--text-3)", cursor: "default" }}/>
+                <input value={detected.format === "gemini" ? "Google Gemini" : detected.format === "claude" ? "Anthropic Claude" : "OpenAI Compatible"} readOnly className="tw-bg-surface-2 tw-text-txt-3 tw-cursor-default"/>
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>Modelo</label>
-                <input className="mono" value={detected.model} readOnly style={{ background: "var(--surface-2)", color: "var(--text-3)", cursor: "default" }}/>
+                <input className="mono tw-bg-surface-2 tw-text-txt-3 tw-cursor-default" value={detected.model} readOnly/>
               </div>
             </div>
           )}
 
-          <div className="field" style={{ margin: "0 0 12px 0" }}>
+          <div className="field tw-mb-3" style={{ margin: 0 }}>
             <label>API Key / Token</label>
-            <div style={{ position: "relative" }}>
+            <div className="tw-relative">
               <input
                 type={showKey ? "text" : "password"}
-                className="mono"
+                className="mono tw-w-full tw-pr-8"
                 value={apiKey}
                 onChange={e => { setApiKey(e.target.value); setSaved(false); setTestResult(null); }}
                 placeholder="tu-api-key"
-                style={{ width: "100%", paddingRight: 32 }}
               />
               <button
                 onClick={() => setShowKey(v => !v)}
-                style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 11, padding: 0 }}
+                className="tw-absolute tw-right-2 tw-top-1/2 tw-bg-transparent tw-border-0 tw-cursor-pointer tw-text-txt-3 tw-text-xs tw-p-0"
+                style={{ transform: "translateY(-50%)" }}
                 title={showKey ? "Ocultar" : "Mostrar"}
               >{showKey ? "🙈" : "👁"}</button>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <button className="btn primary sm" onClick={guardar} disabled={!apiKey.trim() || !urlApi.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
-            <button className="btn sm ghost" onClick={probarConexion} disabled={!apiKey.trim() || !urlApi.trim() || testing}>
+          <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2">
+            <button className="btn primary sm tw-flex-1 sm:tw-flex-none" onClick={guardar} disabled={!apiKey.trim() || !urlApi.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
+            <button className="btn sm ghost tw-flex-1 sm:tw-flex-none" onClick={probarConexion} disabled={!apiKey.trim() || !urlApi.trim() || testing}>
               {testing ? "Probando…" : "Probar conexión"}
             </button>
             {apiKey && (
               <button className="btn ghost sm" onClick={borrarKey} title="Borrar key"><Icon name="x" size={14}/></button>
             )}
             {saved && (
-              <span style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+              <span className="tw-text-xs tw-font-medium tw-flex tw-items-center tw-gap-1" style={{ color: "#22C55E" }}>
                 <Icon name="check" size={14}/> Guardado
               </span>
             )}
             {testResult === "ok" && (
-              <span style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+              <span className="tw-text-xs tw-font-medium tw-flex tw-items-center tw-gap-1" style={{ color: "#22C55E" }}>
                 <Icon name="check" size={14}/> Conexión OK
               </span>
             )}
             {testResult === "error" && (
-              <span style={{ color: "#EF4444", fontSize: 12, fontWeight: 500 }}>URL o Key inválida</span>
+              <span className="tw-text-xs tw-font-medium" style={{ color: "#EF4444" }}>URL o Key inválida</span>
             )}
           </div>
         </div>
