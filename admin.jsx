@@ -862,10 +862,6 @@ const Ingreso = () => {
 
       {showSelector && (
         <Modal title="¿Cómo deseas registrar el ingreso?" lg onClose={() => setShowSelector(false)}>
-          <div className="field" style={{ marginTop: 0, marginBottom: 16 }}>
-            <label>N° factura del proveedor</label>
-            <input className="mono" value={factura} onChange={e => setFactura(e.target.value)} placeholder="Ej: FV-1234"/>
-          </div>
           <p className="muted" style={{ marginTop: 0, marginBottom: 12, fontSize: 13 }}>
             Selecciona el método de captura. En cualquiera podrás revisar y editar los datos antes de guardar.
           </p>
