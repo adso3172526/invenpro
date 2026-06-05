@@ -320,11 +320,11 @@ const Inventario = () => {
           <div className="label"><Icon name="box" size={14}/> Total productos</div>
           <div className="val">{productos.length}</div>
         </div>
-        <div className="kpi">
+        <div className="kpi" style={{ cursor: "pointer", borderColor: estado === "Sin código" ? "#F59E0B" : undefined }} onClick={() => setEstado(estado === "Sin código" ? "Todos" : "Sin código")}>
           <div className="label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Sin código de barras</div>
           <div className="val" style={{ color: sinCodigo > 0 ? "#F59E0B" : "var(--good)" }}>{sinCodigo}</div>
         </div>
-        <div className="kpi">
+        <div className="kpi" style={{ cursor: "pointer", borderColor: estado === "Bajo" ? "var(--bad)" : undefined }} onClick={() => setEstado(estado === "Bajo" ? "Todos" : "Bajo")}>
           <div className="label"><Icon name="alert" size={14}/> Stock bajo</div>
           <div className="val" style={{ color: bajo > 0 ? "var(--bad)" : "var(--good)" }}>{bajo}</div>
         </div>
