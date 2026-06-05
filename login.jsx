@@ -23,13 +23,13 @@ const Login = ({ onLogin }) => {
     <div className="login-shell">
       <div className="deco" />
       <div className="login-form-wrap">
-        <form className="login-form" onSubmit={submit} style={{ animation: shake ? "shake .3s" : undefined }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
-            <img src="logo.png" alt="InvenPro" style={{ objectFit: "contain", width: "125.35px", height: "45px" }} />
+        <form className="login-form tw-w-full tw-max-w-[400px] tw-mx-auto tw-px-4 sm:tw-px-0" onSubmit={submit} style={{ animation: shake ? "shake .3s" : undefined }}>
+          <div className="tw-flex tw-justify-center tw-mb-6">
+            <img src="logo.png" alt="InvenPro" className="tw-object-contain tw-w-[125px] tw-h-[45px]" />
           </div>
-          <h2 style={{ textAlign: "center" }}>Bienvenido</h2>
+          <h2 className="tw-text-center">Bienvenido</h2>
 
-          <div className="field" style={{ marginTop: 20 }}>
+          <div className="field tw-mt-5">
             <label>Usuario</label>
             <input value={user} onChange={(e) => setUser(e.target.value)} placeholder="usuario.apellido" autoFocus/>
           </div>
@@ -39,7 +39,7 @@ const Login = ({ onLogin }) => {
           </div>
 
           {error && (
-            <div style={{ background: "var(--bad-soft)", color: "var(--bad)", padding: "8px 12px", borderRadius: 6, fontSize: 12, marginBottom: 12, fontWeight: 500 }}>
+            <div className="tw-bg-bad-soft tw-text-bad tw-py-2 tw-px-3 tw-rounded-md tw-text-xs tw-mb-3 tw-font-medium">
               {error}
             </div>
           )}
@@ -53,7 +53,7 @@ const Login = ({ onLogin }) => {
       </div>
       <div className="login-footer">
         <div className="brandmark">
-          <img src="logo.png" alt="InvenPro" style={{ height: 22, objectFit: "contain" }} />
+          <img src="logo.png" alt="InvenPro" className="tw-h-[22px] tw-object-contain" />
         </div>
         <div className="pitch">
           <span>Tu minimercado, controlado al detalle.</span> Facturación, inventario, vencimientos y turnos en un solo lugar.

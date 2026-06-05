@@ -7,16 +7,16 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
   const [caja, setCaja] = useState("Caja 01");
   return (
     <div className="shift-open-shell">
-      <div className="card shift-open-card">
-        <div className="card-h" style={{ flexDirection: "column", alignItems: "flex-start", padding: "20px 22px" }}>
-          <div className="row" style={{ marginBottom: 6 }}>
-            <img src="logo.png" alt="InvenPro" style={{ height: 26, objectFit: "contain" }}/>
+      <div className="card shift-open-card tw-w-[min(94vw,480px)]">
+        <div className="card-h tw-flex-col tw-items-start tw-p-5">
+          <div className="row tw-mb-1.5">
+            <img src="logo.png" alt="InvenPro" className="tw-h-[26px] tw-object-contain"/>
           </div>
-          <h3 style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em", margin: "8px 0 4px" }}>Abrir turno</h3>
-          <p className="muted" style={{ margin: 0, fontSize: 13 }}>Hola {cajero.nombre}. Confirma la base de caja inicial para empezar a facturar.</p>
+          <h3 className="tw-text-xl tw-font-semibold tw-tracking-tight tw-my-1">Abrir turno</h3>
+          <p className="muted tw-m-0 tw-text-[13px]">Hola {cajero.nombre}. Confirma la base de caja inicial para empezar a facturar.</p>
         </div>
-        <div className="card-b" style={{ padding: "20px 22px" }}>
-          <div className="grid-2">
+        <div className="card-b tw-p-5">
+          <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
             <div className="field">
               <label>Cajero</label>
               <input value={cajero.nombre} readOnly/>
@@ -36,14 +36,14 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
             <label>Base inicial en efectivo (COP)</label>
             <input className="mono" value={base.toLocaleString("es-CO")}
               onChange={e => setBase(parseInt(e.target.value.replace(/\D/g, "")) || 0)}/>
-            <div className="cash-suggestions">
+            <div className="cash-suggestions tw-flex tw-flex-wrap tw-gap-1.5">
               {[100000, 150000, 200000, 250000, 300000].map(v => (
                 <button key={v} type="button" onClick={() => setBase(v)}>${v.toLocaleString("es-CO")}</button>
               ))}
             </div>
           </div>
         </div>
-        <div className="modal-f" style={{ background: "var(--surface-2)" }}>
+        <div className="modal-f tw-bg-surface-2">
           <button className="btn primary" onClick={() => onOpen({ base, caja, ini: new Date() })}>Abrir turno <Icon name="arrowRight"/></button>
           <button className="btn ghost" onClick={onLogout}><Icon name="logout"/> Salir</button>
         </div>
@@ -134,20 +134,20 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg)" }}>
+    <div className="tw-min-h-screen tw-flex tw-flex-col tw-bg-bg">
       {/* Topbar */}
-      <div className="topbar">
-        <div className="crumb">
-          <img src="logo.png" alt="InvenPro" style={{ height: 22, objectFit: "contain" }}/>
+      <div className="topbar tw-flex tw-flex-wrap tw-gap-2">
+        <div className="crumb tw-flex-1 tw-min-w-0">
+          <img src="logo.png" alt="InvenPro" className="tw-h-[22px] tw-object-contain tw-hidden sm:tw-block"/>
           <h1>Caja {shift.caja.replace("Caja ", "")}</h1>
-          <span className="muted">·</span>
-          <span className="sub">{cajero.nombre}</span>
+          <span className="muted tw-hidden sm:tw-inline">·</span>
+          <span className="sub tw-hidden sm:tw-inline">{cajero.nombre}</span>
           <span className="chip good"><span className="dot"/> Turno abierto</span>
         </div>
-        <div className="actions">
-          <span className="muted mono" style={{ fontSize: 12 }}>{shiftStats.trans} ventas · {window.fmtCOP(shiftStats.ventas)}</span>
-          <button className="btn sm" onClick={onLogout} title="Salir sin cerrar turno"><Icon name="arrowRight" size={14}/> Salir</button>
-          <button className="btn sm" onClick={() => setClosing(true)}><Icon name="logout" size={14}/> Cerrar turno</button>
+        <div className="actions tw-flex tw-items-center tw-gap-2">
+          <span className="muted mono tw-text-xs tw-hidden sm:tw-inline">{shiftStats.trans} ventas · {window.fmtCOP(shiftStats.ventas)}</span>
+          <button className="btn sm" onClick={onLogout} title="Salir sin cerrar turno"><Icon name="arrowRight" size={14}/> <span className="tw-hidden sm:tw-inline">Salir</span></button>
+          <button className="btn sm" onClick={() => setClosing(true)}><Icon name="logout" size={14}/> <span className="tw-hidden sm:tw-inline">Cerrar turno</span></button>
         </div>
       </div>
 
@@ -300,25 +300,25 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
         </button>
       </>
     }>
-      <div className="grid-2" style={{ gap: 20 }}>
+      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-5">
         <div>
-          <div className="muted" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 }}>Método de pago</div>
-          <div className="col" style={{ gap: 6 }}>
+          <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-1.5">Método de pago</div>
+          <div className="tw-flex tw-flex-col tw-gap-1.5">
             {["Efectivo", "Transferencia", "Nequi", "Daviplata"].map(m => (
               <button key={m} className={"btn" + (metodo === m ? " primary" : "")} onClick={() => setMetodo(m)} style={{ justifyContent: "flex-start" }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: metodo === m ? "currentColor" : "var(--text-3)" }}/>
+                <span className="tw-w-2 tw-h-2 tw-rounded-full" style={{ background: metodo === m ? "currentColor" : "var(--text-3)" }}/>
                 {m}
               </button>
             ))}
           </div>
-          <div className="card mt-3" style={{ background: "var(--surface-2)" }}>
+          <div className="card tw-mt-3 tw-bg-surface-2">
             <div className="card-b">
               <div className="row spaced"><span className="muted">Items</span><span className="mono">{items}</span></div>
-              <div className="row spaced"><span className="muted">Total</span><span className="mono" style={{ fontSize: 22, fontWeight: 600 }}>{window.fmtCOP(total)}</span></div>
+              <div className="row spaced"><span className="muted">Total</span><span className="mono tw-text-[22px] tw-font-semibold">{window.fmtCOP(total)}</span></div>
               {metodo === "Efectivo" && (
                 <>
-                  <div className="row spaced mt-2"><span className="muted">Recibido</span><span className="mono">{window.fmtCOP(recibido)}</span></div>
-                  <div className="row spaced"><span className="muted">Cambio</span><span className="mono" style={{ color: cambio > 0 ? "var(--good)" : "var(--text-2)", fontWeight: 600 }}>{window.fmtCOP(cambio)}</span></div>
+                  <div className="row spaced tw-mt-2"><span className="muted">Recibido</span><span className="mono">{window.fmtCOP(recibido)}</span></div>
+                  <div className="row spaced"><span className="muted">Cambio</span><span className="mono tw-font-semibold" style={{ color: cambio > 0 ? "var(--good)" : "var(--text-2)" }}>{window.fmtCOP(cambio)}</span></div>
                 </>
               )}
             </div>
@@ -327,26 +327,26 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
         <div>
           {metodo === "Efectivo" ? (
             <>
-              <div className="muted" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 }}>Efectivo recibido</div>
-              <div className="cash-suggestions">
+              <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-1.5">Efectivo recibido</div>
+              <div className="cash-suggestions tw-flex tw-flex-wrap tw-gap-1.5">
                 {[total, 50000, 100000, 200000].map((v, i) => (
                   <button key={i} onClick={() => setRecibido(v)}>${v.toLocaleString("es-CO")}</button>
                 ))}
               </div>
-              <div className="keypad mt-2">
+              <div className="keypad tw-mt-2">
                 {["1","2","3","4","5","6","7","8","9","C","0","←"].map(k => (
                   <button key={k} onClick={() => onKey(k)}>{k}</button>
                 ))}
               </div>
             </>
           ) : (
-            <div className="card" style={{ background: "var(--surface-2)" }}>
-              <div className="card-b" style={{ textAlign: "center", padding: 30 }}>
-                <div style={{ width: 80, height: 80, borderRadius: 12, background: "var(--surface)", margin: "0 auto 14px", display: "grid", placeItems: "center", border: "1px solid var(--border)" }}>
+            <div className="card tw-bg-surface-2">
+              <div className="card-b tw-text-center tw-p-8">
+                <div className="tw-w-20 tw-h-20 tw-rounded-xl tw-bg-surface tw-mx-auto tw-mb-3.5 tw-grid tw-place-items-center tw-border tw-border-border">
                   <Icon name={metodo === "Transferencia" ? "settings" : "pkg"} size={32}/>
                 </div>
-                <div style={{ fontWeight: 600, marginBottom: 4 }}>Esperando pago por {metodo}…</div>
-                <div className="muted" style={{ fontSize: 12 }}>El cliente debe confirmar la transacción en el datafono o aplicación.</div>
+                <div className="tw-font-semibold tw-mb-1">Esperando pago por {metodo}…</div>
+                <div className="muted tw-text-xs">El cliente debe confirmar la transacción en el datafono o aplicación.</div>
               </div>
             </div>
           )}
@@ -403,17 +403,17 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
         <button className="btn primary" onClick={onConfirm}><Icon name="check"/> Confirmar cierre</button>
       </>
     }>
-      <div className="grid-2">
+      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-5">
         <div>
-          <div className="muted" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 8 }}>Resumen del turno</div>
-          <div className="card" style={{ background: "var(--surface-2)" }}>
+          <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-2">Resumen del turno</div>
+          <div className="card tw-bg-surface-2">
             <div className="card-b">
               <div className="row spaced"><span className="muted">Base inicial</span><span className="mono">{window.fmtCOP(shift.base)}</span></div>
               <div className="row spaced"><span className="muted">Ventas en efectivo</span><span className="mono">{window.fmtCOP(stats.ventas)}</span></div>
               <div className="row spaced"><span className="muted">Transacciones</span><span className="mono">{stats.trans}</span></div>
               <div className="row spaced"><span className="muted">Productos vendidos</span><span className="mono">{stats.items}</span></div>
-              <hr style={{ border: 0, borderTop: "1px solid var(--border)", margin: "10px 0" }}/>
-              <div className="row spaced"><span style={{ fontWeight: 600 }}>Esperado en caja</span><span className="mono" style={{ fontWeight: 600, fontSize: 17 }}>{window.fmtCOP(esperado)}</span></div>
+              <hr className="tw-border-0 tw-border-t tw-border-border tw-my-2.5"/>
+              <div className="row spaced"><span className="tw-font-semibold">Esperado en caja</span><span className="mono tw-font-semibold tw-text-[17px]">{window.fmtCOP(esperado)}</span></div>
             </div>
           </div>
         </div>
@@ -422,18 +422,18 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
             <label>Efectivo contado físicamente</label>
             <input className="mono" value={contado.toLocaleString("es-CO")} onChange={e => setContado(parseInt(e.target.value.replace(/\D/g,"")) || 0)}/>
           </div>
-          <div className={"card"} style={{ background: diff === 0 ? "var(--good-soft)" : (diff > 0 ? "var(--warn-soft)" : "var(--bad-soft)") }}>
+          <div className="card" style={{ background: diff === 0 ? "var(--good-soft)" : (diff > 0 ? "var(--warn-soft)" : "var(--bad-soft)") }}>
             <div className="card-b">
-              <div className="muted" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em" }}>Diferencia</div>
-              <div className="mono" style={{ fontSize: 22, fontWeight: 600, marginTop: 4 }}>
+              <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider">Diferencia</div>
+              <div className="mono tw-text-[22px] tw-font-semibold tw-mt-1">
                 {diff > 0 ? "+" : ""}{window.fmtCOP(diff)}
               </div>
-              <div style={{ fontSize: 12, marginTop: 4 }}>
+              <div className="tw-text-xs tw-mt-1">
                 {diff === 0 ? "Caja cuadra perfectamente." : diff > 0 ? "Sobrante en caja — revisar." : "Faltante — debe justificarse."}
               </div>
             </div>
           </div>
-          <div className="field mt-2">
+          <div className="field tw-mt-2">
             <label>Observaciones (opcional)</label>
             <textarea rows="3" placeholder="Ej: cliente recibió mal el cambio…"/>
           </div>
@@ -445,17 +445,17 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
 
 // =================== Resultado de cierre ===================
 const ShiftClosed = ({ summary, onLogout }) => (
-  <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24, background: "var(--bg)" }}>
-    <div className="card" style={{ width: "min(94vw, 480px)" }}>
-      <div className="card-b" style={{ textAlign: "center", padding: 32 }}>
-        <div style={{ width: 56, height: 56, borderRadius: 999, background: "var(--good-soft)", color: "var(--good)", margin: "0 auto 14px", display: "grid", placeItems: "center" }}>
+  <div className="tw-min-h-screen tw-grid tw-place-items-center tw-p-6 tw-bg-bg">
+    <div className="card tw-w-[min(94vw,480px)]">
+      <div className="card-b tw-text-center tw-p-8">
+        <div className="tw-w-14 tw-h-14 tw-rounded-full tw-bg-good-soft tw-text-good tw-mx-auto tw-mb-3.5 tw-grid tw-place-items-center">
           <Icon name="check" size={28}/>
         </div>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 600, letterSpacing: "-0.02em" }}>Turno cerrado</h2>
+        <h2 className="tw-m-0 tw-text-[22px] tw-font-semibold tw-tracking-tight">Turno cerrado</h2>
         <p className="muted">Total facturado en este turno</p>
-        <div className="mono" style={{ fontSize: 36, fontWeight: 600, letterSpacing: "-0.02em" }}>{window.fmtCOP(summary.ventas)}</div>
-        <div className="muted" style={{ fontSize: 13 }}>{summary.trans} ventas · {summary.items} productos</div>
-        <button className="btn primary full lg mt-4" onClick={onLogout}>
+        <div className="mono tw-text-4xl tw-font-semibold tw-tracking-tight">{window.fmtCOP(summary.ventas)}</div>
+        <div className="muted tw-text-[13px]">{summary.trans} ventas · {summary.items} productos</div>
+        <button className="btn primary full lg tw-mt-4" onClick={onLogout}>
           <Icon name="logout" size={16}/> Cerrar sesión
         </button>
       </div>
