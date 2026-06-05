@@ -1046,9 +1046,17 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 
 /* ============ POS layout ============ */
 .pos {
+  display: grid; grid-template-columns: 1fr;
   background: var(--bg);
 }
-/* pos-left removed — layout now handled by Tailwind grid in cashier.jsx */
+@media (min-width: 768px) {
+  .pos { grid-template-columns: 1fr 420px; min-height: calc(100vh - 60px); }
+}
+.pos-left {
+  display: flex; flex-direction: column;
+  padding: 20px 24px; gap: 14px;
+  min-width: 0; min-height: 0;
+}
 .pos-search {
   display: flex; gap: 8px; align-items: center;
   background: var(--surface);
