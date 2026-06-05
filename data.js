@@ -37,6 +37,7 @@
   // ---------- hydrateData ----------
   window.hydrateData = async function () {
     const d = window.db;
+    if (!d) { console.warn("hydrateData: window.db no disponible"); return; }
 
     const [
       { data: productos },
@@ -109,6 +110,7 @@
   // ---------- DB write operations ----------
   window.DB = {
     async login(usuario, pass) {
+      if (!window.db) { console.error("Supabase no cargó. Recarga la página."); return null; }
       const { data, error } = await window.db
         .from("usuarios_sistema")
         .select("*")
