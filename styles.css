@@ -616,7 +616,6 @@ input, select, textarea { font: inherit; color: inherit; }
 /* Móvil pequeño */
 @media (max-width: 380px) {
   .kpi-grid { grid-template-columns: 1fr; }
-  .topbar .crumb .sub, .topbar .crumb .chip { display: none; }
   .login-footer .pitch { display: none; }
 }
 
@@ -727,21 +726,10 @@ input, select, textarea { font: inherit; color: inherit; }
   .modal-b > div[style*="grid-template-columns: 1fr 1fr 1fr"] {
     grid-template-columns: 1fr !important;
   }
-  /* POS topbar wraps */
-  .topbar { flex-wrap: wrap; height: auto; min-height: 56px; padding: 8px 12px; gap: 8px; }
-  .topbar .crumb { flex-wrap: wrap; gap: 6px; flex: 1; }
-  .topbar .actions { width: 100%; gap: 6px; }
-  .topbar .actions .btn { flex: 1; }
-  .topbar .actions .muted { display: none; }
+  /* POS topbar — now Tailwind */
   /* POS layout - stack vertically en móvil */
   /* POS mobile — now Tailwind */
-  .cat-tabs { gap: 4px; }
-  .cat-tab { padding: 6px 10px; font-size: 12px; }
-  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .product { padding: 10px; }
-  .product .thumb { height: 50px; }
-  .product .name { font-size: 12px; }
-  .product .meta { font-size: 10px; }
+  /* POS cat-tabs + product-grid — mobile now Tailwind */
   /* Cart — now Tailwind */
   /* Scanner modal viewport */
   .scanner-viewport { aspect-ratio: 4 / 3; }
@@ -898,10 +886,7 @@ input, select, textarea { font: inherit; color: inherit; }
 
 @media (max-width: 380px) {
   .kpi-grid { grid-template-columns: 1fr; }
-  .topbar .crumb .sub, .topbar .crumb .chip { display: none; }
   .login-footer .pitch { display: none; }
-  .product-grid { grid-template-columns: 1fr; }
-  .product .thumb { height: 60px; }
   /* Modal action buttons stack */
   .modal-f { flex-direction: column; }
   .modal-f .btn { width: 100%; }
@@ -1527,13 +1512,7 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 /* --- 1. POS layout — now Tailwind grid --- */
 
 /* --- 2. POS en móvil — carrito y catálogo mejorados --- */
-@media (max-width: 640px) {
-  .cat-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
-  .cat-tabs::-webkit-scrollbar { display: none; }
-  .cat-tab { flex-shrink: 0; }
-  .product-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-  /* Cart touch — now Tailwind */
-}
+/* POS mobile cat-tabs + product-grid — now Tailwind in cashier.jsx */
 
 /* --- 3. Proveedores toolbar en tablet/móvil --- */
 @media (max-width: 900px) {
@@ -1559,10 +1538,7 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   .topbar .actions .mono { font-size: 11px; }
   .topbar .crumb .sub { font-size: 11px; }
 }
-@media (max-width: 768px) {
-  .topbar .crumb .chip { display: none; }
-  .topbar .crumb .sub { display: none; }
-}
+/* topbar .crumb chip/sub — now Tailwind tw-hidden sm:tw-inline */
 
 
 /* --- 7. Tablas en pantallas angostas --- */
