@@ -640,14 +640,16 @@ const Ingreso = () => {
   const ingresosFiltrados = MOCK.ingresos.filter(i => i.fecha >= desde && i.fecha <= hasta);
   const pagIng = usePagination(ingresosFiltrados, 10);
 
-  const add = (sku, qty, costo, vence, nombreManual) => {
+  const add = (sku, qty, costo, vence, nombreManual, codigoBarras, precio) => {
     const p = MOCK.productos.find(x => x.sku === sku);
     const esNuevo = !p;
     const nombre = p ? p.nombre : (nombreManual || sku);
-    const item = { sku, nombre, qty: parseInt(qty)||0, costo: parseInt(costo)||0, vence, nuevo: esNuevo };
+    const item = { sku, nombre, qty: parseInt(qty)||0, costo: parseInt(costo)||0, vence, nuevo: esNuevo, codigoBarras: codigoBarras || (p && p.codigoBarras) || "" };
     if (esNuevo) {
       item.categoria = "General";
-      item.precio = Math.round((parseInt(costo)||0) * 1.3);
+      item.precio = parseInt(precio) || Math.round((parseInt(costo)||0) * 1.3);
+    } else {
+      item.precio = parseInt(precio) || p.precio || 0;
     }
     setItems(it => [...it, item]);
   };
@@ -983,12 +985,12 @@ const Ingreso = () => {
           )}
 
           {/* ── Datos del proveedor ── */}
-          <div className="card" style={{ padding: 16, marginBottom: 14, border: "1px solid var(--border)", background: "var(--surface-2)", borderRadius: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div className="tw-bg-surface-2 tw-border tw-border-border tw-rounded-lg tw-p-3.5 md:tw-p-4 tw-mb-3">
+            <div className="tw-flex tw-items-center tw-gap-2 tw-mb-3">
               <Icon name="store" size={16}/>
-              <span style={{ fontWeight: 600, fontSize: 14 }}>Datos del proveedor</span>
+              <span className="tw-font-semibold tw-text-sm">Datos del proveedor</span>
             </div>
-            <div className="grid-2" style={{ gap: 10 }}>
+            <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5">
               <div className="field" style={{ margin: 0 }}>
                 <label>Proveedor</label>
                 <select value={proveedor} onChange={e => setProveedor(e.target.value)}>
@@ -1018,12 +1020,12 @@ const Ingreso = () => {
           </div>
 
           {/* ── Datos de la factura ── */}
-          <div className="card" style={{ padding: 16, marginBottom: 14, border: "1px solid var(--border)", background: "var(--surface-2)", borderRadius: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div className="tw-bg-surface-2 tw-border tw-border-border tw-rounded-lg tw-p-3.5 md:tw-p-4 tw-mb-3">
+            <div className="tw-flex tw-items-center tw-gap-2 tw-mb-3">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <span style={{ fontWeight: 600, fontSize: 14 }}>Datos de la factura</span>
+              <span className="tw-font-semibold tw-text-sm">Datos de la factura</span>
             </div>
-            <div className="grid-2" style={{ gap: 10 }}>
+            <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5">
               <div className="field" style={{ margin: 0 }}>
                 <label>N° factura proveedor</label>
                 <input className="mono" value={factura} onChange={e => setFactura(e.target.value)}/>
@@ -1045,8 +1047,8 @@ const Ingreso = () => {
 
           {/* ── Resumen de items ── */}
           {items.length > 0 && (origen === "ia" || origen === "qr") && (
-            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-              <div style={{ flex: 1, padding: "10px 14px", borderRadius: 8, background: "#ECFDF5", border: "1px solid #A7F3D0", display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="tw-flex tw-flex-col sm:tw-flex-row tw-gap-2.5 tw-mb-3">
+              <div className="tw-flex-1 tw-p-3 tw-rounded-lg tw-flex tw-items-center tw-gap-2" style={{ background: "#ECFDF5", border: "1px solid #A7F3D0" }}>
                 <Icon name="check" size={16}/>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 13, color: "#065F46" }}>{existentes.length} en bodega</div>
@@ -1054,7 +1056,7 @@ const Ingreso = () => {
                 </div>
               </div>
               {nuevos.length > 0 && (
-                <div style={{ flex: 1, padding: "10px 14px", borderRadius: 8, background: "#FFF7ED", border: "1px solid #FED7AA", display: "flex", alignItems: "center", gap: 8 }}>
+                <div className="tw-flex-1 tw-p-3 tw-rounded-lg tw-flex tw-items-center tw-gap-2" style={{ background: "#FFF7ED", border: "1px solid #FED7AA" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C2410C" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 13, color: "#9A3412" }}>{nuevos.length} nuevo(s)</div>
@@ -1066,9 +1068,9 @@ const Ingreso = () => {
           )}
 
           {nuevos.length > 0 && (
-            <div style={{ padding: "10px 14px", borderRadius: 8, background: "#FFF7ED", border: "1px solid #FED7AA", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="tw-flex tw-items-center tw-gap-2 tw-p-3 tw-rounded-lg tw-mb-2.5 tw-text-xs" style={{ background: "#FFF7ED", border: "1px solid #FED7AA", color: "#9A3412" }}>
               <Icon name="box" size={16}/>
-              <span style={{ fontSize: 12, color: "#9A3412" }}>Los productos nuevos se crearán con SKU automático. Podrás asignar el código de barras después en <strong>Bodega</strong>.</span>
+              <span>Los productos nuevos se crearán con SKU automático. Podrás asignar el código de barras después en <strong>Bodega</strong>.</span>
             </div>
           )}
 
@@ -1668,97 +1670,124 @@ const IaScannerModal = ({ onClose, onRead }) => {
 const ItemAdder = ({ onAdd }) => {
   const [sku, setSku] = useStateA("");
   const [query, setQuery] = useStateA("");
-  const [codigo, setCodigo] = useStateA("");
+  const [codigoBarras, setCodigoBarras] = useStateA("");
   const [qty, setQty] = useStateA("");
   const [costo, setCosto] = useStateA("");
+  const [precio, setPrecio] = useStateA("");
   const [vence, setVence] = useStateA("");
   const [open, setOpen] = useStateA(false);
+  const [highlight, setHighlight] = useStateA(-1);
   const opts = MOCK.productos;
   const sugeridos = useMemoA(() => {
-    if (!query) return opts.slice(0, 8);
+    if (!query) return [];
     const q = query.toLowerCase().trim();
     return opts.filter(p =>
       p.nombre.toLowerCase().includes(q) ||
-      p.sku.toLowerCase().includes(q)
-    ).slice(0, 8);
+      p.sku.toLowerCase().includes(q) ||
+      (p.codigoBarras && p.codigoBarras.includes(q))
+    ).slice(0, 6);
   }, [query]);
 
   const elegir = (p) => {
     setSku(p.sku);
-    setQuery(`${p.nombre} (${p.sku})`);
-    setCodigo(p.sku);
+    setQuery(p.nombre);
+    setCodigoBarras(p.codigoBarras || "");
     setCosto(p.costo);
+    setPrecio(p.precio);
     setOpen(false);
+    setHighlight(-1);
   };
 
+  const reset = () => {
+    setSku(""); setQuery(""); setCodigoBarras(""); setQty(""); setCosto(""); setPrecio(""); setVence(""); setHighlight(-1);
+  };
+
+  const esNuevo = query && !sku;
+
   return (
-    <div className="card mt-2" style={{ background: "var(--surface-2)", padding: 14 }}>
-      <div className="item-adder-grid tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 md:tw-grid-cols-[1.6fr_1fr_0.8fr_0.9fr_0.9fr_auto] tw-gap-2 md:tw-gap-2 tw-items-end">
+    <div className="tw-bg-surface-2 tw-border tw-border-border tw-rounded-lg tw-p-3 md:tw-p-4 tw-mt-3">
+      <div className="tw-text-xs tw-font-semibold tw-text-txt-2 tw-mb-2 tw-flex tw-items-center tw-gap-1.5">
+        <Icon name="plus" size={13}/> Agregar producto
+      </div>
+
+      {/* Fila 1: Producto (predictivo) + Código de barras */}
+      <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-[1fr_200px] tw-gap-2 tw-mb-2">
         <div className="field" style={{ margin: 0, position: "relative" }}>
           <label>Producto</label>
           <input
             value={query}
-            onChange={e => { setQuery(e.target.value); setSku(""); setOpen(true); }}
-            onFocus={() => setOpen(true)}
+            onChange={e => { setQuery(e.target.value); setSku(""); setOpen(true); setHighlight(-1); }}
+            onFocus={() => { if (query) setOpen(true); }}
             onBlur={() => setTimeout(() => setOpen(false), 150)}
             onKeyDown={e => {
-              if (e.key === "Enter" && sugeridos.length === 1) elegir(sugeridos[0]);
-              if (e.key === "Escape") setOpen(false);
+              if (e.key === "ArrowDown") { e.preventDefault(); setHighlight(h => Math.min(h + 1, sugeridos.length - 1)); }
+              else if (e.key === "ArrowUp") { e.preventDefault(); setHighlight(h => Math.max(h - 1, 0)); }
+              else if (e.key === "Enter") {
+                if (highlight >= 0 && sugeridos[highlight]) elegir(sugeridos[highlight]);
+                else if (sugeridos.length === 1) elegir(sugeridos[0]);
+              }
+              else if (e.key === "Escape") setOpen(false);
             }}
-            placeholder="Nombre, SKU o código de barras…"
+            placeholder="Escribe para buscar…"
+            autoComplete="off"
           />
           {open && sugeridos.length > 0 && (
-            <div style={{
-              position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4,
-              background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8,
-              boxShadow: "0 8px 24px rgba(0,0,0,.08)", zIndex: 20, maxHeight: 240, overflowY: "auto"
-            }}>
-              {sugeridos.map(p => (
+            <div className="tw-absolute tw-top-full tw-left-0 tw-right-0 tw-mt-1 tw-bg-surface tw-border tw-border-border tw-rounded-lg tw-shadow-lg tw-z-20 tw-max-h-[220px] tw-overflow-y-auto">
+              {sugeridos.map((p, idx) => (
                 <div key={p.sku} onMouseDown={() => elegir(p)}
-                  style={{ padding: "8px 12px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", fontSize: 13 }}
-                  onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
-                  onMouseLeave={e => e.currentTarget.style.background = ""}
+                  onMouseEnter={() => setHighlight(idx)}
+                  className={"tw-flex tw-justify-between tw-items-center tw-px-3 tw-py-2 tw-cursor-pointer tw-text-sm tw-border-b tw-border-border" + (idx === highlight ? " tw-bg-accent-soft" : "")}
                 >
                   <div>
-                    <div style={{ fontWeight: 500 }}>{p.nombre}</div>
-                    <div className="mono muted" style={{ fontSize: 11 }}>{p.sku} · {p.categoria}</div>
+                    <div className="tw-font-medium">{p.nombre}</div>
+                    <div className="mono muted tw-text-xs">{p.sku}{p.codigoBarras ? " · " + p.codigoBarras : ""} · {p.categoria}</div>
                   </div>
-                  <span className="mono muted" style={{ fontSize: 11 }}>Stock {p.stock}</span>
+                  <span className="mono muted tw-text-xs">Stock {p.stock}</span>
                 </div>
               ))}
             </div>
           )}
           {open && query && sugeridos.length === 0 && (
-            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--text-3)" }}>
-              Sin coincidencias
+            <div className="tw-absolute tw-top-full tw-left-0 tw-right-0 tw-mt-1 tw-bg-surface tw-border tw-border-border tw-rounded-lg tw-p-2.5 tw-text-xs tw-text-txt-3">
+              No encontrado — se creará como producto nuevo
             </div>
           )}
         </div>
         <div className="field" style={{ margin: 0 }}>
-          <label>Código de barras / SKU</label>
-          <input className="mono" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g,""))} placeholder="7702001"/>
+          <label>Código de barras</label>
+          <input className="mono" value={codigoBarras} onChange={e => setCodigoBarras(e.target.value)} placeholder="7702001148"/>
         </div>
+      </div>
+
+      {/* Fila 2: Cantidad, Costo, Precio, Vence, Botón */}
+      <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-[1fr_1fr_1fr_1fr_auto] tw-gap-2 tw-items-end">
         <div className="field" style={{ margin: 0 }}>
           <label>Cantidad</label>
-          <input className="mono" value={qty} onChange={e => setQty(e.target.value)} placeholder="0"/>
+          <input className="mono" value={qty} onChange={e => setQty(e.target.value.replace(/\D/g,""))} placeholder="0"/>
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label>Costo unit.</label>
-          <input className="mono" value={costo} onChange={e => setCosto(e.target.value)} placeholder="0"/>
+          <input className="mono" value={costo} onChange={e => setCosto(e.target.value.replace(/\D/g,""))} placeholder="0"/>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Precio venta</label>
+          <input className="mono" value={precio} onChange={e => setPrecio(e.target.value.replace(/\D/g,""))} placeholder="0"/>
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label>Vence</label>
           <input type="date" value={vence} onChange={e => setVence(e.target.value)}/>
         </div>
-        <button className="btn primary" disabled={!sku || !qty || !codigo} onClick={() => {
-          onAdd(codigo, qty, costo, vence);
-          setSku(""); setQuery(""); setCodigo(""); setQty(""); setCosto(""); setVence("");
+        <button className="btn primary tw-w-full md:tw-w-auto" disabled={(!sku && !query) || !qty} onClick={() => {
+          onAdd(sku || ("NUEVO-" + Date.now()), qty, costo, vence, esNuevo ? query : undefined, codigoBarras, precio);
+          reset();
         }}><Icon name="plus" size={14}/> Agregar</button>
       </div>
-      <div className="muted" style={{ fontSize: 11, marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
-        <Icon name="search" size={11}/>
-        Busca por nombre, SKU o código de barras. El código quedará asociado al producto y será reconocido por el lector de barras en el punto de venta.
-      </div>
+
+      {esNuevo && query && (
+        <div className="tw-mt-2 tw-text-xs tw-px-1 tw-flex tw-items-center tw-gap-1.5" style={{ color: "#C2410C" }}>
+          <Icon name="alert" size={11}/> "{query}" no existe en bodega — se creará como producto nuevo al confirmar.
+        </div>
+      )}
     </div>
   );
 };
