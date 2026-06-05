@@ -552,7 +552,6 @@ const Ingreso = () => {
   const [items, setItems] = useStateA([]);
   const [origen, setOrigen] = useStateA(null); // null | "manual" | "qr" | "ia"
   const [showSelector, setShowSelector] = useStateA(false);
-  const [showQrScanner, setShowQrScanner] = useStateA(false);
   const [showIaScanner, setShowIaScanner] = useStateA(false);
   const [showForm, setShowForm] = useStateA(false);
   const [verIngreso, setVerIngreso] = useStateA(null);
@@ -753,23 +752,12 @@ const Ingreso = () => {
           <p className="muted" style={{ marginTop: 0, marginBottom: 16, fontSize: 13 }}>
             Selecciona el método de captura. En cualquiera podrás revisar y editar los datos antes de guardar.
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
             <button className="method-card" onClick={iniciarManual}>
               <div className="method-icon" style={{ background: "var(--surface-2)", color: "var(--text-2)" }}><Icon name="edit" size={24}/></div>
               <div className="method-title">Manual</div>
               <div className="method-desc">Captura los datos uno por uno desde el formulario.</div>
               <div className="method-tag">Tradicional</div>
-            </button>
-            <button className="method-card" onClick={() => { setShowSelector(false); setShowQrScanner(true); }}>
-              <div className="method-icon" style={{ background: "var(--accent-soft)", color: "var(--accent-ink)" }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-                  <path d="M14 14h3v3M21 14v7h-7M17 17v4"/>
-                </svg>
-              </div>
-              <div className="method-title">Escanear QR DIAN</div>
-              <div className="method-desc">Lee el código QR de la factura electrónica para importar los datos exactos.</div>
-              <div className="method-tag accent">Más rápido</div>
             </button>
             <button className="method-card" onClick={() => { setShowSelector(false); setShowIaScanner(true); }}>
               <div className="method-icon" style={{ background: "#FFF1D6", color: "#8C6A1E" }}>
@@ -784,10 +772,6 @@ const Ingreso = () => {
             </button>
           </div>
         </Modal>
-      )}
-
-      {showQrScanner && (
-        <QrScannerModal onClose={() => setShowQrScanner(false)} onRead={(data) => aplicarDatosExtraidos(data, "qr")}/>
       )}
 
       {showIaScanner && (
