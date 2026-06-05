@@ -33,6 +33,7 @@ const Icon = ({ name, size = 16 }) => {
     eye: <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></>,
     edit: <><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></>,
     store: <><path d="M3 9 5 4h14l2 5"/><path d="M3 9v11h18V9"/><path d="M3 9a3 3 0 0 0 6 0M9 9a3 3 0 0 0 6 0M15 9a3 3 0 0 0 6 0"/></>,
+    scan: <><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M3 17v2a2 2 0 0 1 2 2h2M17 21h2a2 2 0 0 1 2-2v-2"/><path d="M7 12h10"/></>,
   };
   return <svg {...props}>{paths[name] || null}</svg>;
 };

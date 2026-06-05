@@ -52,6 +52,71 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
   );
 };
 
+// =================== Escáner de código de barras ===================
+const BarcodeScanner = ({ onScan, onClose }) => {
+  const scannerRef = React.useRef(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const scanner = new Html5Qrcode("barcode-reader");
+    scannerRef.current = scanner;
+
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 150 } },
+      (decodedText) => {
+        scanner.stop().catch(() => {});
+        if (navigator.vibrate) navigator.vibrate(100);
+        onScan(decodedText);
+      },
+      () => {}
+    ).catch(() => setError("No se pudo acceder a la cámara"));
+
+    return () => { scanner.stop().catch(() => {}); };
+  }, []);
+
+  return (
+    <div className="tw-fixed tw-inset-0 tw-z-[102] tw-bg-black tw-flex tw-flex-col">
+      {/* Header */}
+      <div className="tw-flex tw-items-center tw-gap-3 tw-px-4 tw-py-3 tw-bg-black/80">
+        <button className="tw-bg-transparent tw-border-0 tw-text-white tw-cursor-pointer tw-p-1" onClick={onClose}>
+          <Icon name="arrowRight" size={20} style={{ transform: "rotate(180deg)" }}/>
+        </button>
+        <span className="tw-text-white tw-font-semibold tw-text-sm">Escanear código</span>
+      </div>
+
+      {/* Viewfinder */}
+      <div className="tw-flex-1 tw-flex tw-flex-col tw-items-center tw-justify-center tw-px-6 tw-gap-6">
+        {error ? (
+          <div className="tw-text-center tw-text-white tw-flex tw-flex-col tw-gap-4 tw-items-center">
+            <Icon name="alert" size={40}/>
+            <p className="tw-text-sm tw-opacity-80">{error}</p>
+            <button className="tw-bg-white tw-text-black tw-border-0 tw-rounded-xl tw-py-3 tw-px-6 tw-text-sm tw-font-semibold tw-cursor-pointer"
+              onClick={onClose}>
+              Ingresar manualmente
+            </button>
+          </div>
+        ) : (
+          <>
+            <div id="barcode-reader" className="tw-w-full tw-max-w-[320px] tw-rounded-2xl tw-overflow-hidden"/>
+            <p className="tw-text-white/60 tw-text-xs tw-text-center">Apunta al código de barras del producto</p>
+          </>
+        )}
+      </div>
+
+      {/* Fallback button */}
+      {!error && (
+        <div className="tw-px-6 tw-pb-8 tw-pt-2">
+          <button className="tw-w-full tw-bg-white/10 tw-text-white tw-border tw-border-white/20 tw-rounded-xl tw-py-3 tw-text-sm tw-font-medium tw-cursor-pointer"
+            onClick={onClose}>
+            Ingresar manualmente
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // =================== POS principal ===================
 const CATEGORIAS = ["Todos", "Lácteos", "Panadería", "Granos", "Despensa", "Enlatados", "Bebidas", "Frescos", "Aseo"];
 
@@ -64,6 +129,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
   const [done, setDone] = useState(null); // factura cerrada
   const [closing, setClosing] = useState(false);
   const [toast, setToast] = useState(null);
+  const [scanOpen, setScanOpen] = useState(false);
   const [shiftStats, setShiftStats] = useState({ ventas: 0, trans: 0, items: 0 });
 
   const filtered = useMemo(() => {
@@ -103,6 +169,14 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
     }));
   };
   const removeLine = (sku) => setCart(c => c.filter(l => l.sku !== sku));
+
+  const handleBarcodeScan = (code) => {
+    setScanOpen(false);
+    const p = productos.find(x => x.codigoBarras === code)
+           || productos.find(x => x.sku === code);
+    if (p) { addToCart(p); setToast(`${p.nombre} agregado`); }
+    else setToast(`Código "${code}" no encontrado`);
+  };
 
   const completePay = async (metodo, recibido) => {
     // Descontar inventario localmente para UI inmediata
@@ -314,6 +388,10 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
               {q && (
                 <button className="tw-bg-transparent tw-border-0 tw-p-0 tw-cursor-pointer tw-text-txt-3" onClick={() => setQ("")}><Icon name="x" size={14}/></button>
               )}
+              <button className="tw-bg-accent tw-text-white tw-border-0 tw-rounded-lg tw-w-8 tw-h-8 tw-grid tw-place-items-center tw-cursor-pointer tw-shrink-0"
+                onClick={() => setScanOpen(true)} title="Escanear código">
+                <Icon name="scan" size={16}/>
+              </button>
             </div>
           </div>
 
@@ -421,6 +499,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
       {pay && <PaymentModal total={totals.total} items={totals.items} onClose={() => setPay(null)} onPay={completePay}/>}
       {done && <ReceiptModal factura={done} onClose={() => setDone(null)}/>}
       {closing && <CloseShiftModal shift={shift} stats={shiftStats} onClose={() => setClosing(false)} onConfirm={closeShift}/>}
+      {scanOpen && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setScanOpen(false)}/>}
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
     </div>
   );
