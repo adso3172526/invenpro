@@ -42,7 +42,7 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
       </div>
 
       {/* Sidebar lateral (desktop) y menú overlay (mobile) */}
-      <aside className={"sidebar" + (open ? " open" : "")}>
+      <aside className={"sidebar tw-w-[min(75vw,280px)] md:tw-w-auto" + (open ? " open" : "")}>
         <div className="mobile-menu-h">
           <img src="logo.png" alt="InvenPro" style={{ height: 28, objectFit: "contain" }}/>
           <button className="btn sm ghost" onClick={() => setOpen(false)}><Icon name="x" size={16}/></button>
@@ -144,7 +144,7 @@ const Dashboard = ({ go }) => {
         </div>
       </div>
 
-      <div className="kpi-grid dash-kpi">
+      <div className="kpi-grid dash-kpi tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 md:tw-gap-[10px]">
         <div className="kpi">
           <div className="label"><Icon name="cart" size={13}/> Ventas hoy</div>
           <div className="val">{window.fmtCOP(totalHoy)}</div>
@@ -168,7 +168,7 @@ const Dashboard = ({ go }) => {
         </div>
       </div>
 
-      <div className="dash-row" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
+      <div className="dash-row tw-grid tw-grid-cols-1 lg:tw-grid-cols-[1.4fr_1fr] tw-gap-[10px]">
         <div className="card">
           <div className="card-h">
             <div>
@@ -357,68 +357,127 @@ const Inventario = () => {
         </div>
       </div>
 
-      <div className="card">
-        <div className="tbl-wrap">
-          <table className="tbl tbl-bodega">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th className="num">Precio</th>
-                <th>Stock</th>
-                <th>Código de barras</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {pag.slice.map(p => {
-                const stockPct = Math.min(100, (p.stock / (Math.max(p.min, 1) * 3)) * 100);
-                const stockClass = p.stock === 0 ? "bad" : p.stock < p.min ? "warn" : "good";
-                return (
-                  <tr key={p.sku} className={!p.codigoBarras ? "row-sin-codigo" : "row-hover"}>
-                    <td>
-                      <div style={{ fontWeight: 500 }}>{p.nombre}</div>
-                      <div className="mono muted" style={{ fontSize: 11 }}>{p.sku}</div>
-                    </td>
-                    <td><span className="chip">{p.categoria}</span></td>
-                    <td className="num mono">{window.fmtCOP(p.precio)}</td>
-                    <td style={{ minWidth: 130 }}>
-                      <div className="row" style={{ justifyContent: "space-between", marginBottom: 4 }}>
-                        <span className="mono" style={{ fontSize: 12, fontWeight: 500 }}>{p.stock} {p.unidad}</span>
-                        <span className="muted mono" style={{ fontSize: 11 }}>mín {p.min}</span>
-                      </div>
-                      <div className={"progress " + stockClass}><span style={{ width: `${stockPct}%` }}/></div>
-                    </td>
-                    <td>
-                      {p.codigoBarras ? (
-                        <span className="mono" style={{ fontSize: 12 }}>{p.codigoBarras}</span>
-                      ) : (
-                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                          <input
-                            className="bodega-barcode-input mono"
-                            value={barcodeInputs[p.sku] || ""}
-                            onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
-                            onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
-                            placeholder="Escanear código…"
-                          />
-                          <button className="btn sm primary" onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
-                            <Icon name="check" size={13}/>
-                          </button>
+      {/* Desktop: tabla normal */}
+      <div className="tw-hidden md:tw-block">
+        <div className="card">
+          <div className="tbl-wrap">
+            <table className="tbl tbl-bodega">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th className="num">Precio</th>
+                  <th>Stock</th>
+                  <th>Código de barras</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pag.slice.map(p => {
+                  const stockPct = Math.min(100, (p.stock / (Math.max(p.min, 1) * 3)) * 100);
+                  const stockClass = p.stock === 0 ? "bad" : p.stock < p.min ? "warn" : "good";
+                  return (
+                    <tr key={p.sku} className={!p.codigoBarras ? "row-sin-codigo" : "row-hover"}>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{p.nombre}</div>
+                        <div className="mono muted" style={{ fontSize: 11 }}>{p.sku}</div>
+                      </td>
+                      <td><span className="chip">{p.categoria}</span></td>
+                      <td className="num mono">{window.fmtCOP(p.precio)}</td>
+                      <td style={{ minWidth: 130 }}>
+                        <div className="row" style={{ justifyContent: "space-between", marginBottom: 4 }}>
+                          <span className="mono" style={{ fontSize: 12, fontWeight: 500 }}>{p.stock} {p.unidad}</span>
+                          <span className="muted mono" style={{ fontSize: 11 }}>mín {p.min}</span>
                         </div>
-                      )}
-                    </td>
-                    <td className="num">
-                      <button className="btn sm ghost" onClick={() => setEditing({ ...p })} title="Ver / editar"><Icon name="eye" size={13}/></button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {rows.length === 0 && (
-                <tr><td colSpan="6"><div className="empty-state">Sin productos con los filtros aplicados.</div></td></tr>
-              )}
-            </tbody>
-          </table>
+                        <div className={"progress " + stockClass}><span style={{ width: `${stockPct}%` }}/></div>
+                      </td>
+                      <td>
+                        {p.codigoBarras ? (
+                          <span className="mono" style={{ fontSize: 12 }}>{p.codigoBarras}</span>
+                        ) : (
+                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <input
+                              className="bodega-barcode-input mono"
+                              value={barcodeInputs[p.sku] || ""}
+                              onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
+                              onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
+                              placeholder="Escanear código…"
+                            />
+                            <button className="btn sm primary" onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
+                              <Icon name="check" size={13}/>
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="num">
+                        <button className="btn sm ghost" onClick={() => setEditing({ ...p })} title="Ver / editar"><Icon name="eye" size={13}/></button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {rows.length === 0 && (
+                  <tr><td colSpan="6"><div className="empty-state">Sin productos con los filtros aplicados.</div></td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <Pagination {...pag} label="productos"/>
         </div>
+      </div>
+
+      {/* Mobile: tarjetas con Tailwind */}
+      <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-3">
+        {pag.slice.map(p => {
+          const stockPct = Math.min(100, (p.stock / (Math.max(p.min, 1) * 3)) * 100);
+          const stockClass = p.stock === 0 ? "bad" : p.stock < p.min ? "warn" : "good";
+          return (
+            <div key={p.sku} className={
+              "tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm"
+              + (!p.codigoBarras ? " tw-border-l-[3px] tw-border-l-amber-400" : "")
+            }>
+              <div className="tw-flex tw-justify-between tw-items-start tw-mb-2">
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.3 }}>{p.nombre}</div>
+                  <div className="mono muted" style={{ fontSize: 11 }}>{p.sku}</div>
+                </div>
+                <button className="btn sm ghost" onClick={() => setEditing({ ...p })} title="Ver / editar"><Icon name="eye" size={13}/></button>
+              </div>
+              <div className="tw-flex tw-items-center tw-gap-2 tw-mb-2">
+                <span className="chip">{p.categoria}</span>
+                <span className="mono" style={{ fontSize: 12, color: "var(--text-2)" }}>{window.fmtCOP(p.precio)}</span>
+              </div>
+              <div className="tw-mb-2">
+                <div className="tw-flex tw-justify-between tw-mb-1">
+                  <span className="mono" style={{ fontSize: 12, fontWeight: 500 }}>{p.stock} {p.unidad}</span>
+                  <span className="muted mono" style={{ fontSize: 11 }}>mín {p.min}</span>
+                </div>
+                <div className={"progress " + stockClass}><span style={{ width: `${stockPct}%` }}/></div>
+              </div>
+              <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 10, marginTop: 6 }}>
+                {p.codigoBarras ? (
+                  <span className="mono" style={{ fontSize: 12 }}>{p.codigoBarras}</span>
+                ) : (
+                  <div className="tw-flex tw-flex-col tw-gap-2">
+                    <input
+                      className="bodega-barcode-input mono"
+                      value={barcodeInputs[p.sku] || ""}
+                      onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
+                      onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
+                      placeholder="Escanear código…"
+                      style={{ width: "100%", minHeight: 44, fontSize: 16 }}
+                    />
+                    <button className="btn sm primary" style={{ width: "100%", justifyContent: "center", minHeight: 44 }} onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
+                      <Icon name="check" size={13}/> Asignar
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {rows.length === 0 && (
+          <div className="empty-state">Sin productos con los filtros aplicados.</div>
+        )}
         <Pagination {...pag} label="productos"/>
       </div>
 

@@ -213,7 +213,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
         </div>
 
         {/* Carrito */}
-        <div className="cart">
+        <div className="cart tw-max-h-[50vh] md:tw-max-h-none tw-overflow-y-auto">
           <div className="cart-h">
             <div>
               <h3>Venta actual</h3>
