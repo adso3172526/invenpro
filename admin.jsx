@@ -2116,27 +2116,25 @@ const Proveedores = () => {
         </div>
       </div>
 
-      <div className="card tw-mt-2">
-        <div className="tw-flex tw-flex-col sm:tw-flex-row tw-flex-wrap tw-items-stretch sm:tw-items-center tw-justify-between tw-gap-2.5 tw-mb-3">
-          <div className="tw-flex tw-flex-col sm:tw-flex-row tw-flex-wrap tw-gap-2 tw-flex-1">
-            <div className="search tw-flex-1 tw-min-w-0 sm:tw-min-w-[200px]">
-              <Icon name="search" size={14}/>
-              <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar nombre, NIT, contacto…"/>
-            </div>
-            <div className="tw-flex tw-gap-2">
-              <div className="select-pill tw-flex-1 sm:tw-flex-none"><span className="lbl">Estado</span>
-                <select value={estado} onChange={e => setEstado(e.target.value)}>
-                  <option>Todos</option><option value="activo">Activos</option><option value="inactivo">Inactivos</option>
-                </select>
-              </div>
-              <div className="select-pill tw-flex-1 sm:tw-flex-none"><span className="lbl">Categoría</span>
-                <select value={categoria} onChange={e => setCategoria(e.target.value)}>
-                  {categorias.map(c => <option key={c}>{c}</option>)}
-                </select>
-              </div>
-            </div>
+      <div className="card tw-mt-2 tw-p-3 sm:tw-p-4">
+        <div className="tw-flex tw-flex-col sm:tw-flex-row sm:tw-flex-wrap sm:tw-items-center tw-justify-between tw-gap-2 tw-mb-3">
+          <div className="search tw-w-full sm:tw-w-auto sm:tw-flex-1 sm:tw-min-w-[200px]" style={{ minWidth: 0 }}>
+            <Icon name="search" size={14}/>
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar nombre, NIT, contacto…"/>
           </div>
-          <div className="muted mono tw-text-xs tw-text-right">{filtered.length} de {list.length}</div>
+          <div className="tw-flex tw-gap-2 tw-w-full sm:tw-w-auto">
+            <div className="select-pill tw-flex-1 sm:tw-flex-none"><span className="lbl">Estado</span>
+              <select value={estado} onChange={e => setEstado(e.target.value)}>
+                <option>Todos</option><option value="activo">Activos</option><option value="inactivo">Inactivos</option>
+              </select>
+            </div>
+            <div className="select-pill tw-flex-1 sm:tw-flex-none"><span className="lbl">Categoría</span>
+              <select value={categoria} onChange={e => setCategoria(e.target.value)}>
+                {categorias.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="muted mono tw-text-xs tw-self-center tw-hidden sm:tw-block">{filtered.length}/{list.length}</div>
+          </div>
         </div>
 
         {/* Desktop: tabla */}
