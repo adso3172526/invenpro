@@ -739,27 +739,52 @@ const Ingreso = () => {
             }}><Icon name="download" size={14}/> Exportar Excel</button>
           </div>
         </div>
-        <div className="tbl-wrap">
-          <table className="tbl">
-            <thead><tr><th>N° ingreso</th><th>Factura</th><th>Fecha</th><th>Proveedor</th><th className="num">Items</th><th className="num">Costo total</th><th>Recibido por</th><th></th></tr></thead>
-            <tbody>
-              {pagIng.slice.map(i => (
-                <tr key={i.id} className="row-hover" style={{ cursor: "pointer" }} onClick={() => setVerIngreso(i)}>
-                  <td className="mono">{i.id}</td>
-                  <td className="mono">{i.factura || "—"}</td>
-                  <td>{i.fecha}</td>
-                  <td>{i.proveedor}</td>
-                  <td className="num mono">{i.items}</td>
-                  <td className="num mono">{window.fmtCOP(i.costo)}</td>
-                  <td className="muted">{i.recibe}</td>
-                  <td className="num"><button className="btn sm ghost" onClick={e => { e.stopPropagation(); setVerIngreso(i); }}><Icon name="eye" size={13}/></button></td>
-                </tr>
-              ))}
-              {ingresosFiltrados.length === 0 && (
-                <tr><td colSpan="8" className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ingresos en el rango seleccionado</td></tr>
-              )}
-            </tbody>
-          </table>
+        {/* Desktop: tabla */}
+        <div className="tw-hidden md:tw-block">
+          <div className="tbl-wrap">
+            <table className="tbl">
+              <thead><tr><th>N° ingreso</th><th>Factura</th><th>Fecha</th><th>Proveedor</th><th className="num">Items</th><th className="num">Costo total</th><th>Recibido por</th><th></th></tr></thead>
+              <tbody>
+                {pagIng.slice.map(i => (
+                  <tr key={i.id} className="row-hover" style={{ cursor: "pointer" }} onClick={() => setVerIngreso(i)}>
+                    <td className="mono">{i.id}</td>
+                    <td className="mono">{i.factura || "—"}</td>
+                    <td>{i.fecha}</td>
+                    <td>{i.proveedor}</td>
+                    <td className="num mono">{i.items}</td>
+                    <td className="num mono">{window.fmtCOP(i.costo)}</td>
+                    <td className="muted">{i.recibe}</td>
+                    <td className="num"><button className="btn sm ghost" onClick={e => { e.stopPropagation(); setVerIngreso(i); }}><Icon name="eye" size={13}/></button></td>
+                  </tr>
+                ))}
+                {ingresosFiltrados.length === 0 && (
+                  <tr><td colSpan="8" className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ingresos en el rango seleccionado</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {/* Mobile: tarjetas */}
+        <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2.5" style={{ padding: "0 2px 4px" }}>
+          {pagIng.slice.map(i => (
+            <div key={i.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm" style={{ cursor: "pointer" }} onClick={() => setVerIngreso(i)}>
+              <div className="tw-flex tw-justify-between tw-items-start tw-mb-1.5">
+                <div>
+                  <span className="mono" style={{ fontWeight: 600, fontSize: 13 }}>{i.id}</span>
+                  {i.factura && <span className="mono muted" style={{ fontSize: 11, marginLeft: 8 }}>{i.factura}</span>}
+                </div>
+                <span className="muted" style={{ fontSize: 11 }}>{i.fecha}</span>
+              </div>
+              <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 4 }}>{i.proveedor}</div>
+              <div className="tw-flex tw-justify-between tw-items-center tw-pt-2" style={{ borderTop: "1px dashed var(--border)" }}>
+                <span className="muted" style={{ fontSize: 11 }}>{i.items} items · {i.recibe}</span>
+                <span className="mono" style={{ fontWeight: 600, fontSize: 14 }}>{window.fmtCOP(i.costo)}</span>
+              </div>
+            </div>
+          ))}
+          {ingresosFiltrados.length === 0 && (
+            <div className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ingresos en el rango seleccionado</div>
+          )}
         </div>
         <Pagination {...pagIng} label="ingresos"/>
       </div>
@@ -844,7 +869,7 @@ const Ingreso = () => {
           <p className="muted" style={{ marginTop: 0, marginBottom: 12, fontSize: 13 }}>
             Selecciona el método de captura. En cualquiera podrás revisar y editar los datos antes de guardar.
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+          <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-3">
             <button className="method-card" onClick={iniciarManual}>
               <div className="method-icon" style={{ background: "var(--surface-2)", color: "var(--text-2)" }}><Icon name="edit" size={24}/></div>
               <div className="method-title">Manual</div>
@@ -1052,84 +1077,131 @@ const Ingreso = () => {
 
           {items.length > 0 && (
             <div className="card mt-2">
-              <div className="tbl-wrap">
-                <table className="tbl">
-                  <thead><tr><th>Producto</th><th className="num">Stock actual</th><th className="num">Cantidad</th><th className="num">Costo unit.</th><th>Vence</th><th className="num">Subtotal</th><th></th></tr></thead>
-                  <tbody>
-                    {items.map((it, i) => {
-                      const stockActual = getStock(it.sku);
-                      return (
-                      <tr key={i} className={it.nuevo ? "row-nuevo" : ""}>
-                        <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <input
-                              value={it.nombre}
-                              onChange={e => actualizarItem(i, "nombre", e.target.value)}
-                              style={{ fontWeight: 500, border: "1px solid transparent", background: "transparent", color: "var(--text)", padding: "2px 4px", borderRadius: 4, fontSize: 13, width: "100%", minWidth: 120 }}
-                              onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; }}
-                              onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; }}
-                            />
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
-                            {!it.nuevo && <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>}
-                            {it.nuevo && <span className="chip warn" style={{ fontSize: 9 }}>NUEVO</span>}
-                            {it.nuevo && <span className="chip chip-bodega-hint" style={{ fontSize: 9, background: "#FFF7ED", color: "#9A3412", border: "1px dashed #F59E0B" }}>Sin código — asignar en Bodega</span>}
-                            {!it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46" }}>EN BODEGA</span>}
-                            {it.confianza !== undefined && it.confianza < 0.9 && (
-                              <span className="chip" style={{ fontSize: 9, background: "#FFF1D6", color: "#8C6A1E" }}>
-                                IA {Math.round(it.confianza*100)}%
-                              </span>
-                            )}
-                          </div>
-                          {it.nuevo && (
-                            <div className="nuevo-extras">
-                              <select
-                                value={it.categoria || "General"}
-                                onChange={e => actualizarItem(i, "categoria", e.target.value)}
-                                style={{ padding: "2px 4px", borderRadius: 4, border: "1px solid var(--border)", maxWidth: 110 }}
-                              >
-                                {[...new Set(MOCK.productos.map(p => p.categoria))].sort().map(c => (
-                                  <option key={c} value={c}>{c}</option>
-                                ))}
-                                <option value="General">General</option>
-                              </select>
-                              <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                <span style={{ fontSize: 10, color: "var(--text-3)" }}>Venta:</span>
-                                <input
-                                  className="mono"
-                                  value={it.precio || ""}
-                                  onChange={e => actualizarItem(i, "precio", parseInt(e.target.value.replace(/\D/g,"")) || 0)}
-                                  placeholder="Precio"
-                                  style={{ padding: "2px 4px", border: "1px solid var(--border)", borderRadius: 4, width: 70 }}
-                                />
-                              </div>
+              {/* Desktop: tabla */}
+              <div className="tw-hidden md:tw-block">
+                <div className="tbl-wrap">
+                  <table className="tbl">
+                    <thead><tr><th>Producto</th><th className="num">Stock actual</th><th className="num">Cantidad</th><th className="num">Costo unit.</th><th>Vence</th><th className="num">Subtotal</th><th></th></tr></thead>
+                    <tbody>
+                      {items.map((it, i) => {
+                        const stockActual = getStock(it.sku);
+                        return (
+                        <tr key={i} className={it.nuevo ? "row-nuevo" : ""}>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <input
+                                value={it.nombre}
+                                onChange={e => actualizarItem(i, "nombre", e.target.value)}
+                                style={{ fontWeight: 500, border: "1px solid transparent", background: "transparent", color: "var(--text)", padding: "2px 4px", borderRadius: 4, fontSize: 13, width: "100%", minWidth: 120 }}
+                                onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; }}
+                                onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; }}
+                              />
                             </div>
-                          )}
-                        </td>
-                        <td className="num">
-                          {stockActual !== null ? (
-                            <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>{stockActual}</span>
-                          ) : (
-                            <span className="muted" style={{ fontSize: 11 }}>—</span>
-                          )}
-                        </td>
-                        <td className="num">
-                          <input className="cell-input mono" value={it.qty} onChange={e => actualizarItem(i, "qty", parseInt(e.target.value.replace(/\D/g,"")) || 0)}/>
-                        </td>
-                        <td className="num">
-                          <input className="cell-input mono" value={it.costo} onChange={e => actualizarItem(i, "costo", parseInt(e.target.value.replace(/\D/g,"")) || 0)}/>
-                        </td>
-                        <td>
-                          <input className="cell-input mono" type="date" value={it.vence || ""} onChange={e => actualizarItem(i, "vence", e.target.value)}/>
-                        </td>
-                        <td className="num mono" style={{ fontWeight: 600 }}>{window.fmtCOP(it.qty * it.costo)}</td>
-                        <td><button className="btn sm ghost" onClick={() => setItems(items.filter((_,j) => j !== i))}><Icon name="x" size={13}/></button></td>
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2, flexWrap: "wrap" }}>
+                              {!it.nuevo && <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>}
+                              {it.nuevo && <span className="chip warn" style={{ fontSize: 9 }}>NUEVO</span>}
+                              {it.nuevo && <span className="chip chip-bodega-hint" style={{ fontSize: 9, background: "#FFF7ED", color: "#9A3412", border: "1px dashed #F59E0B" }}>Sin código — asignar en Bodega</span>}
+                              {!it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46" }}>EN BODEGA</span>}
+                              {it.confianza !== undefined && it.confianza < 0.9 && (
+                                <span className="chip" style={{ fontSize: 9, background: "#FFF1D6", color: "#8C6A1E" }}>IA {Math.round(it.confianza*100)}%</span>
+                              )}
+                            </div>
+                            {it.nuevo && (
+                              <div className="nuevo-extras">
+                                <select value={it.categoria || "General"} onChange={e => actualizarItem(i, "categoria", e.target.value)} style={{ padding: "2px 4px", borderRadius: 4, border: "1px solid var(--border)", maxWidth: 110 }}>
+                                  {[...new Set(MOCK.productos.map(p => p.categoria))].sort().map(c => <option key={c} value={c}>{c}</option>)}
+                                  <option value="General">General</option>
+                                </select>
+                                <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                  <span style={{ fontSize: 10, color: "var(--text-3)" }}>Venta:</span>
+                                  <input className="mono" value={it.precio || ""} onChange={e => actualizarItem(i, "precio", parseInt(e.target.value.replace(/\D/g,"")) || 0)} placeholder="Precio" style={{ padding: "2px 4px", border: "1px solid var(--border)", borderRadius: 4, width: 70 }}/>
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="num">
+                            {stockActual !== null ? <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>{stockActual}</span> : <span className="muted" style={{ fontSize: 11 }}>—</span>}
+                          </td>
+                          <td className="num"><input className="cell-input mono" value={it.qty} onChange={e => actualizarItem(i, "qty", parseInt(e.target.value.replace(/\D/g,"")) || 0)}/></td>
+                          <td className="num"><input className="cell-input mono" value={it.costo} onChange={e => actualizarItem(i, "costo", parseInt(e.target.value.replace(/\D/g,"")) || 0)}/></td>
+                          <td><input className="cell-input mono" type="date" value={it.vence || ""} onChange={e => actualizarItem(i, "vence", e.target.value)}/></td>
+                          <td className="num mono" style={{ fontWeight: 600 }}>{window.fmtCOP(it.qty * it.costo)}</td>
+                          <td><button className="btn sm ghost" onClick={() => setItems(items.filter((_,j) => j !== i))}><Icon name="x" size={13}/></button></td>
+                        </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
+
+              {/* Mobile: tarjetas de items */}
+              <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2.5" style={{ padding: 10 }}>
+                {items.map((it, i) => {
+                  const stockActual = getStock(it.sku);
+                  return (
+                  <div key={i} className={
+                    "tw-border tw-border-border tw-rounded-lg tw-p-3 tw-relative"
+                    + (it.nuevo ? " tw-bg-amber-50 tw-border-l-[3px] tw-border-l-amber-400" : " tw-bg-surface")
+                  }>
+                    <button className="btn sm ghost tw-absolute tw-top-2 tw-right-2" onClick={() => setItems(items.filter((_,j) => j !== i))} style={{ padding: 4 }}><Icon name="x" size={13}/></button>
+                    <div className="tw-mb-1.5">
+                      <input
+                        value={it.nombre}
+                        onChange={e => actualizarItem(i, "nombre", e.target.value)}
+                        style={{ fontWeight: 600, fontSize: 14, border: "1px solid transparent", background: "transparent", color: "var(--text)", padding: "2px 0", borderRadius: 4, width: "calc(100% - 30px)" }}
+                        onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; e.target.style.padding = "2px 4px"; }}
+                        onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; e.target.style.padding = "2px 0"; }}
+                      />
+                      <div className="tw-flex tw-items-center tw-gap-1 tw-flex-wrap tw-mt-0.5">
+                        {!it.nuevo && <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>}
+                        {it.nuevo && <span className="chip warn" style={{ fontSize: 9 }}>NUEVO</span>}
+                        {!it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46" }}>EN BODEGA</span>}
+                        {it.confianza !== undefined && it.confianza < 0.9 && (
+                          <span className="chip" style={{ fontSize: 9, background: "#FFF1D6", color: "#8C6A1E" }}>IA {Math.round(it.confianza*100)}%</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="tw-grid tw-grid-cols-3 tw-gap-2 tw-mb-2">
+                      <div className="field" style={{ margin: 0 }}>
+                        <label style={{ fontSize: 10 }}>Cantidad</label>
+                        <input className="mono" value={it.qty} onChange={e => actualizarItem(i, "qty", parseInt(e.target.value.replace(/\D/g,"")) || 0)} style={{ padding: "6px 8px", fontSize: 14 }}/>
+                      </div>
+                      <div className="field" style={{ margin: 0 }}>
+                        <label style={{ fontSize: 10 }}>Costo unit.</label>
+                        <input className="mono" value={it.costo} onChange={e => actualizarItem(i, "costo", parseInt(e.target.value.replace(/\D/g,"")) || 0)} style={{ padding: "6px 8px", fontSize: 14 }}/>
+                      </div>
+                      <div className="field" style={{ margin: 0 }}>
+                        <label style={{ fontSize: 10 }}>Stock actual</label>
+                        <div className="mono" style={{ padding: "8px", fontSize: 13, color: "var(--text-2)" }}>{stockActual !== null ? stockActual : "—"}</div>
+                      </div>
+                    </div>
+                    <div className="tw-grid tw-grid-cols-2 tw-gap-2">
+                      <div className="field" style={{ margin: 0 }}>
+                        <label style={{ fontSize: 10 }}>Vence</label>
+                        <input type="date" value={it.vence || ""} onChange={e => actualizarItem(i, "vence", e.target.value)} style={{ padding: "6px 8px", fontSize: 13 }}/>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end" }}>
+                        <span className="mono" style={{ fontWeight: 600, fontSize: 16 }}>{window.fmtCOP(it.qty * it.costo)}</span>
+                      </div>
+                    </div>
+                    {it.nuevo && (
+                      <div className="tw-flex tw-gap-2 tw-mt-2 tw-pt-2" style={{ borderTop: "1px dashed var(--border)" }}>
+                        <select value={it.categoria || "General"} onChange={e => actualizarItem(i, "categoria", e.target.value)} style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", fontSize: 12, flex: 1 }}>
+                          {[...new Set(MOCK.productos.map(p => p.categoria))].sort().map(c => <option key={c} value={c}>{c}</option>)}
+                          <option value="General">General</option>
+                        </select>
+                        <div className="tw-flex tw-items-center tw-gap-1">
+                          <span style={{ fontSize: 11, color: "var(--text-3)" }}>Venta:</span>
+                          <input className="mono" value={it.precio || ""} onChange={e => actualizarItem(i, "precio", parseInt(e.target.value.replace(/\D/g,"")) || 0)} placeholder="$" style={{ padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6, width: 80, fontSize: 13 }}/>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  );
+                })}
+              </div>
+
               <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--surface-2)" }}>
                 <span className="muted">{items.length} producto(s) · {items.reduce((s,i)=>s+i.qty,0)} unidades</span>
                 <span className="mono" style={{ fontWeight: 600, fontSize: 18 }}>{window.fmtCOP(total)}</span>
@@ -1622,7 +1694,7 @@ const ItemAdder = ({ onAdd }) => {
 
   return (
     <div className="card mt-2" style={{ background: "var(--surface-2)", padding: 14 }}>
-      <div className="item-adder-grid" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 0.8fr 0.9fr 0.9fr auto", gap: 8, alignItems: "end" }}>
+      <div className="item-adder-grid tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 md:tw-grid-cols-[1.6fr_1fr_0.8fr_0.9fr_0.9fr_auto] tw-gap-2 md:tw-gap-2 tw-items-end">
         <div className="field" style={{ margin: 0, position: "relative" }}>
           <label>Producto</label>
           <input

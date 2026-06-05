@@ -774,11 +774,7 @@ input, select, textarea { font: inherit; color: inherit; }
     grid-template-columns: 1fr 1fr !important;
   }
 
-  /* ItemAdder: apilar campos verticalmente en móvil */
-  .item-adder-grid {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
+  /* ItemAdder: layout controlado por Tailwind */
   .item-adder-grid > .field { margin: 0; }
   .item-adder-grid > .btn { width: 100%; justify-content: center; }
   .kpi-grid[style*="repeat(3, 1fr)"] .kpi {
