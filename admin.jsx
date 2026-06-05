@@ -2554,43 +2554,75 @@ const Reportes = () => {
         ])}><Icon name="download" size={14}/> Exportar reporte</button>
       </div>
 
-      <div className="filterbar tw-flex tw-flex-wrap tw-gap-2">
-        <div className="select-pill"><span className="lbl">Mes</span>
-          <select value={filtroMes} onChange={e => setFiltroMes(e.target.value)}>
-            {meses.map(m => <option key={m}>{m}</option>)}
-          </select>
+      {/* Filtros */}
+      <div className="card tw-mb-3">
+        <div className="tw-p-3 md:tw-p-4">
+          <div className="tw-flex tw-items-center tw-gap-2 tw-mb-2.5">
+            <Icon name="search" size={14}/>
+            <span className="tw-text-xs tw-font-semibold tw-text-txt-2 tw-uppercase tw-tracking-wider">Filtros</span>
+          </div>
+          <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2">
+            <div className="field tw-m-0">
+              <label className="tw-text-[11px]">Mes</label>
+              <select value={filtroMes} onChange={e => setFiltroMes(e.target.value)}>
+                {meses.map(m => <option key={m}>{m}</option>)}
+              </select>
+            </div>
+            <div className="field tw-m-0">
+              <label className="tw-text-[11px]">Cajero</label>
+              <select value={filtroCajero} onChange={e => setFiltroCajero(e.target.value)}>
+                {cajeros.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="field tw-m-0">
+              <label className="tw-text-[11px]">Producto</label>
+              <select value={filtroProducto} onChange={e => setFiltroProducto(e.target.value)}>
+                {productosOpts.map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+            <div className="field tw-m-0">
+              <label className="tw-text-[11px]">Método de pago</label>
+              <select value={filtroMetodo} onChange={e => setFiltroMetodo(e.target.value)}>
+                {metodos.map(m => <option key={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+          {(filtroMes !== "Todos" || filtroCajero !== "Todos" || filtroProducto !== "Todos" || filtroMetodo !== "Todos") && (
+            <div className="tw-mt-2 tw-flex tw-items-center tw-gap-2">
+              <span className="muted tw-text-xs">{filtered.length} de {MOCK.facturas.length} facturas</span>
+              <button className="btn sm ghost tw-text-xs" onClick={() => { setFiltroMes("Todos"); setFiltroCajero("Todos"); setFiltroProducto("Todos"); setFiltroMetodo("Todos"); }}>
+                <Icon name="x" size={11}/> Limpiar filtros
+              </button>
+            </div>
+          )}
         </div>
-        <div className="select-pill"><span className="lbl">Cajero</span>
-          <select value={filtroCajero} onChange={e => setFiltroCajero(e.target.value)}>
-            {cajeros.map(c => <option key={c}>{c}</option>)}
-          </select>
-        </div>
-        <div className="select-pill"><span className="lbl">Producto</span>
-          <select value={filtroProducto} onChange={e => setFiltroProducto(e.target.value)}>
-            {productosOpts.map(p => <option key={p}>{p}</option>)}
-          </select>
-        </div>
-        <div className="select-pill"><span className="lbl">Método</span>
-          <select value={filtroMetodo} onChange={e => setFiltroMetodo(e.target.value)}>
-            {metodos.map(m => <option key={m}>{m}</option>)}
-          </select>
-        </div>
-        <button className="btn sm" onClick={() => { setFiltroMes("Todos"); setFiltroCajero("Todos"); setFiltroProducto("Todos"); setFiltroMetodo("Todos"); }}>Limpiar</button>
       </div>
 
-      <div className="tw-grid tw-grid-cols-3 tw-gap-2">
-        <div className="kpi"><div className="label">Total filtrado</div><div className="val">{window.fmtCOP(totalFiltro)}</div><div className="muted tw-text-xs">{tickets} facturas</div></div>
-        <div className="kpi"><div className="label">Ticket promedio</div><div className="val">{window.fmtCOP(promedio)}</div></div>
-        <div className="kpi"><div className="label">Productos vendidos</div><div className="val">{filtered.reduce((s,f) => s + f.items.reduce((a,i)=>a+i.q, 0), 0)}</div></div>
+      {/* KPIs */}
+      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-3 tw-gap-2 tw-mb-3">
+        <div className="kpi">
+          <div className="label"><Icon name="chart" size={14}/> Total filtrado</div>
+          <div className="val">{window.fmtCOP(totalFiltro)}</div>
+          <div className="muted tw-text-xs">{tickets} facturas</div>
+        </div>
+        <div className="kpi">
+          <div className="label"><Icon name="cart" size={14}/> Ticket promedio</div>
+          <div className="val">{window.fmtCOP(promedio)}</div>
+        </div>
+        <div className="kpi">
+          <div className="label"><Icon name="box" size={14}/> Productos vendidos</div>
+          <div className="val">{filtered.reduce((s,f) => s + f.items.reduce((a,i)=>a+i.q, 0), 0)}</div>
+        </div>
       </div>
 
-      <div className="tw-grid tw-grid-cols-1 lg:tw-grid-cols-[1.4fr_1fr] tw-gap-2.5 tw-mt-3 tw-items-start">
+      {/* Gráficas: ventas por mes + por cajero */}
+      <div className="tw-grid tw-grid-cols-1 lg:tw-grid-cols-[1.4fr_1fr] tw-gap-2.5 tw-mb-3 tw-items-start">
         <div className="card tw-flex tw-flex-col">
           <div className="card-h"><h3>Ventas por mes</h3><p className="sub">{byMonth.length} mes(es)</p></div>
-          <div className="card-b">
+          <div className="card-b tw-flex-1">
             {byMonth.length > 0 ? (
-              <div className="chart-bars tw-h-[160px] md:tw-h-full">
-                {byMonth.map((b, i) => {
+              <div className="chart-bars tw-h-[160px] lg:tw-h-full" style={{ minHeight: 180 }}>
+                {byMonth.map(b => {
                   const max = Math.max(...byMonth.map(x => x.total));
                   return (
                     <div key={b.mes} className="col">
@@ -2607,15 +2639,15 @@ const Reportes = () => {
           </div>
         </div>
         <div className="card tw-flex tw-flex-col">
-          <div className="card-h"><h3>Por cajero</h3></div>
-          <div>
-            {byCajero.length > 0 ? byCajero.map(c => {
+          <div className="card-h"><h3>Por cajero</h3><p className="sub">{byCajero.length} cajero(s)</p></div>
+          <div className="tw-flex-1">
+            {byCajero.length > 0 ? byCajero.map((c, i) => {
               const max = byCajero[0].total;
               return (
-                <div key={c.nombre} className="tw-px-4 tw-py-3 tw-border-b tw-border-border">
-                  <div className="row spaced tw-mb-1.5">
+                <div key={c.nombre} className={"tw-px-4 tw-py-3" + (i < byCajero.length - 1 ? " tw-border-b tw-border-border" : "")}>
+                  <div className="tw-flex tw-items-center tw-justify-between tw-mb-1.5">
                     <span className="tw-text-[13px] tw-font-medium">{c.nombre}</span>
-                    <span className="mono tw-font-semibold">{window.fmtCOP(c.total)}</span>
+                    <span className="mono tw-font-semibold tw-text-[13px]">{window.fmtCOP(c.total)}</span>
                   </div>
                   <div className="progress"><span style={{ width: `${(c.total/max)*100}%` }}/></div>
                 </div>
@@ -2625,7 +2657,54 @@ const Reportes = () => {
         </div>
       </div>
 
-      <div className="card tw-mt-3">
+      {/* Métodos de pago + Top productos */}
+      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5 tw-mb-3 tw-items-start">
+        <div className="card tw-flex tw-flex-col">
+          <div className="card-h"><h3>Métodos de pago</h3></div>
+          <div className="tw-flex-1">
+            {byMetodo.length > 0 ? byMetodo.map((m, i) => (
+              <div key={m.nombre} className={"tw-px-4 tw-py-2.5" + (i < byMetodo.length - 1 ? " tw-border-b tw-border-border" : "")}>
+                <div className="tw-flex tw-items-center tw-justify-between tw-mb-1">
+                  <div className="tw-flex tw-items-center tw-gap-2">
+                    <span className="tw-w-2.5 tw-h-2.5 tw-rounded-full tw-shrink-0" style={{ background: metodoColors[m.nombre] || "var(--text-3)" }}/>
+                    <span className="tw-text-[13px] tw-font-medium">{m.nombre}</span>
+                  </div>
+                  <div className="tw-text-right">
+                    <span className="mono tw-font-semibold tw-text-[13px]">{window.fmtCOP(m.total)}</span>
+                    <span className="muted tw-text-[11px] tw-ml-1.5">{m.pct.toFixed(0)}%</span>
+                  </div>
+                </div>
+                <div className="progress"><span style={{ width: `${m.pct}%`, background: metodoColors[m.nombre] || "var(--accent)" }}/></div>
+              </div>
+            )) : <div className="empty-state">Sin datos.</div>}
+          </div>
+        </div>
+        <div className="card tw-flex tw-flex-col">
+          <div className="card-h"><h3>Top 5 productos</h3><p className="sub">Por cantidad vendida</p></div>
+          <div className="tw-flex-1">
+            {topProductosFiltro.length > 0 ? topProductosFiltro.map((p, i) => {
+              const maxQ = topProductosFiltro[0].qty;
+              return (
+                <div key={p.nombre} className={"tw-px-4 tw-py-2.5" + (i < topProductosFiltro.length - 1 ? " tw-border-b tw-border-border" : "")}>
+                  <div className="tw-flex tw-items-center tw-justify-between tw-mb-1">
+                    <div className="tw-flex tw-items-center tw-gap-2">
+                      <span className="tw-w-5 tw-h-5 tw-rounded tw-bg-accent-soft tw-text-accent tw-grid tw-place-items-center tw-text-[10px] tw-font-bold tw-shrink-0">{i + 1}</span>
+                      <span className="tw-text-[13px] tw-font-medium tw-truncate">{p.nombre}</span>
+                    </div>
+                    <div className="tw-text-right tw-shrink-0 tw-ml-2">
+                      <span className="mono tw-font-semibold tw-text-[13px]">{p.qty} und</span>
+                    </div>
+                  </div>
+                  <div className="progress"><span style={{ width: `${(p.qty/maxQ)*100}%` }}/></div>
+                </div>
+              );
+            }) : <div className="empty-state">Sin datos.</div>}
+          </div>
+        </div>
+      </div>
+
+      {/* Detalle de facturas */}
+      <div className="card">
         <div className="card-h" id="detalle-facturas"><h3>Detalle de facturas</h3><p className="sub">{filtered.length} resultados</p></div>
         {/* Desktop: tabla */}
         <div className="tbl-wrap tw-hidden md:tw-block tw-max-h-[460px] tw-overflow-y-auto">
@@ -2647,22 +2726,26 @@ const Reportes = () => {
           </table>
         </div>
         {/* Mobile: tarjetas */}
-        <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2 tw-p-3">
-          {pagRep.slice.map(f => (
-            <div key={f.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-lg tw-p-3">
-              <div className="tw-flex tw-items-center tw-justify-between tw-mb-1.5">
-                <span className="mono tw-font-medium tw-text-sm">{f.id}</span>
-                <span className="mono tw-font-semibold tw-text-sm">{window.fmtCOP(f.total)}</span>
+        <div className="tw-hidden max-md:tw-block tw-p-3">
+          <div className="tw-flex tw-flex-col tw-gap-2">
+            {pagRep.slice.map(f => (
+              <div key={f.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm">
+                <div className="tw-flex tw-items-center tw-justify-between tw-mb-2">
+                  <div>
+                    <span className="mono tw-font-medium tw-text-sm">{f.id}</span>
+                    <span className="muted tw-mx-1.5">·</span>
+                    <span className="chip">{f.metodo}</span>
+                  </div>
+                  <span className="mono tw-font-semibold tw-text-sm">{window.fmtCOP(f.total)}</span>
+                </div>
+                <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
+                  <div><span className="muted">Fecha:</span> <span className="mono">{f.fecha} {f.hora}</span></div>
+                  <div><span className="muted">Cajero:</span> {f.cajero}</div>
+                  <div><span className="muted">Items:</span> <span className="mono">{f.items.reduce((s,i)=>s+i.q,0)} productos</span></div>
+                </div>
               </div>
-              <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
-                <div><span className="muted">Fecha:</span> <span className="mono">{f.fecha}</span></div>
-                <div><span className="muted">Hora:</span> <span className="mono">{f.hora}</span></div>
-                <div><span className="muted">Cajero:</span> {f.cajero}</div>
-                <div><span className="muted">Items:</span> <span className="mono">{f.items.reduce((s,i)=>s+i.q,0)}</span></div>
-              </div>
-              <div className="tw-mt-1.5"><span className="chip">{f.metodo}</span></div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
         {filtered.length > 0 && <Pagination {...pagRep} label="facturas"/>}
       </div>
