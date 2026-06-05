@@ -1,4 +1,4 @@
-// InvenPro — Capa de acceso a datos (Supabase)
+// InvenPro — Capa de acceso a datos (Supabase)..
 // Estrategia "hydrate-first": carga todo en window.MOCK antes de que React monte.
 (function () {
   const today = new Date(2026, 4, 8); // 8 de mayo 2026
