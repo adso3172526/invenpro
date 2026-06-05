@@ -734,8 +734,7 @@ input, select, textarea { font: inherit; color: inherit; }
   .topbar .actions .btn { flex: 1; }
   .topbar .actions .muted { display: none; }
   /* POS layout - stack vertically en móvil */
-  .pos { grid-template-columns: 1fr !important; height: auto !important; min-height: calc(100vh - 100px); }
-  .pos-left { padding: 14px; gap: 12px; }
+  /* POS mobile — now Tailwind */
   .cat-tabs { gap: 4px; }
   .cat-tab { padding: 6px 10px; font-size: 12px; }
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -1047,15 +1046,9 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 
 /* ============ POS layout ============ */
 .pos {
-  display: grid; grid-template-columns: 1fr 420px;
-  min-height: calc(100vh - 60px);
   background: var(--bg);
 }
-.pos-left {
-  display: flex; flex-direction: column;
-  padding: 20px 24px; gap: 14px;
-  min-width: 0; min-height: 0;
-}
+/* pos-left removed — layout now handled by Tailwind grid in cashier.jsx */
 .pos-search {
   display: flex; gap: 8px; align-items: center;
   background: var(--surface);
@@ -1523,15 +1516,7 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
    RESPONSIVE v2 — Mejoras de responsividad
    ============================================================ */
 
-/* --- 1. POS layout en tablets (768–900px) --- */
-@media (max-width: 900px) {
-  .pos { grid-template-columns: 1fr 300px; }
-  .pos-left { padding: 16px 18px; gap: 12px; }
-  /* Cart — now Tailwind */
-}
-@media (max-width: 768px) {
-  .pos { grid-template-columns: 1fr; height: auto; min-height: calc(100vh - 100px); }
-}
+/* --- 1. POS layout — now Tailwind grid --- */
 
 /* --- 2. POS en móvil — carrito y catálogo mejorados --- */
 @media (max-width: 640px) {
@@ -1602,8 +1587,7 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 
 /* --- 9. Landscape móvil --- */
 @media (max-height: 768px) and (orientation: landscape) and (max-width: 1024px) {
-  .pos { grid-template-columns: 1fr 280px; height: auto; }
-  .pos-left { padding: 12px 14px; gap: 10px; }
+  /* POS landscape — now Tailwind */
   /* Cart landscape — now Tailwind */
 }
 @media (max-height: 600px) and (orientation: landscape) {

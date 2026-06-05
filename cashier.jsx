@@ -152,34 +152,98 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
         </div>
       </div>
 
-      {/* Layout POS */}
-      <div className="pos">
-        <div className="pos-left">
+      {/* Layout POS — mobile: search → cart → catalog | desktop: [search+catalog | cart] */}
+      <div className="pos tw-grid tw-grid-cols-1 md:tw-grid-cols-[1fr_380px] lg:tw-grid-cols-[1fr_420px]" style={{ minHeight: "calc(100vh - 60px)" }}>
+
+        {/* 1. Buscador — siempre primero */}
+        <div className="tw-p-3 md:tw-px-6 md:tw-pt-5 md:tw-pb-0 md:tw-col-start-1 md:tw-row-start-1">
           <div className="pos-search">
             <Icon name="search" size={18}/>
             <input
               autoFocus
-              placeholder="Escanea código de barras, busca por nombre o digita el código…"
+              placeholder="Escanea código de barras o busca producto…"
               value={q}
               onChange={e => setQ(e.target.value)}
               onKeyDown={e => {
                 if (e.key === "Enter") {
                   const term = q.trim();
                   if (!term) return;
-                  // 1. Match exacto en codigo_barras (escáner físico)
                   let p = productos.find(x => x.codigoBarras === term);
-                  // 2. Match exacto en SKU
                   if (!p) p = productos.find(x => x.sku === term);
-                  // 3. Primer resultado por nombre
                   if (!p) p = filtered[0];
                   if (p) { addToCart(p); setQ(""); }
                   else setToast(`Sin coincidencias para "${term}"`);
                 }
               }}
             />
-            <span className="chip accent" title="Listo para escanear"><span className="dot"/> Escáner</span>
-            <span className="kbd">↵</span>
+            <span className="chip accent tw-hidden sm:tw-inline-flex" title="Listo para escanear"><span className="dot"/> Escáner</span>
+            <span className="kbd tw-hidden sm:tw-inline">↵</span>
           </div>
+        </div>
+
+        {/* 2. Carrito — segundo en mobile, columna derecha en desktop */}
+        <div className="cart tw-bg-surface md:tw-border-l tw-border-border tw-flex tw-flex-col tw-min-h-0 tw-order-2 md:tw-order-none md:tw-col-start-2 md:tw-row-start-1 md:tw-row-end-[-1]">
+          {/* Header */}
+          <div className="tw-flex tw-items-center tw-justify-between tw-px-3 tw-py-2 tw-border-y md:tw-border-t-0 tw-border-border tw-shrink-0">
+            <div className="tw-flex tw-items-center tw-gap-2">
+              <h3 className="tw-m-0 tw-text-sm tw-font-semibold">Carrito</h3>
+              {cart.length > 0 && <span className="chip accent tw-text-[10px]">{totals.items}</span>}
+              <span className="mono tw-text-[10px] tw-text-txt-3">#{(10310 + shiftStats.trans).toString().padStart(6, "0")}</span>
+            </div>
+            {cart.length > 0 && (
+              <button className="btn sm danger" onClick={() => setCart([])}><Icon name="trash" size={12}/> Vaciar</button>
+            )}
+          </div>
+
+          {/* Lista */}
+          {cart.length === 0 ? (
+            <div className="tw-flex-1 tw-overflow-y-auto tw-min-h-0">
+              <div className="tw-grid tw-place-items-center tw-h-full tw-text-txt-3 tw-text-center tw-py-4 max-md:tw-py-3">
+                <div>
+                  <div className="tw-w-10 tw-h-10 tw-rounded-full tw-bg-surface-2 tw-grid tw-place-items-center tw-mx-auto tw-mb-2 max-md:tw-w-8 max-md:tw-h-8">
+                    <Icon name="cart" size={18}/>
+                  </div>
+                  <div className="tw-font-semibold tw-text-txt-2 tw-text-xs tw-mb-0.5">Carrito vacío</div>
+                  <div className="tw-text-[11px] max-md:tw-hidden">Selecciona productos o escanea un código</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="tw-flex-1 tw-overflow-y-auto tw-min-h-0 tw-px-3 tw-py-1 max-md:tw-max-h-[30vh]">
+              {cart.map((l, i) => (
+                <div key={l.sku} className={"tw-grid tw-grid-cols-[1fr_auto] tw-items-center tw-gap-1 tw-py-1.5 tw-px-0.5" + (i < cart.length - 1 ? " tw-border-b tw-border-dashed tw-border-border" : "")}>
+                  <div>
+                    <div className="tw-text-xs tw-font-medium tw-leading-tight">{l.nombre}</div>
+                    <div className="mono tw-text-[10px] tw-text-txt-3">{window.fmtCOP(l.precio)} × {l.q}</div>
+                    <div className="tw-inline-flex tw-items-center tw-border tw-border-border tw-rounded tw-overflow-hidden tw-mt-0.5">
+                      <button className="tw-bg-transparent tw-border-0 tw-w-6 tw-h-6 tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-cursor-pointer" onClick={() => setQty(l.sku, -1)}><Icon name="minus" size={10}/></button>
+                      <span className="tw-px-1.5 tw-tabular-nums tw-text-[11px] tw-font-medium">{l.q}</span>
+                      <button className="tw-bg-transparent tw-border-0 tw-w-6 tw-h-6 tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-cursor-pointer" onClick={() => setQty(l.sku, +1)}><Icon name="plus" size={10}/></button>
+                    </div>
+                  </div>
+                  <div className="tw-text-right">
+                    <div className="mono tw-font-semibold tw-text-xs tw-tabular-nums">{window.fmtCOP(l.q * l.precio)}</div>
+                    <button className="tw-text-txt-3 tw-text-[10px] tw-bg-transparent tw-border-0 tw-p-0 tw-cursor-pointer hover:tw-text-bad" onClick={() => removeLine(l.sku)}>Quitar</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Totales */}
+          <div className="tw-px-3 tw-py-2 tw-border-t tw-border-border tw-bg-surface-2 tw-shrink-0">
+            <div className="tw-flex tw-justify-between tw-py-0.5 tw-text-xs tw-text-txt-2 tw-tabular-nums"><span>{totals.items} productos</span><span>{window.fmtCOP(totals.sub)}</span></div>
+            <div className="tw-flex tw-justify-between tw-mt-1 tw-pt-1.5 tw-border-t tw-border-border tw-text-base tw-font-semibold tw-tracking-tight tw-tabular-nums">
+              <span>Total</span><span>{window.fmtCOP(totals.total)}</span>
+            </div>
+            <button className="btn accent full tw-mt-2 tw-py-2.5 tw-text-sm tw-font-semibold" disabled={cart.length === 0} onClick={() => setPay("modal")}>
+              <Icon name="cart" size={15}/> Cobrar {window.fmtCOP(totals.total)}
+            </button>
+          </div>
+        </div>
+
+        {/* 3. Catálogo — tercero en mobile, columna izquierda fila 2 en desktop */}
+        <div className="tw-flex tw-flex-col tw-gap-3 tw-p-3 md:tw-px-6 md:tw-pb-5 md:tw-pt-3 tw-min-h-0 tw-order-3 md:tw-order-none md:tw-col-start-1 md:tw-row-start-2">
           <div className="cat-tabs">
             {CATEGORIAS.map(c => (
               <button key={c} className={"cat-tab" + (cat === c ? " active" : "")} onClick={() => setCat(c)}>{c}</button>
@@ -207,67 +271,6 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
             )}
           </div>
           <Pagination {...pagProd} label="productos"/>
-        </div>
-
-        {/* Carrito */}
-        <div className="cart tw-bg-surface tw-border-l tw-border-border tw-flex tw-flex-col tw-min-h-0 tw-max-h-[50vh] md:tw-max-h-none">
-          {/* Header */}
-          <div className="tw-flex tw-items-center tw-justify-between tw-px-3 tw-py-2.5 tw-border-b tw-border-border tw-shrink-0">
-            <div>
-              <h3 className="tw-m-0 tw-text-sm tw-font-semibold">Venta actual</h3>
-              <div className="mono tw-text-[10px] tw-text-txt-3">Ticket #{(10310 + shiftStats.trans).toString().padStart(6, "0")}</div>
-            </div>
-            {cart.length > 0 && (
-              <button className="btn sm danger" onClick={() => setCart([])}><Icon name="trash" size={12}/> Vaciar</button>
-            )}
-          </div>
-
-          {/* Lista de productos */}
-          {cart.length === 0 ? (
-            <div className="tw-flex-1 tw-overflow-y-auto tw-min-h-0">
-              <div className="tw-grid tw-place-items-center tw-h-full tw-text-txt-3 tw-text-center tw-py-4">
-                <div>
-                  <div className="tw-w-10 tw-h-10 tw-rounded-full tw-bg-surface-2 tw-grid tw-place-items-center tw-mx-auto tw-mb-2">
-                    <Icon name="cart" size={18}/>
-                  </div>
-                  <div className="tw-font-semibold tw-text-txt-2 tw-text-xs tw-mb-0.5">Carrito vacío</div>
-                  <div className="tw-text-[11px]">Selecciona productos o escanea un código</div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="tw-flex-1 tw-overflow-y-auto tw-min-h-0 tw-px-3 tw-py-1">
-              {cart.map((l, i) => (
-                <div key={l.sku} className={"tw-grid tw-grid-cols-[1fr_auto] tw-items-center tw-gap-1 tw-py-1.5 tw-px-0.5" + (i < cart.length - 1 ? " tw-border-b tw-border-dashed tw-border-border" : "")}>
-                  <div>
-                    <div className="tw-text-xs tw-font-medium tw-leading-tight">{l.nombre}</div>
-                    <div className="mono tw-text-[10px] tw-text-txt-3">{window.fmtCOP(l.precio)} × {l.q}</div>
-                    <div className="tw-inline-flex tw-items-center tw-border tw-border-border tw-rounded tw-overflow-hidden tw-mt-0.5">
-                      <button className="tw-bg-transparent tw-border-0 tw-w-6 tw-h-6 tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-cursor-pointer" onClick={() => setQty(l.sku, -1)}><Icon name="minus" size={10}/></button>
-                      <span className="tw-px-1.5 tw-tabular-nums tw-text-[11px] tw-font-medium">{l.q}</span>
-                      <button className="tw-bg-transparent tw-border-0 tw-w-6 tw-h-6 tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-cursor-pointer" onClick={() => setQty(l.sku, +1)}><Icon name="plus" size={10}/></button>
-                    </div>
-                  </div>
-                  <div className="tw-text-right">
-                    <div className="mono tw-font-semibold tw-text-xs tw-tabular-nums">{window.fmtCOP(l.q * l.precio)}</div>
-                    <button className="tw-text-txt-3 tw-text-[10px] tw-bg-transparent tw-border-0 tw-p-0 tw-cursor-pointer hover:tw-text-bad" onClick={() => removeLine(l.sku)}>Quitar</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Totales */}
-          <div className="tw-px-3 tw-py-2.5 tw-border-t tw-border-border tw-bg-surface-2 tw-shrink-0">
-            <div className="tw-flex tw-justify-between tw-py-0.5 tw-text-xs tw-text-txt-2 tw-tabular-nums"><span>Productos</span><span>{totals.items} und</span></div>
-            <div className="tw-flex tw-justify-between tw-py-0.5 tw-text-xs tw-text-txt-2 tw-tabular-nums"><span>Subtotal</span><span>{window.fmtCOP(totals.sub)}</span></div>
-            <div className="tw-flex tw-justify-between tw-mt-1 tw-pt-2 tw-border-t tw-border-border tw-text-base tw-font-semibold tw-tracking-tight tw-tabular-nums">
-              <span>Total</span><span>{window.fmtCOP(totals.total)}</span>
-            </div>
-            <button className="btn accent full tw-mt-2 tw-py-2.5 tw-text-sm tw-font-semibold" disabled={cart.length === 0} onClick={() => setPay("modal")}>
-              <Icon name="cart" size={15}/> Cobrar {window.fmtCOP(totals.total)}
-            </button>
-          </div>
         </div>
       </div>
 
