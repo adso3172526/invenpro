@@ -113,6 +113,10 @@ const App = () => {
 };
 
 (async () => {
+  // Esperar hasta 5s a que window.db esté disponible (fallback dinámico)
+  for (let i = 0; i < 50 && !window.db; i++) {
+    await new Promise(r => setTimeout(r, 100));
+  }
   try {
     await window.hydrateData();
   } catch (e) {
