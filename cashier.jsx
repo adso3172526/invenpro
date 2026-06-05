@@ -135,7 +135,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
   };
 
   return (
-    <div className="tw-min-h-screen tw-flex tw-flex-col tw-bg-bg">
+    <div className="tw-h-screen tw-flex tw-flex-col tw-bg-bg tw-overflow-hidden">
       {/* Topbar — Desktop */}
       <div className="topbar tw-hidden md:tw-flex tw-items-center tw-gap-2">
         <div className="crumb tw-flex-1 tw-min-w-0">
@@ -332,8 +332,8 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
           </div>
 
           {/* Productos — grid con tarjetas bonitas */}
-          <div className="tw-flex-1 tw-overflow-y-auto tw-px-3 tw-pb-3">
-            <div className="tw-grid tw-grid-cols-3 tw-gap-2">
+          <div className="tw-flex-1 tw-overflow-y-auto tw-px-3 tw-pb-3 tw-min-h-0" style={{ WebkitOverflowScrolling: "touch" }}>
+            <div className="tw-grid tw-grid-cols-2 min-[400px]:tw-grid-cols-3 tw-gap-2">
               {pagProd.slice.map(p => {
                 const inCart = cart.find(l => l.sku === p.sku);
                 return (

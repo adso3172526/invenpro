@@ -1031,11 +1031,12 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 
 /* ============ POS layout ============ */
 .pos {
-  display: grid; grid-template-columns: 1fr;
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0;
   background: var(--bg);
 }
 @media (min-width: 768px) {
-  .pos { grid-template-columns: 1fr 420px; min-height: calc(100vh - 60px); }
+  .pos { display: grid; grid-template-columns: 1fr 420px; min-height: calc(100vh - 60px); }
 }
 .pos-left {
   display: flex; flex-direction: column;
