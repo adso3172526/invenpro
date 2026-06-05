@@ -642,7 +642,7 @@ const Ingreso = () => {
   const [toast, setToast] = useStateA(null);
   const [guardando, setGuardando] = useStateA(false);
   const ingresosFiltrados = MOCK.ingresos.filter(i => i.fecha >= desde && i.fecha <= hasta);
-  const pagIng = usePagination(ingresosFiltrados, 10);
+  const pagIng = usePagination(ingresosFiltrados, 8);
 
   const add = (sku, qty, costo, vence, nombreManual, codigoBarras, precio) => {
     const p = MOCK.productos.find(x => x.sku === sku);
