@@ -2161,7 +2161,10 @@ const Ajustes = () => {
     try {
       if (formato === "gemini") {
         const m = modelo.trim() || "gemini-2.0-flash";
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}?key=${apiKey.trim()}`);
+        const base = urlApi.trim()
+          ? urlApi.trim().replace(/(:generateContent)?\??.*$/, "") + `?key=${apiKey.trim()}`
+          : `https://generativelanguage.googleapis.com/v1beta/models/${m}?key=${apiKey.trim()}`;
+        const r = await fetch(base);
         if (!r.ok) throw new Error();
       } else if (formato === "claude") {
         const endpoint = urlApi.trim() || "https://api.anthropic.com/v1/messages";
@@ -2243,18 +2246,19 @@ const Ajustes = () => {
               />
             </div>
           </div>
-          {formato !== "gemini" && (
-            <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
-              <label>URL del endpoint</label>
-              <input
-                className="mono"
-                value={urlApi}
-                onChange={e => { setUrlApi(e.target.value); setSaved(false); }}
-                placeholder={formato === "openai" ? "https://api.ejemplo.com/v1/chat/completions" : "https://api.anthropic.com/v1/messages"}
-                style={{ fontSize: 12 }}
-              />
-            </div>
-          )}
+          <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+            <label>URL del endpoint</label>
+            <input
+              className="mono"
+              value={urlApi}
+              onChange={e => { setUrlApi(e.target.value); setSaved(false); }}
+              placeholder={formato === "gemini" ? "https://generativelanguage.googleapis.com/v1beta/models/MODELO:generateContent" : formato === "claude" ? "https://api.anthropic.com/v1/messages" : "https://api.ejemplo.com/v1/chat/completions"}
+              style={{ fontSize: 12 }}
+            />
+            {formato === "gemini" && !urlApi && (
+              <span className="muted" style={{ fontSize: 10, marginTop: 4, display: "block" }}>Vacío = endpoint por defecto de Google AI</span>
+            )}
+          </div>
           <p className="muted" style={{ fontSize: 11, marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
             Groq, Together, Mistral, DeepSeek, Ollama, LM Studio, OpenRouter usan formato OpenAI Compatible.
           </p>
