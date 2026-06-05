@@ -170,6 +170,26 @@
       if (error) console.error("updateProveedor:", error);
     },
 
+    async updateIngreso(id, header, detalle) {
+      const { error: hErr } = await window.db.from("ingresos")
+        .update({ proveedor: header.proveedor, factura: header.factura, recibe: header.recibe })
+        .eq("id", id);
+      if (hErr) { console.error("updateIngreso header:", hErr); return hErr; }
+      // Borrar detalle viejo y reinsertar
+      const { error: delErr } = await window.db.from("ingreso_detalle").delete().eq("ingreso_id", id);
+      if (delErr) { console.error("updateIngreso del:", delErr); return delErr; }
+      const rows = detalle.map(d => ({
+        ingreso_id: id, sku: d.sku, nombre: d.nombre,
+        qty: d.qty, costo: d.costo, vence: d.vence || null,
+      }));
+      const { error: dErr } = await window.db.from("ingreso_detalle").insert(rows);
+      if (dErr) { console.error("updateIngreso detalle:", dErr); return dErr; }
+      // Actualizar totales en header
+      const totalCosto = detalle.reduce((s, d) => s + d.qty * d.costo, 0);
+      await window.db.from("ingresos").update({ items: detalle.length, costo: totalCosto }).eq("id", id);
+      return null;
+    },
+
     async createIngreso(ingreso, detalle) {
       const { error: hErr } = await window.db.from("ingresos").insert({
         id: ingreso.id,

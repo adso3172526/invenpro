@@ -704,36 +704,63 @@ const Ingreso = () => {
         <Pagination {...pagIng} label="ingresos"/>
       </div>
 
-      {verIngreso && (
-        <Modal title={`Detalle del ingreso ${verIngreso.id}`} lg onClose={() => setVerIngreso(null)} footer={
+      {verIngreso && (() => {
+        const [editIng, setEditIng] = [verIngreso, setVerIngreso];
+        const editDet = editIng.detalle || [];
+        const editTotal = editDet.reduce((s, d) => s + d.qty * d.costo, 0);
+        const updField = (k, v) => setVerIngreso({ ...editIng, [k]: v });
+        const updDet = (idx, k, v) => setVerIngreso({ ...editIng, detalle: editDet.map((d, i) => i === idx ? { ...d, [k]: v } : d) });
+        return (
+        <Modal title={`Ingreso ${editIng.id}`} lg onClose={() => setVerIngreso(null)} footer={
           <>
-            <button className="btn ghost" onClick={() => setVerIngreso(null)}>Cerrar</button>
+            <button className="btn ghost" onClick={() => setVerIngreso(null)}>Cancelar</button>
             <button className="btn" onClick={() => {
-              const rows = (verIngreso.detalle || []).map(d => ({
+              const rows = editDet.map(d => ({
                 SKU: d.sku, Producto: d.nombre, Cantidad: d.qty,
                 "Costo unit.": d.costo, Subtotal: d.qty * d.costo, Vence: d.vence || "",
               }));
-              exportXlsx(`ingreso_${verIngreso.id}.xlsx`, [{ name: "Detalle", rows }]);
-            }}><Icon name="download" size={14}/> Exportar este ingreso</button>
+              exportXlsx(`ingreso_${editIng.id}.xlsx`, [{ name: "Detalle", rows }]);
+            }}><Icon name="download" size={14}/> Exportar</button>
+            <button className="btn primary" disabled={guardando} onClick={async () => {
+              setGuardando(true);
+              const err = await DB.updateIngreso(editIng.id, editIng, editDet);
+              if (err) { setToast("Error al guardar"); setGuardando(false); return; }
+              await hydrateData();
+              setVerIngreso(null);
+              setGuardando(false);
+              setToast("Ingreso actualizado");
+            }}><Icon name="check" size={14}/> {guardando ? "Guardando…" : "Guardar cambios"}</button>
           </>
         }>
-          <div className="grid-2" style={{ marginBottom: 12 }}>
-            <div><span className="muted" style={{ fontSize: 12 }}>Proveedor</span><div style={{ fontWeight: 500 }}>{verIngreso.proveedor}</div></div>
-            <div><span className="muted" style={{ fontSize: 12 }}>Factura</span><div className="mono">{verIngreso.factura || "—"}</div></div>
-            <div><span className="muted" style={{ fontSize: 12 }}>Fecha</span><div className="mono">{verIngreso.fecha}</div></div>
-            <div><span className="muted" style={{ fontSize: 12 }}>Recibido por</span><div>{verIngreso.recibe}</div></div>
+          <div className="grid-2" style={{ marginBottom: 12, gap: 10 }}>
+            <div className="field" style={{ margin: 0 }}>
+              <label>Proveedor</label>
+              <input value={editIng.proveedor} onChange={e => updField("proveedor", e.target.value)}/>
+            </div>
+            <div className="field" style={{ margin: 0 }}>
+              <label>N° Factura</label>
+              <input className="mono" value={editIng.factura || ""} onChange={e => updField("factura", e.target.value)}/>
+            </div>
+            <div className="field" style={{ margin: 0 }}>
+              <label>Fecha</label>
+              <input className="mono" value={editIng.fecha} readOnly style={{ background: "var(--surface-2)", color: "var(--text-3)" }}/>
+            </div>
+            <div className="field" style={{ margin: 0 }}>
+              <label>Recibido por</label>
+              <input value={editIng.recibe || ""} onChange={e => updField("recibe", e.target.value)}/>
+            </div>
           </div>
           <div className="tbl-wrap">
             <table className="tbl">
               <thead><tr><th>Producto</th><th>SKU</th><th className="num">Cant.</th><th className="num">Costo unit.</th><th>Vence</th><th className="num">Subtotal</th></tr></thead>
               <tbody>
-                {(verIngreso.detalle || []).map((d, i) => (
+                {editDet.map((d, i) => (
                   <tr key={i}>
-                    <td style={{ fontWeight: 500 }}>{d.nombre}</td>
-                    <td className="mono" style={{ fontSize: 12 }}>{d.sku}</td>
-                    <td className="num mono">{d.qty}</td>
-                    <td className="num mono">{window.fmtCOP(d.costo)}</td>
-                    <td className="mono muted" style={{ fontSize: 12 }}>{d.vence || "—"}</td>
+                    <td><input value={d.nombre} onChange={e => updDet(i, "nombre", e.target.value)} style={{ fontWeight: 500, border: "1px solid transparent", background: "transparent", padding: "2px 4px", borderRadius: 4, fontSize: 13, width: "100%", minWidth: 100 }} onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; }} onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; }}/></td>
+                    <td className="mono muted" style={{ fontSize: 12 }}>{d.sku}</td>
+                    <td className="num"><input className="cell-input mono" value={d.qty} onChange={e => updDet(i, "qty", parseInt(e.target.value.replace(/\D/g, "")) || 0)}/></td>
+                    <td className="num"><input className="cell-input mono" value={d.costo} onChange={e => updDet(i, "costo", parseInt(e.target.value.replace(/\D/g, "")) || 0)}/></td>
+                    <td><input className="cell-input mono" type="date" value={d.vence || ""} onChange={e => updDet(i, "vence", e.target.value)}/></td>
                     <td className="num mono" style={{ fontWeight: 600 }}>{window.fmtCOP(d.qty * d.costo)}</td>
                   </tr>
                 ))}
@@ -741,11 +768,12 @@ const Ingreso = () => {
             </table>
           </div>
           <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", background: "var(--surface-2)", marginTop: 8, borderRadius: 8 }}>
-            <span className="muted">{(verIngreso.detalle || []).length} producto(s) · {(verIngreso.detalle || []).reduce((s,d)=>s+d.qty,0)} unidades</span>
-            <span className="mono" style={{ fontWeight: 600, fontSize: 18 }}>{window.fmtCOP(verIngreso.costo)}</span>
+            <span className="muted">{editDet.length} producto(s) · {editDet.reduce((s,d)=>s+d.qty,0)} unidades</span>
+            <span className="mono" style={{ fontWeight: 600, fontSize: 18 }}>{window.fmtCOP(editTotal)}</span>
           </div>
         </Modal>
-      )}
+        );
+      })()}
 
       {showSelector && (
         <Modal title="¿Cómo deseas registrar el ingreso?" lg onClose={() => setShowSelector(false)}>
