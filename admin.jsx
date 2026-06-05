@@ -277,7 +277,7 @@ const InventarioProductos = () => {
 
       <div className="card">
         <div className="tbl-wrap">
-          <table className="tbl">
+          <table className="tbl tbl-inv">
             <thead>
               <tr>
                 <th>SKU</th>
@@ -400,7 +400,7 @@ const Bodega = () => {
 
       <div className="card">
         <div className="tbl-wrap">
-          <table className="tbl">
+          <table className="tbl tbl-bodega">
             <thead>
               <tr>
                 <th>Producto</th>
@@ -968,7 +968,7 @@ const Ingreso = () => {
                           <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
                             {!it.nuevo && <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>}
                             {it.nuevo && <span className="chip warn" style={{ fontSize: 9 }}>NUEVO</span>}
-                            {it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#FFF7ED", color: "#9A3412", border: "1px dashed #F59E0B" }}>Sin código — asignar en Bodega</span>}
+                            {it.nuevo && <span className="chip chip-bodega-hint" style={{ fontSize: 9, background: "#FFF7ED", color: "#9A3412", border: "1px dashed #F59E0B" }}>Sin código — asignar en Bodega</span>}
                             {!it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46" }}>EN BODEGA</span>}
                             {it.confianza !== undefined && it.confianza < 0.9 && (
                               <span className="chip" style={{ fontSize: 9, background: "#FFF1D6", color: "#8C6A1E" }}>
