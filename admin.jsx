@@ -224,8 +224,8 @@ const Dashboard = ({ go }) => {
   );
 };
 
-// =================== Inventario ===================
-const Inventario = () => {
+// =================== Inventario (con tabs: Productos + Bodega) ===================
+const InventarioProductos = () => {
   const [q, setQ] = useStateA("");
   const [cat, setCat] = useStateA("Todos");
   const [estado, setEstado] = useStateA("Todos");
@@ -234,7 +234,7 @@ const Inventario = () => {
       if (cat !== "Todos" && p.categoria !== cat) return false;
       if (q) {
         const qq = q.toLowerCase().trim();
-        if (!(p.nombre.toLowerCase().includes(qq) || p.sku.toLowerCase().includes(qq))) return false;
+        if (!(p.nombre.toLowerCase().includes(qq) || p.sku.toLowerCase().includes(qq) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(qq)))) return false;
       }
       if (estado === "Bajo" && p.stock >= p.min) return false;
       if (estado === "Sin stock" && p.stock > 0) return false;
@@ -247,21 +247,6 @@ const Inventario = () => {
   const pag = usePagination(rows, 10);
   return (
     <>
-      <div className="page-h">
-        <div>
-          <h2>Inventario</h2>
-          <p className="sub">{MOCK.productos.length} productos · {bajo} con stock bajo · valor en bodega {window.fmtCOP(totalValor)}</p>
-        </div>
-        <div className="row">
-          <button className="btn" onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
-            { name: "Inventario", rows: rows.map(p => ({
-              SKU: p.sku, "Código de barras": p.sku, Producto: p.nombre, Categoría: p.categoria,
-              Precio: p.precio, Costo: p.costo, Stock: p.stock, Mínimo: p.min, Unidad: p.unidad, Vence: p.vence || ""
-            })) },
-          ])}><Icon name="download" size={14}/> Exportar Excel</button>
-        </div>
-      </div>
-
       <div className="filterbar">
         <div className="search">
           <Icon name="search" size={16}/>
@@ -282,6 +267,12 @@ const Inventario = () => {
             <option>Sin stock</option>
           </select>
         </div>
+        <button className="btn" onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
+          { name: "Inventario", rows: rows.map(p => ({
+            SKU: p.sku, "Código de barras": p.codigoBarras || "", Producto: p.nombre, Categoría: p.categoria,
+            Precio: p.precio, Costo: p.costo, Stock: p.stock, Mínimo: p.min, Unidad: p.unidad, Vence: p.vence || ""
+          })) },
+        ])}><Icon name="download" size={14}/> Exportar</button>
       </div>
 
       <div className="card">
@@ -291,6 +282,7 @@ const Inventario = () => {
               <tr>
                 <th>SKU</th>
                 <th>Producto</th>
+                <th>Código barras</th>
                 <th>Categoría</th>
                 <th className="num">Precio</th>
                 <th className="num">Costo</th>
@@ -308,6 +300,7 @@ const Inventario = () => {
                   <tr key={p.sku} className="row-hover">
                     <td className="mono muted">{p.sku}</td>
                     <td style={{ fontWeight: 500 }}>{p.nombre}</td>
+                    <td>{p.codigoBarras ? <span className="mono" style={{ fontSize: 11 }}>{p.codigoBarras}</span> : <span className="muted" style={{ fontSize: 11 }}>Sin asignar</span>}</td>
                     <td><span className="chip">{p.categoria}</span></td>
                     <td className="num mono">{window.fmtCOP(p.precio)}</td>
                     <td className="num mono muted">{window.fmtCOP(p.costo)}</td>
@@ -341,6 +334,151 @@ const Inventario = () => {
         </div>
         <Pagination {...pag} label="productos"/>
       </div>
+    </>
+  );
+};
+
+// =================== Bodega ===================
+const Bodega = () => {
+  const [filtro, setFiltro] = useStateA("pendientes");
+  const [toast, setToast] = useStateA(null);
+  const [productos, setProductos] = useStateA(() => MOCK.productos.map(p => ({ ...p })));
+  const [barcodeInputs, setBarcodeInputs] = useStateA({});
+
+  const sinCodigo = useMemoA(() => productos.filter(p => !p.codigoBarras), [productos]);
+  const totalStock = useMemoA(() => productos.reduce((s, p) => s + p.stock, 0), [productos]);
+
+  const visible = useMemoA(() => {
+    if (filtro === "pendientes") return productos.filter(p => !p.codigoBarras);
+    return [...productos].sort((a, b) => (a.codigoBarras ? 1 : 0) - (b.codigoBarras ? 1 : 0));
+  }, [productos, filtro]);
+
+  const pag = usePagination(visible, 10);
+
+  const asignarCodigo = async (sku) => {
+    const codigo = (barcodeInputs[sku] || "").trim();
+    if (!codigo) { setToast("Escanea o digita un código de barras"); return; }
+    // Validar unicidad
+    const existente = productos.find(p => p.codigoBarras === codigo);
+    if (existente) { setToast(`Este código ya está asignado a "${existente.nombre}" (${existente.sku})`); return; }
+    // Guardar en DB
+    const err = await DB.updateCodigoBarras(sku, codigo);
+    if (err) { setToast("Error al guardar: " + (err.message || "Intenta de nuevo")); return; }
+    // Actualizar local
+    setProductos(ps => ps.map(p => p.sku === sku ? { ...p, codigoBarras: codigo } : p));
+    const mp = MOCK.productos.find(p => p.sku === sku);
+    if (mp) mp.codigoBarras = codigo;
+    setBarcodeInputs(prev => { const next = { ...prev }; delete next[sku]; return next; });
+    setToast("Código de barras asignado correctamente");
+  };
+
+  return (
+    <>
+      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+        <div className="kpi">
+          <div className="label"><Icon name="box" size={14}/> Total productos</div>
+          <div className="val">{productos.length}</div>
+        </div>
+        <div className="kpi">
+          <div className="label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Sin código de barras</div>
+          <div className="val" style={{ color: sinCodigo.length > 0 ? "#F59E0B" : "var(--good)" }}>{sinCodigo.length}</div>
+        </div>
+        <div className="kpi">
+          <div className="label"><Icon name="truck" size={14}/> Stock total</div>
+          <div className="val">{totalStock.toLocaleString("es-CO")}</div>
+        </div>
+      </div>
+
+      <div className="filterbar">
+        <div className="tab-bar">
+          <button className={filtro === "pendientes" ? "on" : ""} onClick={() => setFiltro("pendientes")}>
+            Pendientes {sinCodigo.length > 0 && <span className="bodega-badge" style={{ marginLeft: 4 }}>{sinCodigo.length}</span>}
+          </button>
+          <button className={filtro === "todos" ? "on" : ""} onClick={() => setFiltro("todos")}>Todos</button>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="tbl-wrap">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>SKU</th>
+                <th>Categoría</th>
+                <th className="num">Stock</th>
+                <th>Código de barras</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {pag.slice.map(p => (
+                <tr key={p.sku} className={!p.codigoBarras ? "row-sin-codigo" : "row-hover"}>
+                  <td style={{ fontWeight: 500 }}>{p.nombre}</td>
+                  <td className="mono muted" style={{ fontSize: 11 }}>{p.sku}</td>
+                  <td><span className="chip">{p.categoria}</span></td>
+                  <td className="num mono">{p.stock} {p.unidad}</td>
+                  <td>
+                    {p.codigoBarras ? (
+                      <span className="mono" style={{ fontSize: 12 }}>{p.codigoBarras}</span>
+                    ) : (
+                      <input
+                        className="bodega-barcode-input mono"
+                        value={barcodeInputs[p.sku] || ""}
+                        onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
+                        onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
+                        placeholder="Escanear código…"
+                      />
+                    )}
+                  </td>
+                  <td className="num">
+                    {!p.codigoBarras && (
+                      <button className="btn sm primary" onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
+                        <Icon name="check" size={13}/> Asignar
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {visible.length === 0 && (
+                <tr><td colSpan="6"><div className="empty-state"><div className="icon"><Icon name="check" size={22}/></div>Todos los productos tienen código de barras.</div></td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <Pagination {...pag} label="productos"/>
+      </div>
+
+      {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+    </>
+  );
+};
+
+const Inventario = () => {
+  const [tab, setTab] = useStateA("productos");
+  const sinCodigo = useMemoA(() => MOCK.productos.filter(p => !p.codigoBarras).length, []);
+  const bajo = MOCK.productos.filter(p => p.stock < p.min).length;
+  const totalValor = MOCK.productos.reduce((s, p) => s + p.stock * p.costo, 0);
+
+  return (
+    <>
+      <div className="page-h">
+        <div>
+          <h2>Inventario</h2>
+          <p className="sub">{MOCK.productos.length} productos · {bajo} con stock bajo · valor en bodega {window.fmtCOP(totalValor)}</p>
+        </div>
+        <div className="row">
+          <div className="tab-bar">
+            <button className={tab === "productos" ? "on" : ""} onClick={() => setTab("productos")}>Productos</button>
+            <button className={tab === "bodega" ? "on" : ""} onClick={() => setTab("bodega")}>
+              Bodega {sinCodigo > 0 && <span className="bodega-badge" style={{ marginLeft: 4 }}>{sinCodigo}</span>}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {tab === "productos" && <InventarioProductos/>}
+      {tab === "bodega" && <Bodega/>}
     </>
   );
 };
@@ -633,41 +771,34 @@ const Ingreso = () => {
         <Modal title="Confirmar ingreso de mercancía" lg onClose={() => { setShowForm(false); setOrigen(null); }} footer={
           <>
             <button className="btn ghost" onClick={() => { setShowForm(false); setOrigen(null); }}>Cancelar</button>
-            <button className="btn accent" disabled={guardando || items.length === 0 || items.some(it => it.nuevo && (!it.sku || it.sku.startsWith("NUEVO-")))} onClick={async () => {
+            <button className="btn accent" disabled={guardando || items.length === 0} onClick={async () => {
               // Validar factura única
               const yaExiste = MOCK.ingresos.find(i => i.factura === factura && i.proveedor === proveedor);
               if (yaExiste) {
                 setToast("Esta factura ya fue registrada para este proveedor");
                 return;
               }
-              // Validar códigos de barras de productos nuevos
-              const nuevos = items.filter(it => it.nuevo);
-              const skusNuevos = nuevos.map(it => it.sku);
-              const duplicados = skusNuevos.filter((s, i) => skusNuevos.indexOf(s) !== i);
-              if (duplicados.length > 0) {
-                setToast("Hay códigos de barras duplicados: " + duplicados.join(", "));
-                return;
-              }
-              const yaEnInventario = skusNuevos.filter(s => MOCK.productos.find(p => p.sku === s));
-              if (yaEnInventario.length > 0) {
-                setToast("Estos códigos ya existen en inventario: " + yaEnInventario.join(", "));
-                return;
-              }
               // Bloquear doble clic
               setGuardando(true);
               try {
-                // Crear productos nuevos
+                // Crear productos nuevos con SKU auto-generado
+                const nuevos = items.filter(it => it.nuevo);
                 for (const it of nuevos) {
+                  const autoSku = DB.generateSku();
+                  it.sku = autoSku;
                   const err = await DB.createProducto({
-                    sku: it.sku,
+                    sku: autoSku,
                     nombre: it.nombre,
                     categoria: it.categoria || "General",
                     precio: it.precio || Math.round(it.costo * 1.3),
                     costo: it.costo,
                     stock: 0,
                     vence: it.vence || null,
+                    codigoBarras: null,
                   });
                   if (err) { setToast("Error creando producto: " + it.nombre); setGuardando(false); return; }
+                  // Agregar al MOCK local para que generateSku no repita
+                  MOCK.productos.push({ sku: autoSku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: 0, min: 0, vence: it.vence || null, unidad: "und", codigoBarras: null });
                 }
                 // Incrementar stock de todos los items
                 for (const it of items) {
@@ -686,7 +817,7 @@ const Ingreso = () => {
                 await DB.createIngreso(ingreso, items);
                 await hydrateData();
                 setShowForm(false); setItems([]); setVendedor(""); setCelular(""); setOrigen(null);
-                setToast("Ingreso registrado · " + nuevos.length + " producto(s) creado(s) · stock actualizado");
+                setToast("Ingreso registrado · " + nuevos.length + " producto(s) creado(s) · stock actualizado. Asigna códigos de barras en Bodega.");
               } catch (e) {
                 setToast("Error al guardar: " + e.message);
               }
@@ -805,10 +936,10 @@ const Ingreso = () => {
             </div>
           )}
 
-          {nuevos.some(it => !it.sku || it.sku.startsWith("NUEVO-")) && (
-            <div style={{ padding: "10px 14px", borderRadius: 8, background: "#FEF2F2", border: "1px solid #FECACA", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span style={{ fontSize: 12, color: "#991B1B" }}>Escanea o digita el código de barras de los productos nuevos para poder confirmar.</span>
+          {nuevos.length > 0 && (
+            <div style={{ padding: "10px 14px", borderRadius: 8, background: "#FFF7ED", border: "1px solid #FED7AA", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+              <Icon name="box" size={16}/>
+              <span style={{ fontSize: 12, color: "#9A3412" }}>Los productos nuevos se crearán con SKU automático. Podrás asignar el código de barras después en <strong>Bodega</strong>.</span>
             </div>
           )}
 
@@ -835,20 +966,9 @@ const Ingreso = () => {
                             />
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
-                            {it.nuevo ? (
-                              <input
-                                className="mono barcode-input"
-                                value={it.sku.startsWith("NUEVO-") ? "" : it.sku}
-                                onChange={e => {
-                                  const v = e.target.value.replace(/\D/g,"");
-                                  actualizarItem(i, "sku", v || ("NUEVO-" + i));
-                                }}
-                                placeholder="Escanear código de barras…"
-                              />
-                            ) : (
-                              <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>
-                            )}
+                            {!it.nuevo && <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>}
                             {it.nuevo && <span className="chip warn" style={{ fontSize: 9 }}>NUEVO</span>}
+                            {it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#FFF7ED", color: "#9A3412", border: "1px dashed #F59E0B" }}>Sin código — asignar en Bodega</span>}
                             {!it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46" }}>EN BODEGA</span>}
                             {it.confianza !== undefined && it.confianza < 0.9 && (
                               <span className="chip" style={{ fontSize: 9, background: "#FFF1D6", color: "#8C6A1E" }}>

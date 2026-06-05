@@ -1786,3 +1786,42 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   .login-form h2 { font-size: 18px; margin-bottom: 12px; }
   .login-form .field { margin-bottom: 10px; }
 }
+
+/* ============ Bodega ============ */
+.row-sin-codigo td { background: linear-gradient(90deg, #FFF7ED, transparent) !important; }
+.bodega-barcode-input {
+  border: 2px dashed #F59E0B;
+  background: #FFFBEB;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  outline: none;
+  width: 180px;
+  max-width: 100%;
+  transition: border-style .15s, border-color .15s;
+}
+.bodega-barcode-input:focus {
+  border-style: solid;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent);
+}
+.bodega-badge {
+  background: #F59E0B;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  display: inline-block;
+  line-height: 1.4;
+}
+
+/* Dark mode */
+[data-theme="dark"] .row-sin-codigo td { background: linear-gradient(90deg, #251E10, transparent) !important; }
+[data-theme="dark"] .bodega-barcode-input { background: #1C1708; border-color: #8C6A1E; }
+[data-theme="dark"] .bodega-barcode-input:focus { border-color: var(--accent); }
+
+/* Mobile */
+@media (max-width: 640px) {
+  .bodega-barcode-input { width: 100%; }
+}

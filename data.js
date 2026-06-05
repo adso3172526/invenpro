@@ -207,9 +207,32 @@
         min: p.min || 0,
         vence: p.vence || null,
         unidad: p.unidad || "und",
+        codigo_barras: p.codigoBarras || null,
       });
       if (error) console.error("createProducto:", error);
       return error;
+    },
+
+    async updateCodigoBarras(sku, codigoBarras) {
+      const { error } = await window.db
+        .from("productos")
+        .update({ codigo_barras: codigoBarras })
+        .eq("sku", sku);
+      if (error) console.error("updateCodigoBarras:", error);
+      return error;
+    },
+
+    generateSku() {
+      const productos = (window.MOCK && window.MOCK.productos) || [];
+      let max = 0;
+      for (const p of productos) {
+        const m = p.sku.match(/^P-(\d+)$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > max) max = n;
+        }
+      }
+      return "P-" + String(max + 1).padStart(5, "0");
     },
 
     async incrementStock(sku, qty) {

@@ -4,15 +4,16 @@
 -- ===================== TABLAS CORE =====================
 
 CREATE TABLE productos (
-  sku       TEXT PRIMARY KEY,
-  nombre    TEXT NOT NULL,
-  categoria TEXT NOT NULL,
-  precio    INTEGER NOT NULL,
-  costo     INTEGER NOT NULL,
-  stock     INTEGER NOT NULL DEFAULT 0,
-  min       INTEGER NOT NULL DEFAULT 0,
-  vence     DATE,
-  unidad    TEXT NOT NULL DEFAULT 'und'
+  sku            TEXT PRIMARY KEY,
+  nombre         TEXT NOT NULL,
+  categoria      TEXT NOT NULL,
+  precio         INTEGER NOT NULL,
+  costo          INTEGER NOT NULL,
+  stock          INTEGER NOT NULL DEFAULT 0,
+  min            INTEGER NOT NULL DEFAULT 0,
+  vence          DATE,
+  unidad         TEXT NOT NULL DEFAULT 'und',
+  codigo_barras  TEXT
 );
 
 CREATE TABLE usuarios_sistema (
@@ -134,6 +135,12 @@ CREATE TABLE configuracion (
 );
 
 -- ===================== ÍNDICES =====================
+
+-- Migrar datos existentes: productos actuales tienen SKU = código de barras
+-- UPDATE productos SET codigo_barras = sku;
+
+CREATE UNIQUE INDEX idx_productos_codigo_barras
+  ON productos(codigo_barras) WHERE codigo_barras IS NOT NULL;
 
 CREATE INDEX idx_productos_categoria ON productos(categoria);
 CREATE INDEX idx_productos_vence ON productos(vence);

@@ -70,7 +70,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
     const ql = q.trim().toLowerCase();
     return productos.filter(p =>
       (cat === "Todos" || p.categoria === cat) &&
-      (!ql || p.nombre.toLowerCase().includes(ql) || p.sku.includes(ql))
+      (!ql || p.nombre.toLowerCase().includes(ql) || p.sku.toLowerCase().includes(ql) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(ql)))
     );
   }, [productos, cat, q]);
 
@@ -89,7 +89,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
         if (stockLeft <= 0) { setToast(`Solo hay ${p.stock} unidades de ${p.nombre}`); return c; }
         return c.map((l, idx) => idx === i ? { ...l, q: l.q + 1 } : l);
       }
-      return [...c, { sku: p.sku, nombre: p.nombre, q: 1, precio: p.precio, stockMax: p.stock }];
+      return [...c, { sku: p.sku, nombre: p.nombre, q: 1, precio: p.precio, stockMax: p.stock, codigoBarras: p.codigoBarras }];
     });
   };
   const setQty = (sku, delta) => {
@@ -165,9 +165,11 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
                 if (e.key === "Enter") {
                   const term = q.trim();
                   if (!term) return;
-                  // Match exact SKU first (lector de barras o digitado)
-                  let p = productos.find(x => x.sku === term);
-                  // Si no, primer resultado por nombre
+                  // 1. Match exacto en codigo_barras (escáner físico)
+                  let p = productos.find(x => x.codigoBarras === term);
+                  // 2. Match exacto en SKU
+                  if (!p) p = productos.find(x => x.sku === term);
+                  // 3. Primer resultado por nombre
                   if (!p) p = filtered[0];
                   if (p) { addToCart(p); setQ(""); }
                   else setToast(`Sin coincidencias para "${term}"`);
@@ -195,7 +197,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
                 </div>
                 <div className="name">{p.nombre}</div>
                 <div className="meta">
-                  <span className="mono">{p.sku}</span>
+                  <span className="mono">{p.codigoBarras || p.sku}</span>
                   <span className={p.stock < p.min ? "stock-bad" : ""}>{p.stock} {p.unidad}</span>
                 </div>
                 <div className="price mono">{window.fmtCOP(p.precio)}</div>
@@ -235,7 +237,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
                 <div className="cart-line" key={l.sku}>
                   <div>
                     <div className="name">{l.nombre}</div>
-                    <div className="sub mono">{window.fmtCOP(l.precio)} c/u · {l.sku}</div>
+                    <div className="sub mono">{window.fmtCOP(l.precio)} c/u · {l.codigoBarras || l.sku}</div>
                     <div className="qty">
                       <button onClick={() => setQty(l.sku, -1)}><Icon name="minus" size={12}/></button>
                       <span>{l.q}</span>
