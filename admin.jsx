@@ -687,7 +687,9 @@ const Ingreso = () => {
 
   const iniciarManual = () => {
     setItems([]); setVendedor(""); setCelular("");
-    setFactura("FV-" + Math.floor(Math.random()*9000+1000));
+    setFactura(""); setProveedor(proveedores[0]?.nombre || "");
+    const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    setRecibido(d.toISOString().slice(0,16));
     setOrigen("manual");
     setShowSelector(false);
     setShowForm(true);
