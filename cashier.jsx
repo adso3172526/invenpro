@@ -438,69 +438,179 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
     setRecibido(r => Math.min(r * 10 + parseInt(k), 99999999));
   };
 
+  const canPay = metodo !== "Efectivo" || recibido >= total;
+
   return (
-    <Modal title="Cobrar venta" onClose={onClose} lg bottomSheet footer={
-      <>
-        <button className="btn ghost" onClick={onClose}>Cancelar</button>
-        <button className="btn accent" disabled={metodo === "Efectivo" && recibido < total}
-          onClick={() => onPay(metodo, metodo === "Efectivo" ? recibido : total)}>
-          <Icon name="check"/> Confirmar pago
-        </button>
-      </>
-    }>
-      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-5">
-        <div>
-          <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-1.5">Método de pago</div>
-          <div className="tw-flex tw-flex-col tw-gap-1.5">
-            {["Efectivo", "Transferencia", "Nequi", "Daviplata"].map(m => (
-              <button key={m} className={"btn" + (metodo === m ? " primary" : "")} onClick={() => setMetodo(m)} style={{ justifyContent: "flex-start" }}>
-                <span className="tw-w-2 tw-h-2 tw-rounded-full" style={{ background: metodo === m ? "currentColor" : "var(--text-3)" }}/>
-                {m}
-              </button>
-            ))}
-          </div>
-          <div className="card tw-mt-3 tw-bg-surface-2">
-            <div className="card-b">
-              <div className="row spaced"><span className="muted">Items</span><span className="mono">{items}</span></div>
-              <div className="row spaced"><span className="muted">Total</span><span className="mono tw-text-[22px] tw-font-semibold">{window.fmtCOP(total)}</span></div>
-              {metodo === "Efectivo" && (
+    <div className="modal-bg" onClick={onClose}>
+      {/* Desktop: modal clásico */}
+      <div className="modal lg tw-hidden sm:tw-flex" onClick={e => e.stopPropagation()}>
+        <div className="modal-h">
+          <h3>Cobrar venta</h3>
+          <button className="x" onClick={onClose}><Icon name="x"/></button>
+        </div>
+        <div className="modal-b">
+          <div className="tw-grid tw-grid-cols-2 tw-gap-5">
+            <div>
+              <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-1.5">Método de pago</div>
+              <div className="tw-flex tw-flex-col tw-gap-1.5">
+                {["Efectivo", "Transferencia", "Nequi", "Daviplata"].map(m => (
+                  <button key={m} className={"btn" + (metodo === m ? " primary" : "")} onClick={() => setMetodo(m)} style={{ justifyContent: "flex-start" }}>
+                    <span className="tw-w-2 tw-h-2 tw-rounded-full" style={{ background: metodo === m ? "currentColor" : "var(--text-3)" }}/>
+                    {m}
+                  </button>
+                ))}
+              </div>
+              <div className="card tw-mt-3 tw-bg-surface-2">
+                <div className="card-b">
+                  <div className="row spaced"><span className="muted">Items</span><span className="mono">{items}</span></div>
+                  <div className="row spaced"><span className="muted">Total</span><span className="mono tw-text-[22px] tw-font-semibold">{window.fmtCOP(total)}</span></div>
+                  {metodo === "Efectivo" && (
+                    <>
+                      <div className="row spaced tw-mt-2"><span className="muted">Recibido</span><span className="mono">{window.fmtCOP(recibido)}</span></div>
+                      <div className="row spaced"><span className="muted">Cambio</span><span className="mono tw-font-semibold" style={{ color: cambio > 0 ? "var(--good)" : "var(--text-2)" }}>{window.fmtCOP(cambio)}</span></div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div>
+              {metodo === "Efectivo" ? (
                 <>
-                  <div className="row spaced tw-mt-2"><span className="muted">Recibido</span><span className="mono">{window.fmtCOP(recibido)}</span></div>
-                  <div className="row spaced"><span className="muted">Cambio</span><span className="mono tw-font-semibold" style={{ color: cambio > 0 ? "var(--good)" : "var(--text-2)" }}>{window.fmtCOP(cambio)}</span></div>
+                  <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-1.5">Efectivo recibido</div>
+                  <div className="cash-suggestions tw-flex tw-flex-wrap tw-gap-1.5">
+                    {[total, 50000, 100000, 200000].map((v, i) => (
+                      <button key={i} onClick={() => setRecibido(v)}>${v.toLocaleString("es-CO")}</button>
+                    ))}
+                  </div>
+                  <div className="keypad tw-mt-2">
+                    {["1","2","3","4","5","6","7","8","9","C","0","←"].map(k => (
+                      <button key={k} onClick={() => onKey(k)}>{k}</button>
+                    ))}
+                  </div>
                 </>
+              ) : (
+                <div className="card tw-bg-surface-2">
+                  <div className="card-b tw-text-center tw-p-8">
+                    <div className="tw-w-20 tw-h-20 tw-rounded-xl tw-bg-surface tw-mx-auto tw-mb-3.5 tw-grid tw-place-items-center tw-border tw-border-border">
+                      <Icon name={metodo === "Transferencia" ? "settings" : "pkg"} size={32}/>
+                    </div>
+                    <div className="tw-font-semibold tw-mb-1">Esperando pago por {metodo}…</div>
+                    <div className="muted tw-text-xs">El cliente debe confirmar la transacción en el datafono o aplicación.</div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
         </div>
-        <div>
+        <div className="modal-f">
+          <button className="btn ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn accent" disabled={!canPay}
+            onClick={() => onPay(metodo, metodo === "Efectivo" ? recibido : total)}>
+            <Icon name="check"/> Confirmar pago
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile: fullscreen bottom sheet optimizado */}
+      <div className="sm:tw-hidden tw-fixed tw-inset-0 tw-flex tw-flex-col tw-bg-surface tw-z-[101]" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-3 tw-border-b tw-border-border tw-shrink-0">
+          <div>
+            <div className="tw-text-base tw-font-bold">Cobrar venta</div>
+            <div className="tw-text-[11px] tw-text-txt-3">{items} producto{items !== 1 ? "s" : ""}</div>
+          </div>
+          <button className="tw-w-8 tw-h-8 tw-rounded-lg tw-border tw-border-border tw-bg-surface-2 tw-grid tw-place-items-center tw-cursor-pointer" onClick={onClose}><Icon name="x" size={16}/></button>
+        </div>
+
+        {/* Total prominente */}
+        <div className="tw-text-center tw-py-3 tw-border-b tw-border-border tw-bg-surface-2 tw-shrink-0">
+          <div className="tw-text-[10px] tw-text-txt-3 tw-uppercase tw-tracking-wider">Total a cobrar</div>
+          <div className="mono tw-text-2xl tw-font-bold tw-tracking-tight">{window.fmtCOP(total)}</div>
+        </div>
+
+        {/* Contenido scrolleable */}
+        <div className="tw-flex-1 tw-overflow-y-auto tw-min-h-0" style={{ WebkitOverflowScrolling: "touch" }}>
+          {/* Métodos de pago — horizontal */}
+          <div className="tw-px-4 tw-pt-3 tw-pb-2">
+            <div className="tw-text-[10px] tw-text-txt-3 tw-uppercase tw-tracking-wider tw-mb-2">Método de pago</div>
+            <div className="tw-grid tw-grid-cols-4 tw-gap-1.5">
+              {["Efectivo", "Transfer.", "Nequi", "Daviplata"].map((label, idx) => {
+                const val = ["Efectivo", "Transferencia", "Nequi", "Daviplata"][idx];
+                return (
+                  <button key={val}
+                    className={"tw-flex tw-flex-col tw-items-center tw-gap-1 tw-py-2 tw-px-1 tw-rounded-xl tw-border tw-text-[10px] tw-font-medium tw-cursor-pointer tw-transition-all "
+                      + (metodo === val
+                        ? "tw-bg-accent tw-text-white tw-border-accent tw-shadow-sm"
+                        : "tw-bg-surface-2 tw-text-txt-2 tw-border-border")}
+                    onClick={() => setMetodo(val)}>
+                    <Icon name={val === "Efectivo" ? "cart" : val === "Transferencia" ? "settings" : "pkg"} size={16}/>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {metodo === "Efectivo" ? (
-            <>
-              <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-1.5">Efectivo recibido</div>
-              <div className="cash-suggestions tw-flex tw-flex-wrap tw-gap-1.5">
-                {[total, 50000, 100000, 200000].map((v, i) => (
-                  <button key={i} onClick={() => setRecibido(v)}>${v.toLocaleString("es-CO")}</button>
-                ))}
-              </div>
-              <div className="keypad tw-mt-2">
-                {["1","2","3","4","5","6","7","8","9","C","0","←"].map(k => (
-                  <button key={k} onClick={() => onKey(k)}>{k}</button>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="card tw-bg-surface-2">
-              <div className="card-b tw-text-center tw-p-8">
-                <div className="tw-w-20 tw-h-20 tw-rounded-xl tw-bg-surface tw-mx-auto tw-mb-3.5 tw-grid tw-place-items-center tw-border tw-border-border">
-                  <Icon name={metodo === "Transferencia" ? "settings" : "pkg"} size={32}/>
+            <div className="tw-px-4 tw-pb-3">
+              {/* Recibido display */}
+              <div className="tw-bg-surface-2 tw-rounded-xl tw-p-3 tw-mb-2">
+                <div className="tw-flex tw-justify-between tw-items-center">
+                  <span className="tw-text-xs tw-text-txt-3">Recibido</span>
+                  <span className="mono tw-text-lg tw-font-bold">{window.fmtCOP(recibido)}</span>
                 </div>
-                <div className="tw-font-semibold tw-mb-1">Esperando pago por {metodo}…</div>
-                <div className="muted tw-text-xs">El cliente debe confirmar la transacción en el datafono o aplicación.</div>
+                {recibido >= total && (
+                  <div className="tw-flex tw-justify-between tw-items-center tw-mt-1 tw-pt-1 tw-border-t tw-border-border">
+                    <span className="tw-text-xs tw-text-txt-3">Cambio</span>
+                    <span className="mono tw-font-bold tw-text-good">{window.fmtCOP(cambio)}</span>
+                  </div>
+                )}
               </div>
+
+              {/* Sugerencias rápidas */}
+              <div className="tw-grid tw-grid-cols-4 tw-gap-1.5 tw-mb-2">
+                {[total, 50000, 100000, 200000].map((v, i) => (
+                  <button key={i}
+                    className={"tw-py-1.5 tw-rounded-lg tw-border tw-text-[11px] tw-font-medium tw-cursor-pointer tw-transition-all mono "
+                      + (recibido === v ? "tw-bg-accent tw-text-white tw-border-accent" : "tw-bg-surface-2 tw-border-border")}
+                    onClick={() => setRecibido(v)}>${v >= 1000 ? Math.round(v/1000) + "k" : v.toLocaleString("es-CO")}</button>
+                ))}
+              </div>
+
+              {/* Keypad compacto */}
+              <div className="tw-grid tw-grid-cols-3 tw-gap-1.5">
+                {["1","2","3","4","5","6","7","8","9","C","0","←"].map(k => (
+                  <button key={k}
+                    className={"tw-py-3 tw-rounded-xl tw-border tw-border-border tw-text-base tw-font-medium tw-cursor-pointer tw-transition-all active:tw-scale-[0.95] "
+                      + (k === "C" ? "tw-bg-bad-soft tw-text-bad" : k === "←" ? "tw-bg-surface-2 tw-text-txt-2" : "tw-bg-surface tw-text-txt")}
+                    onClick={() => onKey(k)}>{k}</button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="tw-px-4 tw-py-6 tw-text-center">
+              <div className="tw-w-16 tw-h-16 tw-rounded-2xl tw-bg-accent-soft tw-text-accent tw-mx-auto tw-mb-3 tw-grid tw-place-items-center">
+                <Icon name={metodo === "Transferencia" ? "settings" : "pkg"} size={28}/>
+              </div>
+              <div className="tw-font-semibold tw-mb-1">Pago por {metodo}</div>
+              <div className="tw-text-xs tw-text-txt-3">El cliente debe confirmar la transacción.</div>
             </div>
           )}
         </div>
+
+        {/* Footer fijo */}
+        <div className="tw-px-4 tw-py-3 tw-border-t tw-border-border tw-bg-surface-2 tw-shrink-0 tw-flex tw-gap-2">
+          <button className="tw-flex-1 tw-py-2.5 tw-rounded-xl tw-border tw-border-border tw-bg-surface tw-text-sm tw-font-medium tw-cursor-pointer" onClick={onClose}>Cancelar</button>
+          <button
+            className={"tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5 tw-transition-opacity "
+              + (canPay ? "tw-bg-accent tw-text-white" : "tw-bg-surface-3 tw-text-txt-3 tw-opacity-50 tw-cursor-not-allowed")}
+            disabled={!canPay}
+            onClick={() => onPay(metodo, metodo === "Efectivo" ? recibido : total)}>
+            <Icon name="check" size={15}/> Confirmar pago
+          </button>
+        </div>
       </div>
-    </Modal>
+    </div>
   );
 };
 
