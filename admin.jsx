@@ -407,13 +407,20 @@ const Ingreso = () => {
   const [showProv, setShowProv] = useStateA(false);
   const [provDraft, setProvDraft] = useStateA({ nombre: "", nit: "", tel: "" });
   const [toast, setToast] = useStateA(null);
+  const [guardando, setGuardando] = useStateA(false);
   const ingresosFiltrados = MOCK.ingresos.filter(i => i.fecha >= desde && i.fecha <= hasta);
   const pagIng = usePagination(ingresosFiltrados, 10);
 
-  const add = (sku, qty, costo, vence) => {
+  const add = (sku, qty, costo, vence, nombreManual) => {
     const p = MOCK.productos.find(x => x.sku === sku);
-    const nombre = p ? p.nombre : sku;
-    setItems(it => [...it, { sku, nombre, qty: parseInt(qty)||0, costo: parseInt(costo)||0, vence, nuevo: !p }]);
+    const esNuevo = !p;
+    const nombre = p ? p.nombre : (nombreManual || sku);
+    const item = { sku, nombre, qty: parseInt(qty)||0, costo: parseInt(costo)||0, vence, nuevo: esNuevo };
+    if (esNuevo) {
+      item.categoria = "General";
+      item.precio = Math.round((parseInt(costo)||0) * 1.3);
+    }
+    setItems(it => [...it, item]);
   };
 
   const actualizarItem = (idx, campo, valor) => {
@@ -430,15 +437,20 @@ const Ingreso = () => {
     setFactura(data.factura);
     setVendedor(data.vendedor || "");
     setCelular(data.celular || "");
-    setItems(data.items.map(it => ({
-      sku: it.sku || ("NUEVO-" + Math.floor(Math.random()*9999)),
-      nombre: it.nombre,
-      qty: it.qty,
-      costo: it.costo,
-      vence: it.vence,
-      nuevo: !!it.nuevo || !it.encontrado,
-      confianza: it.confianza,
-    })));
+    setItems(data.items.map(it => {
+      const esNuevo = !!it.nuevo || !it.encontrado;
+      return {
+        sku: it.sku || ("NUEVO-" + Math.floor(Math.random()*9999)),
+        nombre: it.nombre,
+        qty: it.qty,
+        costo: it.costo,
+        vence: it.vence,
+        nuevo: esNuevo,
+        confianza: it.confianza,
+        categoria: esNuevo ? "General" : undefined,
+        precio: esNuevo ? Math.round((it.costo || 0) * 1.3) : undefined,
+      };
+    }));
     setOrigen(modo);
     setShowQrScanner(false);
     setShowIaScanner(false);
@@ -621,21 +633,65 @@ const Ingreso = () => {
         <Modal title="Confirmar ingreso de mercancía" lg onClose={() => { setShowForm(false); setOrigen(null); }} footer={
           <>
             <button className="btn ghost" onClick={() => { setShowForm(false); setOrigen(null); }}>Cancelar</button>
-            <button className="btn accent" disabled={items.length === 0} onClick={async () => {
-              const ingreso = {
-                id: "ING-" + Date.now(),
-                fecha: new Date().toISOString().slice(0, 10),
-                proveedor: proveedor,
-                items: items.length,
-                costo: total,
-                recibe: "Administrador",
-                factura: factura,
-              };
-              await DB.createIngreso(ingreso, items);
-              await hydrateData();
-              setShowForm(false); setItems([]); setVendedor(""); setCelular(""); setOrigen(null);
-              setToast("Ingreso registrado · stock actualizado");
-            }}><Icon name="check"/> Confirmar ingreso</button>
+            <button className="btn accent" disabled={guardando || items.length === 0 || items.some(it => it.nuevo && (!it.sku || it.sku.startsWith("NUEVO-")))} onClick={async () => {
+              // Validar factura única
+              const yaExiste = MOCK.ingresos.find(i => i.factura === factura && i.proveedor === proveedor);
+              if (yaExiste) {
+                setToast("Esta factura ya fue registrada para este proveedor");
+                return;
+              }
+              // Validar códigos de barras de productos nuevos
+              const nuevos = items.filter(it => it.nuevo);
+              const skusNuevos = nuevos.map(it => it.sku);
+              const duplicados = skusNuevos.filter((s, i) => skusNuevos.indexOf(s) !== i);
+              if (duplicados.length > 0) {
+                setToast("Hay códigos de barras duplicados: " + duplicados.join(", "));
+                return;
+              }
+              const yaEnInventario = skusNuevos.filter(s => MOCK.productos.find(p => p.sku === s));
+              if (yaEnInventario.length > 0) {
+                setToast("Estos códigos ya existen en inventario: " + yaEnInventario.join(", "));
+                return;
+              }
+              // Bloquear doble clic
+              setGuardando(true);
+              try {
+                // Crear productos nuevos
+                for (const it of nuevos) {
+                  const err = await DB.createProducto({
+                    sku: it.sku,
+                    nombre: it.nombre,
+                    categoria: it.categoria || "General",
+                    precio: it.precio || Math.round(it.costo * 1.3),
+                    costo: it.costo,
+                    stock: 0,
+                    vence: it.vence || null,
+                  });
+                  if (err) { setToast("Error creando producto: " + it.nombre); setGuardando(false); return; }
+                }
+                // Incrementar stock de todos los items
+                for (const it of items) {
+                  await DB.incrementStock(it.sku, it.qty);
+                }
+                // Registrar ingreso
+                const ingreso = {
+                  id: "ING-" + Date.now(),
+                  fecha: new Date().toISOString().slice(0, 10),
+                  proveedor: proveedor,
+                  items: items.length,
+                  costo: total,
+                  recibe: "Administrador",
+                  factura: factura,
+                };
+                await DB.createIngreso(ingreso, items);
+                await hydrateData();
+                setShowForm(false); setItems([]); setVendedor(""); setCelular(""); setOrigen(null);
+                setToast("Ingreso registrado · " + nuevos.length + " producto(s) creado(s) · stock actualizado");
+              } catch (e) {
+                setToast("Error al guardar: " + e.message);
+              }
+              setGuardando(false);
+            }}><Icon name="check"/> {guardando ? "Guardando…" : "Confirmar ingreso"}</button>
           </>
         }>
           {origen && origen !== "manual" && (
@@ -749,6 +805,13 @@ const Ingreso = () => {
             </div>
           )}
 
+          {nuevos.some(it => !it.sku || it.sku.startsWith("NUEVO-")) && (
+            <div style={{ padding: "10px 14px", borderRadius: 8, background: "#FEF2F2", border: "1px solid #FECACA", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span style={{ fontSize: 12, color: "#991B1B" }}>Escanea o digita el código de barras de los productos nuevos para poder confirmar.</span>
+            </div>
+          )}
+
           <ItemAdder onAdd={add}/>
 
           {items.length > 0 && (
@@ -772,7 +835,19 @@ const Ingreso = () => {
                             />
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
-                            <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>
+                            {it.nuevo ? (
+                              <input
+                                className="mono barcode-input"
+                                value={it.sku.startsWith("NUEVO-") ? "" : it.sku}
+                                onChange={e => {
+                                  const v = e.target.value.replace(/\D/g,"");
+                                  actualizarItem(i, "sku", v || ("NUEVO-" + i));
+                                }}
+                                placeholder="Escanear código de barras…"
+                              />
+                            ) : (
+                              <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>
+                            )}
                             {it.nuevo && <span className="chip warn" style={{ fontSize: 9 }}>NUEVO</span>}
                             {!it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46" }}>EN BODEGA</span>}
                             {it.confianza !== undefined && it.confianza < 0.9 && (
@@ -781,6 +856,30 @@ const Ingreso = () => {
                               </span>
                             )}
                           </div>
+                          {it.nuevo && (
+                            <div className="nuevo-extras">
+                              <select
+                                value={it.categoria || "General"}
+                                onChange={e => actualizarItem(i, "categoria", e.target.value)}
+                                style={{ padding: "2px 4px", borderRadius: 4, border: "1px solid var(--border)", maxWidth: 110 }}
+                              >
+                                {[...new Set(MOCK.productos.map(p => p.categoria))].sort().map(c => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                                <option value="General">General</option>
+                              </select>
+                              <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                <span style={{ fontSize: 10, color: "var(--text-3)" }}>Venta:</span>
+                                <input
+                                  className="mono"
+                                  value={it.precio || ""}
+                                  onChange={e => actualizarItem(i, "precio", parseInt(e.target.value.replace(/\D/g,"")) || 0)}
+                                  placeholder="Precio"
+                                  style={{ padding: "2px 4px", border: "1px solid var(--border)", borderRadius: 4, width: 70 }}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </td>
                         <td className="num">
                           {stockActual !== null ? (
@@ -2216,14 +2315,14 @@ const Ajustes = () => {
           </div>
 
           {urlApi && (
-            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-              <div className="field" style={{ margin: 0, flex: 1 }}>
+            <div className="grid-2" style={{ gap: 10, marginBottom: 12 }}>
+              <div className="field" style={{ margin: 0 }}>
                 <label>Proveedor detectado</label>
                 <input value={detected.format === "gemini" ? "Google Gemini" : detected.format === "claude" ? "Anthropic Claude" : "OpenAI Compatible"} readOnly style={{ background: "var(--surface-2)", color: "var(--text-3)", cursor: "default" }}/>
               </div>
-              <div className="field" style={{ margin: 0, flex: 1 }}>
+              <div className="field" style={{ margin: 0 }}>
                 <label>Modelo</label>
-                <input value={detected.model} readOnly style={{ background: "var(--surface-2)", color: "var(--text-3)", cursor: "default", fontFamily: "monospace" }}/>
+                <input className="mono" value={detected.model} readOnly style={{ background: "var(--surface-2)", color: "var(--text-3)", cursor: "default" }}/>
               </div>
             </div>
           )}

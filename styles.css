@@ -862,6 +862,10 @@ input, select, textarea { font: inherit; color: inherit; }
   .method-card .method-icon { width: 40px; height: 40px; }
   /* Inputs en cell-input crecen */
   .cell-input { max-width: 80px; }
+  /* Campos nuevo producto: apilar */
+  .row-nuevo .barcode-input { width: 100%; }
+  .row-nuevo .nuevo-extras { flex-direction: column; gap: 4px; }
+  .row-nuevo .nuevo-extras select { max-width: 100%; }
   /* Filterbar más limpio */
   .filterbar { padding: 10px; }
   .select-pill { width: 100%; display: flex; gap: 8px; }
@@ -1513,6 +1517,14 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 }
 .cell-input:hover:not(:focus) { background: var(--surface-2); }
 .row-nuevo td { background: linear-gradient(90deg, #FFF8E0, transparent) !important; }
+/* Campos de producto nuevo en la tabla de ingreso */
+.row-nuevo .nuevo-extras { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+.row-nuevo .nuevo-extras select,
+.row-nuevo .nuevo-extras input { font-size: 11px; }
+.row-nuevo .barcode-input {
+  font-size: 11px; padding: 2px 6px; border: 2px solid #F59E0B;
+  background: #FFFBEB; border-radius: 4px; width: 160px; max-width: 100%;
+}
 
 /* ===== Scanner UI ===== */
 .scanner-frame {

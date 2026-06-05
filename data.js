@@ -196,6 +196,31 @@
       if (dErr) console.error("createIngreso detalle:", dErr);
     },
 
+    async createProducto(p) {
+      const { error } = await window.db.from("productos").insert({
+        sku: p.sku,
+        nombre: p.nombre,
+        categoria: p.categoria || "General",
+        precio: p.precio || 0,
+        costo: p.costo || 0,
+        stock: p.stock || 0,
+        min: p.min || 0,
+        vence: p.vence || null,
+        unidad: p.unidad || "und",
+      });
+      if (error) console.error("createProducto:", error);
+      return error;
+    },
+
+    async incrementStock(sku, qty) {
+      const { error } = await window.db.rpc("increment_stock", {
+        p_sku: sku,
+        p_qty: qty,
+      });
+      if (error) console.error("incrementStock:", error);
+      return error;
+    },
+
     async createTurno(turno) {
       const row = snakify(turno);
       const { error } = await window.db.from("turnos").insert(row);
