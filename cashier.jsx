@@ -291,7 +291,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
   };
 
   return (
-    <Modal title="Cobrar venta" onClose={onClose} lg footer={
+    <Modal title="Cobrar venta" onClose={onClose} lg bottomSheet footer={
       <>
         <button className="btn ghost" onClick={onClose}>Cancelar</button>
         <button className="btn accent" disabled={metodo === "Efectivo" && recibido < total}
@@ -358,7 +358,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
 
 // =================== Recibo ===================
 const ReceiptModal = ({ factura, onClose }) => (
-  <Modal title="Venta completada" onClose={onClose} footer={
+  <Modal title="Venta completada" onClose={onClose} bottomSheet footer={
     <>
       <button className="btn"><Icon name="print"/> Imprimir</button>
       <button className="btn primary" onClick={onClose}>Nueva venta <Icon name="arrowRight"/></button>
@@ -397,7 +397,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
   const esperado = shift.base + stats.ventas;
   const diff = contado - esperado;
   return (
-    <Modal title="Cerrar turno" onClose={onClose} lg footer={
+    <Modal title="Cerrar turno" onClose={onClose} lg bottomSheet footer={
       <>
         <button className="btn ghost" onClick={onClose}>Cancelar</button>
         <button className="btn primary" onClick={onConfirm}><Icon name="check"/> Confirmar cierre</button>
