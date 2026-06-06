@@ -792,13 +792,13 @@ input, select, textarea { font: inherit; color: inherit; }
   .row-nuevo .nuevo-extras select { max-width: 100%; }
   /* Filterbar más limpio */
   .filterbar { padding: 10px; }
-  .select-pill { width: 100%; display: flex; gap: 8px; }
-  .select-pill .lbl {
+  .filterbar .select-pill { width: 100%; display: flex; gap: 8px; }
+  .filterbar .select-pill .lbl {
     display: inline-block; font-size: 11px; font-weight: 600;
     color: var(--text-2); text-transform: uppercase; letter-spacing: 0.04em;
     flex-shrink: 0;
   }
-  .select-pill select { flex: 1; }
+  .filterbar .select-pill select { flex: 1; }
   /* Sidebar user en mobile menu */
   .sidebar .user .btn { flex: 1; justify-content: center; }
   /* Page padding */
