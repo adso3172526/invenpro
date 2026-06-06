@@ -2315,6 +2315,7 @@ const ProveedorForm = ({ inicial, onClose, onSave }) => {
 const Cajeros = () => {
   const [tab, setTab] = useStateA("equipo");
   const [showAdd, setShowAdd] = useStateA(false);
+  const [cfgCajero, setCfgCajero] = useStateA(null);
   const [toast, setToast] = useStateA(null);
   const pagCaj = usePagination(MOCK.cajeros, 2);
   const pagTur = usePagination(MOCK.turnos, 10);
@@ -2363,7 +2364,7 @@ const Cajeros = () => {
                       <td className="muted">{c.ingreso}</td>
                       <td className="num mono">{window.fmtCOP(c.ventas30d)}</td>
                       <td className="num">
-                        <button className="btn sm ghost"><Icon name="settings" size={13}/></button>
+                        <button className="btn sm ghost" onClick={() => setCfgCajero(c)}><Icon name="settings" size={13}/></button>
                       </td>
                     </tr>
                   ))}
@@ -2385,6 +2386,7 @@ const Cajeros = () => {
                     <div className="muted mono tw-text-[11px]">{c.id} · {c.doc}</div>
                   </div>
                   <span className={"chip " + (c.estado === "activo" ? "good" : "bad")}><span className="dot"/>{c.estado}</span>
+                  <button className="btn sm ghost" onClick={() => setCfgCajero(c)}><Icon name="settings" size={14}/></button>
                 </div>
                 <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
                   <div><span className="muted">Rol:</span> {c.rol}</div>
@@ -2465,8 +2467,133 @@ const Cajeros = () => {
           </div>
         </Modal>
       )}
+      {cfgCajero && <CajeroConfig cajero={cfgCajero} onClose={() => setCfgCajero(null)} onDone={(msg) => { setCfgCajero(null); setToast(msg); }}/>}
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
     </>
+  );
+};
+
+// ---- Modal de configuración de cajero ----
+const CajeroConfig = ({ cajero, onClose, onDone }) => {
+  const [nombre, setNombre] = useStateA(cajero.nombre);
+  const [doc, setDoc] = useStateA(cajero.doc);
+  const [rol, setRol] = useStateA(cajero.rol);
+  const [estado, setEstado] = useStateA(cajero.estado);
+  const [newPass, setNewPass] = useStateA("");
+  const [confirmDel, setConfirmDel] = useStateA(false);
+  const [saving, setSaving] = useStateA(false);
+
+  const usuario = useMemoA(() => {
+    const u = MOCK.usuarios_sistema.find(u => u.nombre === cajero.nombre);
+    return u ? u.usuario : null;
+  }, [cajero]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    // Update cajero data
+    const updates = {};
+    if (nombre !== cajero.nombre) updates.nombre = nombre;
+    if (doc !== cajero.doc) updates.doc = doc;
+    if (rol !== cajero.rol) updates.rol = rol;
+    if (estado !== cajero.estado) updates.estado = estado;
+
+    if (Object.keys(updates).length > 0) {
+      const err = await DB.updateCajero(cajero.id, updates);
+      if (!err) {
+        const idx = MOCK.cajeros.findIndex(c => c.id === cajero.id);
+        if (idx !== -1) Object.assign(MOCK.cajeros[idx], updates);
+      }
+    }
+
+    // Update password if provided
+    if (newPass && usuario) {
+      await DB.updateUsuario(usuario, { pass: newPass });
+    }
+
+    // Update nombre in usuarios_sistema if changed
+    if (updates.nombre && usuario) {
+      const uIdx = MOCK.usuarios_sistema.findIndex(u => u.usuario === usuario);
+      if (uIdx !== -1) MOCK.usuarios_sistema[uIdx].nombre = updates.nombre;
+      await DB.updateUsuario(usuario, { nombre: updates.nombre });
+    }
+
+    setSaving(false);
+    onDone("Cajero actualizado correctamente");
+  };
+
+  const handleDelete = async () => {
+    setSaving(true);
+    const err1 = await DB.deleteCajero(cajero.id);
+    if (!err1) {
+      MOCK.cajeros = MOCK.cajeros.filter(c => c.id !== cajero.id);
+      if (usuario) {
+        await DB.deleteUsuario(usuario);
+        MOCK.usuarios_sistema = MOCK.usuarios_sistema.filter(u => u.usuario !== usuario);
+      }
+      setSaving(false);
+      onDone("Cajero eliminado correctamente");
+    } else {
+      setSaving(false);
+    }
+  };
+
+  const toggleEstado = () => setEstado(estado === "activo" ? "inactivo" : "activo");
+
+  const initials = nombre.split(" ").map(x => x[0]).slice(0,2).join("");
+
+  return (
+    <Modal title="Configurar cajero" onClose={onClose} footer={
+      <>
+        <button className="btn ghost" onClick={onClose}>Cancelar</button>
+        <button className="btn primary" disabled={saving} onClick={handleSave}><Icon name="check"/> Guardar</button>
+      </>
+    }>
+      {/* Header */}
+      <div className="tw-flex tw-items-center tw-gap-3 tw-mb-4">
+        <div className="tw-w-10 tw-h-10 tw-rounded-full tw-bg-accent-soft tw-grid tw-place-items-center tw-font-semibold tw-text-sm" style={{ color: "var(--accent-ink)" }}>
+          {initials}
+        </div>
+        <div>
+          <div className="tw-font-medium">{cajero.nombre}</div>
+          <div className="muted mono tw-text-xs">{cajero.id} · {cajero.doc}</div>
+        </div>
+      </div>
+
+      {/* Datos personales */}
+      <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide muted tw-mb-2">Datos personales</div>
+      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
+        <div className="field"><label>Nombre</label><input value={nombre} onChange={e => setNombre(e.target.value)}/></div>
+        <div className="field"><label>Documento</label><input className="mono" value={doc} onChange={e => setDoc(e.target.value)}/></div>
+        <div className="field"><label>Rol</label><select value={rol} onChange={e => setRol(e.target.value)}><option>Cajero</option><option>Supervisor</option></select></div>
+      </div>
+
+      {/* Credenciales */}
+      <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide muted tw-mb-2 tw-mt-4">Credenciales</div>
+      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
+        <div className="field"><label>Usuario</label><input className="mono" value={usuario || "—"} readOnly style={{opacity:0.6}}/></div>
+        <div className="field"><label>Nueva contraseña</label><input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Dejar vacío para no cambiar"/></div>
+      </div>
+
+      {/* Estado */}
+      <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide muted tw-mb-2 tw-mt-4">Estado</div>
+      <button className={"chip " + (estado === "activo" ? "good" : "bad")} onClick={toggleEstado} style={{cursor:"pointer"}}>
+        <span className="dot"/>{estado === "activo" ? "Activo" : "Inactivo"} <span className="muted tw-text-[10px] tw-ml-1">(click para cambiar)</span>
+      </button>
+
+      {/* Zona peligrosa */}
+      <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide tw-mt-5 tw-mb-2" style={{color:"var(--err)"}}>Zona peligrosa</div>
+      {!confirmDel ? (
+        <button className="btn ghost" style={{color:"var(--err)", borderColor:"var(--err)"}} onClick={() => setConfirmDel(true)}>
+          <Icon name="trash-2" size={14}/> Eliminar cajero
+        </button>
+      ) : (
+        <div className="tw-flex tw-items-center tw-gap-2">
+          <span className="tw-text-sm" style={{color:"var(--err)"}}>¿Confirmar eliminación?</span>
+          <button className="btn sm" style={{background:"var(--err)", color:"#fff"}} disabled={saving} onClick={handleDelete}>Sí, eliminar</button>
+          <button className="btn sm ghost" onClick={() => setConfirmDel(false)}>No</button>
+        </div>
+      )}
+    </Modal>
   );
 };
 
