@@ -48,7 +48,7 @@ const Toast = ({ msg, onDone }) => {
 
 const Modal = ({ title, onClose, children, footer, lg, bottomSheet }) => (
   <div className="modal-bg" onClick={onClose}>
-    <div className={"modal" + (lg ? " lg" : "") + (bottomSheet ? " max-sm:tw-fixed max-sm:tw-bottom-0 max-sm:tw-left-0 max-sm:tw-right-0 max-sm:tw-rounded-t-2xl max-sm:tw-rounded-b-none max-sm:tw-max-h-[90vh] max-sm:tw-w-full max-sm:tw-overflow-y-auto" : "")} onClick={e => e.stopPropagation()}>
+    <div className={"modal" + (lg ? " lg" : "") + (bottomSheet ? " bottom-sheet" : "")} onClick={e => e.stopPropagation()}>
       <div className="modal-h">
         <h3>{title}</h3>
         <button className="x" onClick={onClose}><Icon name="x"/></button>

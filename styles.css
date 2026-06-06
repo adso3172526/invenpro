@@ -1130,6 +1130,23 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 }
 .modal.lg { width: min(94vw, 720px); }
 @keyframes pop { from { opacity: 0; transform: scale(.96) translateY(8px); } }
+/* Bottom-sheet en mobile: el modal-bg pasa a alinear abajo */
+@media (max-width: 639px) {
+  .modal-bg:has(> .modal.bottom-sheet) {
+    place-items: end stretch;
+  }
+  .modal.bottom-sheet {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+    animation: slide-up .22s cubic-bezier(.2,.8,.2,1);
+  }
+  .modal.bottom-sheet .modal-b { padding: 16px; }
+  .modal.bottom-sheet .modal-f { padding: 12px 16px; }
+  .modal.bottom-sheet .modal-f .btn { flex: 1; justify-content: center; }
+  @keyframes slide-up { from { opacity: 0; transform: translateY(40px); } }
+}
 .modal-h {
   padding: 18px 20px; border-bottom: 1px solid var(--border);
   display: flex; justify-content: space-between; align-items: center;
