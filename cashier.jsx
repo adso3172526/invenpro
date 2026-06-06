@@ -11,20 +11,25 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
     setLoading(true);
     const now = new Date();
     const turnoId = "T-" + Date.now();
-    const turno = {
+    const fechaIni = now.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
+    // Solo campos que existen en la tabla turnos
+    const turnoRow = {
       id: turnoId,
       cajero: cajero.nombre,
-      caja,
-      base,
-      ini: now,
-      fechaIni: now.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }),
-      baseIni: base,
+      fechaIni,
+      fechaFin: null,
       estado: "abierto",
+      baseIni: base,
       ventas: 0,
       transacciones: 0,
     };
-    DB.createTurno(turno).catch(err => console.error("createTurno:", err));
-    onOpen(turno);
+    try {
+      await DB.createTurno(turnoRow);
+    } catch (err) {
+      console.error("createTurno:", err);
+    }
+    // Pasar al POS con datos adicionales para la UI
+    onOpen({ ...turnoRow, caja, base, ini: now });
   };
 
   return (
