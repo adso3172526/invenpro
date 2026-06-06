@@ -5,6 +5,28 @@ const { useState, useEffect, useMemo } = React;
 const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
   const [base, setBase] = useState(200000);
   const [caja, setCaja] = useState("Caja 01");
+  const [loading, setLoading] = useState(false);
+
+  const handleOpen = async () => {
+    setLoading(true);
+    const now = new Date();
+    const turnoId = "T-" + Date.now();
+    const turno = {
+      id: turnoId,
+      cajero: cajero.nombre,
+      caja,
+      base,
+      ini: now,
+      fechaIni: now.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }),
+      baseIni: base,
+      estado: "abierto",
+      ventas: 0,
+      transacciones: 0,
+    };
+    DB.createTurno(turno).catch(err => console.error("createTurno:", err));
+    onOpen(turno);
+  };
+
   return (
     <div className="shift-open-shell">
       <div className="card shift-open-card tw-w-[min(94vw,480px)]">
@@ -23,7 +45,7 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
             </div>
             <div className="field">
               <label>Fecha y hora</label>
-              <input value="08 may 2026 · 07:02" readOnly/>
+              <input value={new Date().toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })} readOnly/>
             </div>
           </div>
           <div className="field">
@@ -44,7 +66,7 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
           </div>
         </div>
         <div className="modal-f tw-bg-surface-2">
-          <button className="btn primary" onClick={() => onOpen({ base, caja, ini: new Date() })}>Abrir turno <Icon name="arrowRight"/></button>
+          <button className="btn primary" disabled={loading} onClick={handleOpen}>{loading ? "Abriendo…" : "Abrir turno"} <Icon name="arrowRight"/></button>
           <button className="btn ghost" onClick={onLogout}><Icon name="logout"/> Salir</button>
         </div>
       </div>
@@ -205,7 +227,18 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   };
 
   const closeShift = () => {
-    onCloseShift({ ...shift, ...shiftStats, cierre: new Date() });
+    const now = new Date();
+    const summary = { ...shift, ...shiftStats, cierre: now };
+    // Persistir cierre en Supabase
+    if (shift.id) {
+      DB.closeTurno(shift.id, {
+        fechaFin: now.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }),
+        estado: "cerrado",
+        ventas: shiftStats.ventas,
+        transacciones: shiftStats.trans,
+      }).catch(err => console.error("closeTurno:", err));
+    }
+    onCloseShift(summary);
   };
 
   return (
