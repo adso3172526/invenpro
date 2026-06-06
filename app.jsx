@@ -39,8 +39,18 @@ const App = () => {
     // El rol y los permisos determinan la vista, no una selección manual
     const tieneAdmin = (u.permisos || []).includes("USUARIO_GESTIONAR")
                      || (u.permisos || []).includes("REPORTE_VER");
-    if (tieneAdmin) setStage("admin");
-    else setStage("shift-open");
+    if (tieneAdmin) { setStage("admin"); return; }
+
+    // Buscar turno abierto del cajero para reanudarlo
+    const turnoAbierto = (window.MOCK.turnos || []).find(
+      t => t.cajero === u.nombre && t.estado === "abierto"
+    );
+    if (turnoAbierto) {
+      setShift({ ...turnoAbierto, caja: turnoAbierto.caja || "Caja 01", base: turnoAbierto.baseIni });
+      setStage("pos");
+    } else {
+      setStage("shift-open");
+    }
   };
 
   const onLogout = () => {
