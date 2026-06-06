@@ -526,17 +526,17 @@ input, select, textarea { font: inherit; color: inherit; }
   }
   .nav-card-label-mobile {
     display: block !important;
-    font-size: 13px; font-weight: 500;
-    padding: 0 10px; color: var(--text);
+    font-size: 14px; font-weight: 500;
+    padding: 0 12px; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .nav-card-top {
-    padding: 10px; min-height: auto;
+    padding: 12px; min-height: auto;
     display: grid; place-items: center;
     border-radius: 8px 0 0 8px;
-    flex-shrink: 0;
+    flex-shrink: 0; width: 46px;
   }
-  .nav-card-top svg { width: 18px; height: 18px; }
+  .nav-card-top svg { width: 22px; height: 22px; }
   .nav-card-badge { font-size: 8px; padding: 1px 4px; top: 3px; right: 3px; }
 
   /* User box */
