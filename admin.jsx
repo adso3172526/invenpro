@@ -2123,12 +2123,12 @@ const Proveedores = () => {
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar nombre, NIT, contacto…"/>
           </div>
           <div className="tw-flex tw-gap-2 tw-w-full sm:tw-w-auto">
-            <div className="select-pill tw-flex-1 sm:tw-flex-none"><span className="lbl">Estado</span>
+            <div className="select-pill tw-flex-1 sm:tw-flex-none" style={{ width: "auto" }}><span className="lbl">Estado</span>
               <select value={estado} onChange={e => setEstado(e.target.value)}>
                 <option>Todos</option><option value="activo">Activos</option><option value="inactivo">Inactivos</option>
               </select>
             </div>
-            <div className="select-pill tw-flex-1 sm:tw-flex-none"><span className="lbl">Categoría</span>
+            <div className="select-pill tw-flex-1 sm:tw-flex-none" style={{ width: "auto" }}><span className="lbl">Categoría</span>
               <select value={categoria} onChange={e => setCategoria(e.target.value)}>
                 {categorias.map(c => <option key={c}>{c}</option>)}
               </select>
