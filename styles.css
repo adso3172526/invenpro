@@ -214,9 +214,9 @@ input, select, textarea { font: inherit; color: inherit; }
   border-right: 1px solid var(--border);
   background: var(--surface);
   display: flex; flex-direction: column;
-  padding: 18px 10px;
+  padding: 10px 8px;
   position: sticky; top: 0; height: 100vh;
-  width: 110px;
+  width: 90px;
   flex-shrink: 0;
 }
 .sidebar .nav-cards {
@@ -225,7 +225,7 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .sidebar .brand {
   display: flex; align-items: center; gap: 10px;
-  padding: 4px 8px 18px 8px;
+  padding: 2px 6px 10px 6px;
   font-weight: 600; letter-spacing: -0.01em;
 }
 .sidebar .brand .glyph {
@@ -286,19 +286,19 @@ input, select, textarea { font: inherit; color: inherit; }
 
 /* === Tile-style nav cards (icon-only, compact) === */
 .nav-cards {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  margin-top: 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  margin-top: 4px;
   width: 100%;
 }
 .nav-card {
   background: color-mix(in oklab, var(--nav-c) 10%, var(--surface));
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--nav-c) 20%, transparent);
   cursor: pointer;
   transition: all .22s ease;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  width: 64px;
+  width: 54px;
 }
 .nav-card:hover {
   transform: translateY(-2px);
@@ -317,16 +317,16 @@ input, select, textarea { font: inherit; color: inherit; }
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: #fff;
-  padding: 14px 10px;
+  padding: 10px 8px;
   display: flex; align-items: center; justify-content: center;
   position: relative;
 }
 .nav-card-top svg { color: #fff; stroke-width: 2.5; }
 .nav-card-badge {
-  position: absolute; top: 4px; right: 6px;
+  position: absolute; top: 2px; right: 4px;
   background: rgba(255,255,255,0.25); color: #fff;
-  font-size: 9px; font-weight: 700;
-  padding: 1px 5px; border-radius: 999px;
+  font-size: 8px; font-weight: 700;
+  padding: 1px 4px; border-radius: 999px;
 }
 .nav-item.active .dot { background: var(--accent); }
 .nav-item .dot {
@@ -342,21 +342,21 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .sidebar .user {
   margin-top: 0;
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 10px 6px; border-radius: 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 4px; border-radius: 8px;
   border: 1px solid var(--border);
   text-align: center;
 }
 .sidebar .user .avatar {
-  width: 32px; height: 32px; border-radius: 999px;
+  width: 28px; height: 28px; border-radius: 999px;
   background: var(--accent-soft); color: var(--accent-ink);
-  display: grid; place-items: center; font-weight: 600; font-size: 12px;
+  display: grid; place-items: center; font-weight: 600; font-size: 11px;
   flex-shrink: 0;
 }
 .sidebar .user .flex-1 { display: none; }
 .sidebar .user .name, .sidebar .user .role { display: none; }
 .sidebar .user .btn {
-  width: 100%; padding: 6px; justify-content: center;
+  width: 100%; padding: 4px; justify-content: center; font-size: 11px;
 }
 
 .main {

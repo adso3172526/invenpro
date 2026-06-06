@@ -14,7 +14,7 @@ const exportXlsx = (filename, sheets) => {
 
 // =================== Sidebar ===================
 const NAV = [
-  { id: "dashboard",   label: "Dashboard",          icon: "chart",    color: "#3B82F6" },
+  { id: "dashboard",   label: "Dashboard",          icon: "home",     color: "#3B82F6" },
   { id: "pos",         label: "Facturar",           icon: "cart",     color: "#0EA5E9" },
   { id: "inventory",   label: "Inventario",         icon: "box",      color: "#22C55E" },
   { id: "ingreso",     label: "Ingreso mercancía",  icon: "truck",    color: "#F59E0B" },
@@ -47,8 +47,8 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
           <img src="logo.png" alt="InvenPro" style={{ height: 28, objectFit: "contain" }}/>
           <button className="btn sm ghost" onClick={() => setOpen(false)}><Icon name="x" size={16}/></button>
         </div>
-        <div className="brand" style={{ paddingTop: 8, justifyContent: "center", display: "flex" }}>
-          <img src="logo.png" alt="InvenPro" style={{ height: 36, objectFit: "contain" }}/>
+        <div className="brand" style={{ paddingTop: 4, justifyContent: "center", display: "flex" }}>
+          <img src="logo.png" alt="InvenPro" style={{ height: 28, objectFit: "contain" }}/>
         </div>
         <div className="nav-cards">
           {NAV.filter(n => !n.rol || (user && user.rol === n.rol)).map(n => (
@@ -58,7 +58,7 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
                  onClick={() => goTo(n.id)}
                  title={n.label}>
               <div className="nav-card-top">
-                <Icon name={n.icon} size={26}/>
+                <Icon name={n.icon} size={20}/>
                 {n.badge && <span className="nav-card-badge">{n.badge}</span>}
               </div>
               <div className="nav-card-label-mobile">{n.label}</div>
