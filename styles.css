@@ -515,35 +515,49 @@ input, select, textarea { font: inherit; color: inherit; }
   }
   .sidebar .brand { display: none !important; }
 
-  /* Nav cards — cuadradas, fáciles de tocar */
+  /* Nav cards — lista compacta con icono + label */
   .sidebar .nav-cards {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    display: flex; flex-direction: column; gap: 4px;
     flex: none; width: 100%;
   }
-  .sidebar .nav-card { width: 100%; border-radius: 10px; aspect-ratio: 1; }
-  .nav-card-label-mobile { display: none !important; }
-  .nav-card-top { padding: 0; min-height: 100%; display: grid; place-items: center; }
-  .nav-card-top svg { width: 30px; height: 30px; }
-  .nav-card-badge { font-size: 8px; padding: 1px 5px; top: 4px; right: 4px; }
+  .sidebar .nav-card {
+    width: 100%; border-radius: 8px;
+    display: flex; flex-direction: row; align-items: center;
+  }
+  .nav-card-label-mobile {
+    display: block !important;
+    font-size: 13px; font-weight: 500;
+    padding: 0 10px; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .nav-card-top {
+    padding: 10px; min-height: auto;
+    display: grid; place-items: center;
+    border-radius: 8px 0 0 8px;
+    flex-shrink: 0;
+  }
+  .nav-card-top svg { width: 18px; height: 18px; }
+  .nav-card-badge { font-size: 8px; padding: 1px 4px; top: 3px; right: 3px; }
 
   /* User box */
   .sidebar .user {
-    flex-direction: column; align-items: stretch;
-    margin-top: 16px; padding: 10px; gap: 8px;
-    text-align: center;
+    flex-direction: row; align-items: center;
+    margin-top: 12px; padding: 8px 10px; gap: 8px;
+    text-align: left;
   }
-  .sidebar .user .avatar { width: 32px; height: 32px; font-size: 12px; align-self: center; }
+  .sidebar .user .avatar { width: 30px; height: 30px; font-size: 11px; }
   .user-info-mobile {
-    display: block; flex: none; min-width: 0; text-align: center;
+    display: block; flex: 1; min-width: 0;
   }
   .name-m { font-weight: 600; font-size: 12px; line-height: 1.2; }
   .role-m { font-size: 10px; color: var(--text-3); }
   .sidebar .user .flex-1 { display: none; }
   .sidebar .user .btn {
-    width: 100%; padding: 8px 6px; justify-content: center;
-    font-size: 11px; gap: 4px;
+    padding: 6px; justify-content: center;
+    font-size: 0; gap: 0; flex-shrink: 0;
   }
-  .user-logout-label { display: inline; font-size: 11px; }
+  .sidebar .user .btn svg { width: 16px; height: 16px; }
+  .user-logout-label { display: none; }
 
   /* Main — descontar mobile topbar */
   .main { min-width: 0; max-height: calc(100vh - 56px); overflow-y: auto; }
@@ -591,12 +605,7 @@ input, select, textarea { font: inherit; color: inherit; }
   /* Modal body scroll */
   .modal-b { max-height: calc(100vh - 130px); overflow-y: auto; }
 
-  /* Nav móvil más compacto */
-  /* Nav cards — mantener cuadradas grandes en móvil */
-  .nav-card-top { padding: 0; min-height: 100%; display: grid; place-items: center; }
-  .nav-card-top svg { width: 30px; height: 30px; }
-  .nav-card-badge { font-size: 8px; padding: 1px 5px; }
-  .nav-card-label-mobile { display: none !important; }
+  /* Nav móvil — hereda estilo lista del breakpoint 900px */
 
   /* Toolbar de búsqueda */
   .pos-search { padding: 10px 12px; }
