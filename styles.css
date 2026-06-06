@@ -1137,10 +1137,14 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   }
   .modal.bottom-sheet {
     width: 100%;
-    max-height: 92vh;
+    max-height: 85dvh;
+    max-height: 85vh; /* fallback */
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     border-bottom: 0;
     animation: slide-up .22s cubic-bezier(.2,.8,.2,1);
+  }
+  @supports (max-height: 1dvh) {
+    .modal.bottom-sheet { max-height: 85dvh; }
   }
   .modal.bottom-sheet .modal-b { padding: 16px; }
   .modal.bottom-sheet .modal-f { padding: 12px 16px; }

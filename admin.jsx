@@ -2284,10 +2284,10 @@ const ProveedorForm = ({ inicial, onClose, onSave }) => {
         </button>
       </>
     }>
-      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
-        <div className="field"><label>Razón social *</label>
+      <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-0">
+        <div className="field tw-col-span-2 sm:tw-col-span-1"><label>Razón social *</label>
           <input value={d.nombre} onChange={e => set("nombre", e.target.value)} placeholder="Ej: Distribuidora El Sol"/></div>
-        <div className="field"><label>NIT *</label>
+        <div className="field tw-col-span-2 sm:tw-col-span-1"><label>NIT *</label>
           <input className="mono" value={d.nit} onChange={e => set("nit", e.target.value)} placeholder="900.000.000-0"/></div>
         <div className="field"><label>Categoría</label>
           <select value={d.categoria} onChange={e => set("categoria", e.target.value)}>
@@ -2298,9 +2298,9 @@ const ProveedorForm = ({ inicial, onClose, onSave }) => {
           <select value={d.terminos} onChange={e => set("terminos", e.target.value)}>
             <option>Contado</option><option>15 días</option><option>30 días</option><option>45 días</option><option>60 días</option>
           </select></div>
-        <div className="field"><label>Persona de contacto *</label>
+        <div className="field tw-col-span-2 sm:tw-col-span-1"><label>Contacto *</label>
           <input value={d.contacto} onChange={e => set("contacto", e.target.value)} placeholder="Ej: Mauricio Rendón"/></div>
-        <div className="field"><label>Teléfono *</label>
+        <div className="field tw-col-span-2 sm:tw-col-span-1"><label>Teléfono *</label>
           <input className="mono" value={d.tel} onChange={e => set("tel", e.target.value)} placeholder="(4) 444 0000"/></div>
         <div className="field"><label>Correo</label>
           <input value={d.email} onChange={e => set("email", e.target.value)} placeholder="ventas@empresa.co"/></div>
