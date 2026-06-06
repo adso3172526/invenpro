@@ -2480,7 +2480,6 @@ const CajeroConfig = ({ cajero, onClose, onDone }) => {
   const [rol, setRol] = useStateA(cajero.rol);
   const [estado, setEstado] = useStateA(cajero.estado);
   const [newPass, setNewPass] = useStateA("");
-  const [confirmDel, setConfirmDel] = useStateA(false);
   const [saving, setSaving] = useStateA(false);
 
   const usuario = useMemoA(() => {
@@ -2521,21 +2520,6 @@ const CajeroConfig = ({ cajero, onClose, onDone }) => {
     onDone("Cajero actualizado correctamente");
   };
 
-  const handleDelete = async () => {
-    setSaving(true);
-    const err1 = await DB.deleteCajero(cajero.id);
-    if (!err1) {
-      MOCK.cajeros = MOCK.cajeros.filter(c => c.id !== cajero.id);
-      if (usuario) {
-        await DB.deleteUsuario(usuario);
-        MOCK.usuarios_sistema = MOCK.usuarios_sistema.filter(u => u.usuario !== usuario);
-      }
-      setSaving(false);
-      onDone("Cajero eliminado correctamente");
-    } else {
-      setSaving(false);
-    }
-  };
 
   const toggleEstado = () => setEstado(estado === "activo" ? "inactivo" : "activo");
 
@@ -2580,19 +2564,6 @@ const CajeroConfig = ({ cajero, onClose, onDone }) => {
         <span className="dot"/>{estado === "activo" ? "Activo" : "Inactivo"} <span className="muted tw-text-[10px] tw-ml-1">(click para cambiar)</span>
       </button>
 
-      {/* Zona peligrosa */}
-      <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide tw-mt-5 tw-mb-2" style={{color:"var(--err)"}}>Zona peligrosa</div>
-      {!confirmDel ? (
-        <button className="btn ghost" style={{color:"var(--err)", borderColor:"var(--err)"}} onClick={() => setConfirmDel(true)}>
-          <Icon name="trash-2" size={14}/> Eliminar cajero
-        </button>
-      ) : (
-        <div className="tw-flex tw-items-center tw-gap-2">
-          <span className="tw-text-sm" style={{color:"var(--err)"}}>¿Confirmar eliminación?</span>
-          <button className="btn sm" style={{background:"var(--err)", color:"#fff"}} disabled={saving} onClick={handleDelete}>Sí, eliminar</button>
-          <button className="btn sm ghost" onClick={() => setConfirmDel(false)}>No</button>
-        </div>
-      )}
     </Modal>
   );
 };

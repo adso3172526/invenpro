@@ -296,11 +296,6 @@
       return error;
     },
 
-    async deleteCajero(id) {
-      const { error } = await window.db.from("cajeros").delete().eq("id", id);
-      if (error) console.error("deleteCajero:", error);
-      return error;
-    },
 
     async updateUsuario(usuario, updates) {
       const { error } = await window.db.from("usuarios_sistema").update(updates).eq("usuario", usuario);
@@ -308,11 +303,6 @@
       return error;
     },
 
-    async deleteUsuario(usuario) {
-      const { error } = await window.db.from("usuarios_sistema").delete().eq("usuario", usuario);
-      if (error) console.error("deleteUsuario:", error);
-      return error;
-    },
 
     async saveConfig(clave, valor) {
       const v = String(valor ?? "");
