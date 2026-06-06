@@ -72,20 +72,6 @@ input, select, textarea { font: inherit; color: inherit; }
 .tnum { font-variant-numeric: tabular-nums; }
 
 /* ============ Theme toggle (floating) ============ */
-.theme-toggle {
-  position: fixed;
-  bottom: 16px; right: 16px;
-  width: 40px; height: 40px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  display: grid; place-items: center;
-  box-shadow: var(--shadow-md);
-  z-index: 200;
-  transition: transform .15s ease;
-}
-.theme-toggle:hover { transform: translateY(-1px); }
-.theme-toggle svg { width: 18px; height: 18px; }
 
 /* ============ Login ============ */
 .login-shell {
@@ -782,8 +768,6 @@ input, select, textarea { font: inherit; color: inherit; }
   /* Tab-bar buttons full width */
   .tab-bar { width: 100%; }
   .tab-bar button { flex: 1; }
-  /* Botón flotante de tema en zona segura */
-  .theme-toggle { bottom: 14px; right: 14px; }
   /* Login form más compacto */
   .login-form h2 { font-size: 20px; }
   /* Origen banner */

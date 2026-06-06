@@ -59,12 +59,6 @@ const Modal = ({ title, onClose, children, footer, lg, bottomSheet }) => (
   </div>
 );
 
-const ThemeToggle = ({ theme, setTheme }) => (
-  <button className="theme-toggle" onClick={() => setTheme(theme === "light" ? "dark" : "light")} title="Cambiar tema">
-    <Icon name={theme === "light" ? "moon" : "sun"} size={18}/>
-  </button>
-);
-
 // Mini sparkline
 const Spark = ({ data, color = "var(--accent)", h = 36, w = 80 }) => {
   if (!data?.length) return null;
@@ -116,4 +110,4 @@ const Pagination = ({ page, setPage, totalPages, total, pageSize, label = "regis
   );
 };
 
-Object.assign(window, { Icon, Toast, Modal, ThemeToggle, Spark, usePagination, Pagination });
+Object.assign(window, { Icon, Toast, Modal, Spark, usePagination, Pagination });

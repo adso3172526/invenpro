@@ -49,26 +49,19 @@ const App = () => {
     setStage("login"); setAdminPage("dashboard");
   };
 
-  if (stage === "login") return (<>
-    <Login onLogin={onLogin}/>
-    <ThemeToggle theme={theme} setTheme={setTheme}/>
-  </>);
+  if (stage === "login") return <Login onLogin={onLogin}/>;
 
-  if (stage === "shift-open") return (<>
+  if (stage === "shift-open") return (
     <ShiftOpen cajero={user} onLogout={onLogout} onOpen={(s) => { setShift(s); setStage("pos"); }}/>
-    <ThemeToggle theme={theme} setTheme={setTheme}/>
-  </>);
+  );
 
   if (stage === "pos") return (
-    <POS shift={shift} cajero={user} theme={theme} setTheme={setTheme}
+    <POS shift={shift} cajero={user}
       onLogout={onLogout}
       onCloseShift={(summary) => { setShiftSummary(summary); setStage("shift-closed"); }}/>
   );
 
-  if (stage === "shift-closed") return (<>
-    <ShiftClosed summary={shiftSummary} onLogout={onLogout}/>
-    <ThemeToggle theme={theme} setTheme={setTheme}/>
-  </>);
+  if (stage === "shift-closed") return <ShiftClosed summary={shiftSummary} onLogout={onLogout}/>;
 
   // Admin
   if (stage === "admin") {
@@ -76,16 +69,13 @@ const App = () => {
       // Si el admin no ha abierto turno, mostrarlo como al cajero
       if (!shift) {
         return (
-          <>
-            <ShiftOpen cajero={user}
-              onLogout={() => setAdminPage("dashboard")}
-              onOpen={(s) => setShift(s)}/>
-            <ThemeToggle theme={theme} setTheme={setTheme}/>
-          </>
+          <ShiftOpen cajero={user}
+            onLogout={() => setAdminPage("dashboard")}
+            onOpen={(s) => setShift(s)}/>
         );
       }
       return (
-        <POS shift={shift} cajero={user} theme={theme} setTheme={setTheme}
+        <POS shift={shift} cajero={user}
           onLogout={() => setAdminPage("dashboard")}
           onCloseShift={() => { setShift(null); setAdminPage("dashboard"); }}/>
       );
@@ -105,7 +95,6 @@ const App = () => {
             {adminPage === "ajustes" && <Ajustes/>}
           </div>
         </div>
-        <ThemeToggle theme={theme} setTheme={setTheme}/>
       </div>
     );
   }

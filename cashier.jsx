@@ -120,7 +120,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
 // =================== POS principal ===================
 const CATEGORIAS = ["Todos", "Lácteos", "Panadería", "Granos", "Despensa", "Enlatados", "Bebidas", "Frescos", "Aseo"];
 
-const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
+const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   const [productos, setProductos] = useState(() => MOCK.productos.map(p => ({ ...p })));
   const [cart, setCart] = useState([]);
   const [cat, setCat] = useState("Todos");
@@ -493,8 +493,6 @@ const POS = ({ shift, cajero, onCloseShift, onLogout, theme, setTheme }) => {
           </div>
         </div>
       </div>
-
-      <ThemeToggle theme={theme} setTheme={setTheme}/>
 
       {pay && <PaymentModal total={totals.total} items={totals.items} onClose={() => setPay(null)} onPay={completePay}/>}
       {done && <ReceiptModal factura={done} onClose={() => setDone(null)}/>}
