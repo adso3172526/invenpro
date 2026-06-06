@@ -58,7 +58,7 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
                  onClick={() => goTo(n.id)}
                  title={n.label}>
               <div className="nav-card-top">
-                <Icon name={n.icon} size={20}/>
+                <Icon name={n.icon} size={26}/>
                 {n.badge && <span className="nav-card-badge">{n.badge}</span>}
               </div>
               <div className="nav-card-label-mobile">{n.label}</div>

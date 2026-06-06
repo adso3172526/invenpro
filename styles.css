@@ -214,9 +214,9 @@ input, select, textarea { font: inherit; color: inherit; }
   border-right: 1px solid var(--border);
   background: var(--surface);
   display: flex; flex-direction: column;
-  padding: 10px 8px;
+  padding: 12px 10px;
   position: sticky; top: 0; height: 100vh;
-  width: 90px;
+  width: 100px;
   flex-shrink: 0;
 }
 .sidebar .nav-cards {
@@ -286,19 +286,19 @@ input, select, textarea { font: inherit; color: inherit; }
 
 /* === Tile-style nav cards (icon-only, compact) === */
 .nav-cards {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  margin-top: 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  margin-top: 6px;
   width: 100%;
 }
 .nav-card {
   background: color-mix(in oklab, var(--nav-c) 10%, var(--surface));
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--nav-c) 20%, transparent);
   cursor: pointer;
   transition: all .22s ease;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  width: 54px;
+  width: 68px;
 }
 .nav-card:hover {
   transform: translateY(-2px);
@@ -317,16 +317,16 @@ input, select, textarea { font: inherit; color: inherit; }
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: #fff;
-  padding: 10px 8px;
+  padding: 14px 10px;
   display: flex; align-items: center; justify-content: center;
   position: relative;
 }
-.nav-card-top svg { color: #fff; stroke-width: 2.5; }
+.nav-card-top svg { color: #fff; stroke-width: 2.2; }
 .nav-card-badge {
-  position: absolute; top: 2px; right: 4px;
+  position: absolute; top: 3px; right: 5px;
   background: rgba(255,255,255,0.25); color: #fff;
-  font-size: 8px; font-weight: 700;
-  padding: 1px 4px; border-radius: 999px;
+  font-size: 9px; font-weight: 700;
+  padding: 1px 5px; border-radius: 999px;
 }
 .nav-item.active .dot { background: var(--accent); }
 .nav-item .dot {
