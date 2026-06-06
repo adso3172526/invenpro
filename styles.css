@@ -305,24 +305,31 @@ input, select, textarea { font: inherit; color: inherit; }
   width: 100%;
 }
 .nav-card {
-  background: var(--surface);
+  background: color-mix(in oklab, var(--nav-c) 10%, var(--surface));
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in oklab, var(--nav-c) 20%, transparent);
   cursor: pointer;
-  transition: all .18s ease;
+  transition: all .22s ease;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   width: 64px;
 }
 .nav-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 14px -4px color-mix(in oklab, var(--nav-c) 40%, transparent);
+  background: color-mix(in oklab, var(--nav-c) 18%, var(--surface));
+  border-color: color-mix(in oklab, var(--nav-c) 35%, transparent);
+  box-shadow: 0 6px 16px -4px color-mix(in oklab, var(--nav-c) 35%, transparent);
 }
 .nav-card.active {
-  box-shadow: 0 0 0 2px var(--nav-c), 0 6px 14px -4px color-mix(in oklab, var(--nav-c) 50%, transparent);
+  background: color-mix(in oklab, var(--nav-c) 15%, var(--surface));
+  border-color: color-mix(in oklab, var(--nav-c) 50%, transparent);
+  box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--nav-c) 60%, transparent),
+              0 6px 16px -4px color-mix(in oklab, var(--nav-c) 40%, transparent);
 }
 .nav-card-top {
-  background: var(--nav-c);
+  background: color-mix(in oklab, var(--nav-c) 85%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   color: #fff;
   padding: 14px 10px;
   display: flex; align-items: center; justify-content: center;
