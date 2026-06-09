@@ -34,7 +34,7 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
 
   return (
     <div className="shift-open-shell">
-      <div className="card shift-open-card tw-w-[min(94vw,480px)]">
+      <div className="card shift-open-card tw-w-[min(94vw,580px)]">
         <div className="card-h tw-flex-col tw-items-start tw-p-5">
           <div className="row tw-mb-1.5">
             <img src="logo.png" alt="InvenPro" className="tw-h-[26px] tw-object-contain"/>
