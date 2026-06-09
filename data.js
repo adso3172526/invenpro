@@ -1,5 +1,5 @@
-// InvenPro — Helpers y utilidades globales
-// Cargado ANTES de models.js — exporta camelize, snakify, hashPass, fmtCOP, etc.
+// InvenPro — Capa de acceso a datos (Supabase)
+// Cargado DESPUÉS de models.js — usa las clases definidas allí.
 (function () {
   const today = new Date(2026, 4, 8); // 8 de mayo 2026
 
@@ -56,4 +56,25 @@
     return Math.round(ms / (1000 * 60 * 60 * 24));
   };
   window.todayStr = fmt(today);
+
+  // ---------- hydrateData (DataStore) ----------
+  window.hydrateData = async function () {
+    if (!window._dataStore) {
+      window._dataStore = new DataStore();
+    }
+    await window._dataStore.hydrate();
+    window.MOCK = window._dataStore;
+  };
+
+  // ---------- DB: instancias de servicios ----------
+  window.DB = {
+    auth: new AuthService(),
+    productos: new ProductoService(),
+    facturas: new FacturaService(),
+    turnos: new TurnoService(),
+    cajeros: new CajeroService(),
+    proveedores: new ProveedorService(),
+    ingresos: new IngresoService(),
+    config: new ConfigService(),
+  };
 })();
