@@ -107,17 +107,36 @@
     };
   };
 
+  // ---------- Hash de contraseñas (SHA-256) ----------
+  const hashPass = async (plain) => {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(plain));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  };
+  window.hashPass = hashPass;
+
   // ---------- DB write operations ----------
   window.DB = {
     async login(usuario, pass) {
       if (!window.db) { console.error("Supabase no cargó. Recarga la página."); return null; }
-      const { data, error } = await window.db
+      const hashed = await hashPass(pass);
+      // Intentar con hash primero
+      let { data, error } = await window.db
+        .from("usuarios_sistema")
+        .select("*")
+        .ilike("usuario", usuario)
+        .eq("pass", hashed)
+        .maybeSingle();
+      if (!error && data) return camelize(data);
+      // Fallback: contraseña aún en texto plano → migrar a hash
+      ({ data, error } = await window.db
         .from("usuarios_sistema")
         .select("*")
         .ilike("usuario", usuario)
         .eq("pass", pass)
-        .maybeSingle();
+        .maybeSingle());
       if (error || !data) return null;
+      // Auto-migrar a hash
+      await window.db.from("usuarios_sistema").update({ pass: hashed }).eq("usuario", data.usuario);
       return camelize(data);
     },
 

@@ -193,7 +193,8 @@ const CajeroConfig = ({ cajero, onClose, onDone }) => {
     }
 
     if (newPass && usuario) {
-      await DB.updateUsuario(usuario, { pass: newPass });
+      const hashed = await window.hashPass(newPass);
+      await DB.updateUsuario(usuario, { pass: hashed });
     }
 
     if (updates.nombre && usuario) {

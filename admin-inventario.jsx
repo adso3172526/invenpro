@@ -318,16 +318,16 @@ const ProductoEditModal = ({ producto, saving, onClose, onSave }) => {
 
       <div className="grid-2">
         <div className="field"><label>Precio de venta</label>
-          <input className="mono" type="number" min="0" value={d.precio} onChange={e => set("precio", parseInt(e.target.value) || 0)}/></div>
+          <input className="mono" type="number" min="0" value={d.precio || ""} onChange={e => set("precio", e.target.value === "" ? 0 : parseInt(e.target.value))}/></div>
         <div className="field"><label>Costo</label>
-          <input className="mono" type="number" min="0" value={d.costo} onChange={e => set("costo", parseInt(e.target.value) || 0)}/></div>
+          <input className="mono" type="number" min="0" value={d.costo || ""} onChange={e => set("costo", e.target.value === "" ? 0 : parseInt(e.target.value))}/></div>
       </div>
 
       <div className="grid-2">
         <div className="field"><label>Stock actual</label>
-          <input className="mono" type="number" min="0" value={d.stock} onChange={e => set("stock", parseInt(e.target.value) || 0)}/></div>
+          <input className="mono" type="number" min="0" value={d.stock || ""} onChange={e => set("stock", e.target.value === "" ? 0 : parseInt(e.target.value))}/></div>
         <div className="field"><label>Stock mínimo</label>
-          <input className="mono" type="number" min="0" value={d.min} onChange={e => set("min", parseInt(e.target.value) || 0)}/></div>
+          <input className="mono" type="number" min="0" value={d.min || ""} onChange={e => set("min", e.target.value === "" ? 0 : parseInt(e.target.value))}/></div>
       </div>
 
       <div className="grid-2">
