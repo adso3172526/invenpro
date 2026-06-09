@@ -34,15 +34,15 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
 
   return (
     <div className="shift-open-shell">
-      <div className="card shift-open-card tw-w-[min(94vw,580px)]">
-        <div className="card-h tw-flex-col tw-items-start tw-p-5">
-          <div className="row tw-mb-1.5">
-            <img src="logo.png" alt="InvenPro" className="tw-h-[26px] tw-object-contain"/>
+      <div className="card shift-open-card">
+        <div className="card-h tw-flex-col tw-items-start tw-p-6 md:tw-p-8">
+          <div className="row tw-mb-2">
+            <img src="logo.png" alt="InvenPro" className="tw-h-[32px] tw-object-contain"/>
           </div>
-          <h3 className="tw-text-xl tw-font-semibold tw-tracking-tight tw-my-1">Abrir turno</h3>
-          <p className="muted tw-m-0 tw-text-[13px]">Hola {cajero.nombre}. Confirma la base de caja inicial para empezar a facturar.</p>
+          <h3 className="tw-text-2xl tw-font-semibold tw-tracking-tight tw-my-1.5">Abrir turno</h3>
+          <p className="muted tw-m-0 tw-text-sm">Hola {cajero.nombre}. Confirma la base de caja inicial para empezar a facturar.</p>
         </div>
-        <div className="card-b tw-p-5">
+        <div className="card-b tw-p-6 md:tw-p-8">
           <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
             <div className="field">
               <label>Cajero</label>
@@ -70,7 +70,7 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
             </div>
           </div>
         </div>
-        <div className="modal-f tw-bg-surface-2">
+        <div className="modal-f tw-bg-surface-2 tw-p-6 md:tw-px-8">
           <button className="btn primary" disabled={loading} onClick={handleOpen}>{loading ? "Abriendo…" : "Abrir turno"} <Icon name="arrowRight"/></button>
           <button className="btn ghost" onClick={onLogout}><Icon name="logout"/> Salir</button>
         </div>

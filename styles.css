@@ -1230,7 +1230,7 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   padding: 24px; background: var(--bg);
 }
 .shift-open-card {
-  width: min(94vw, 480px);
+  width: min(94vw, 720px);
 }
 .shift-open-card .cash-suggestions { gap: 6px; flex-wrap: wrap; }
 .shift-open-card .modal-f { flex-wrap: wrap; gap: 8px; }
