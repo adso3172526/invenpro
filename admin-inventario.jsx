@@ -24,9 +24,10 @@ const Inventario = () => {
       list = list.filter(p => p.nombre.toLowerCase().includes(qq) || p.sku.toLowerCase().includes(qq) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(qq)));
     }
     if (estado === "Bajo") list = list.filter(p => p.stock < p.min);
-    if (estado === "Sin stock") list = list.filter(p => p.stock === 0);
-    if (estado === "Sin código") list = list.filter(p => !p.codigoBarras);
-    return [...list].sort((a, b) => (a.codigoBarras ? 1 : 0) - (b.codigoBarras ? 1 : 0));
+    else if (estado === "Sin stock") list = list.filter(p => p.stock === 0);
+    else if (estado === "Sin código") list = list.filter(p => !p.codigoBarras);
+    else list = list.filter(p => !!p.codigoBarras);
+    return [...list].sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [productos, q, cat, estado]);
 
   const pag = usePagination(rows, 8);
