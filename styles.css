@@ -902,8 +902,8 @@ input, select, textarea { font: inherit; color: inherit; }
   .chart-bars .lbl, .chart-bars .val { font-size: 9px; }
 }
 
-.page { padding: 24px 32px 60px; max-width: 1180px; margin: 0 auto; width: 100%; }
-.page:has(.dash) { padding: 14px 20px 24px; max-width: 1320px; }
+.page { padding: 24px 32px 60px; max-width: 1440px; margin: 0 auto; width: 100%; }
+.page:has(.dash) { padding: 14px 20px 24px; max-width: 1440px; }
 
 /* Dashboard — base structure (layout controlled by Tailwind) */
 .dash { width: 100%; box-sizing: border-box; }
