@@ -143,7 +143,7 @@ const Reportes = () => {
       </div>
 
       {/* Gráficas: ventas por mes + por cajero */}
-      <div className="tw-grid tw-grid-cols-1 lg:tw-grid-cols-[1.4fr_1fr] tw-gap-2.5 tw-mb-3 tw-items-start">
+      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5 tw-mb-3 tw-items-stretch">
         <div className="card tw-flex tw-flex-col">
           <div className="card-h"><h3>Ventas por mes</h3><p className="sub">{byMonth.length} mes(es)</p></div>
           <div className="card-b tw-flex-1">
@@ -185,7 +185,7 @@ const Reportes = () => {
       </div>
 
       {/* Métodos de pago + Top productos */}
-      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5 tw-mb-3 tw-items-start">
+      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5 tw-mb-3 tw-items-stretch">
         <div className="card tw-flex tw-flex-col">
           <div className="card-h"><h3>Métodos de pago</h3></div>
           <div className="tw-flex-1">
