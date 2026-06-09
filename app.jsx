@@ -37,7 +37,9 @@ const App = () => {
       permisos: u.permisos || [],
     });
     // El rol y los permisos determinan la vista, no una selección manual
-    const tieneAdmin = (u.permisos || []).includes("USUARIO_GESTIONAR")
+    const tieneAdmin = u.rol === "Administrador"
+                     || u.rol === "Supervisor"
+                     || (u.permisos || []).includes("USUARIO_GESTIONAR")
                      || (u.permisos || []).includes("REPORTE_VER");
     if (tieneAdmin) { setStage("admin"); return; }
 
