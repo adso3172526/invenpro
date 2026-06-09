@@ -1,12 +1,11 @@
-// InvenPro — Capa de acceso a datos (Supabase)
-// Cargado DESPUÉS de models.js — usa las clases definidas allí.
+// InvenPro — Capa de datos: Modelos, Servicios y DataStore
+// Todo dentro de un único IIFE para captura de closure confiable.
 (function () {
   const today = new Date(2026, 4, 8); // 8 de mayo 2026
 
-  // ---------- helpers ----------
+  // ══════════ HELPERS ══════════
   const fmt = (d) => d.toISOString().slice(0, 10);
 
-  // snake_case → camelCase
   function camelize(obj) {
     if (Array.isArray(obj)) return obj.map(camelize);
     if (obj !== null && typeof obj === "object") {
@@ -20,7 +19,6 @@
     return obj;
   }
 
-  // camelCase → snake_case
   function snakify(obj) {
     if (Array.isArray(obj)) return obj.map(snakify);
     if (obj !== null && typeof obj === "object") {
@@ -34,16 +32,377 @@
     return obj;
   }
 
-  // ---------- Hash de contraseñas (SHA-256) ----------
   const hashPass = async (plain) => {
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(plain));
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
   };
 
-  // ---------- Exponer globalmente ----------
+  // ══════════ MODELOS (6) ══════════
+
+  class Producto {
+    constructor(data) {
+      this.sku = data.sku;
+      this.nombre = data.nombre;
+      this.categoria = data.categoria;
+      this.precio = data.precio;
+      this.costo = data.costo;
+      this.stock = data.stock;
+      this.min = data.min;
+      this.vence = data.vence;
+      this.unidad = data.unidad;
+      this.codigoBarras = data.codigoBarras;
+    }
+    get initials() {
+      return this.nombre ? this.nombre.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() : "?";
+    }
+    get stockBajo() { return this.stock < this.min; }
+    get valorTotal() { return this.stock * this.costo; }
+  }
+
+  class Usuario {
+    constructor(data) {
+      this.usuario = data.usuario;
+      this.nombre = data.nombre;
+      this.rol = data.rol;
+      this.permisos = data.permisos;
+      this.pass = data.pass;
+    }
+    get initials() {
+      return this.nombre ? this.nombre.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() : "?";
+    }
+    get esAdmin() { return this.rol === "Administrador"; }
+  }
+
+  class Cajero {
+    constructor(data) {
+      this.id = data.id;
+      this.nombre = data.nombre;
+      this.doc = data.doc;
+      this.rol = data.rol;
+      this.estado = data.estado;
+      this.turnoActivo = data.turnoActivo;
+      this.ingreso = data.ingreso;
+      this.ventas30d = data.ventas30d;
+    }
+    get initials() {
+      return this.nombre ? this.nombre.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() : "?";
+    }
+    get activo() { return this.estado === "activo"; }
+  }
+
+  class Proveedor {
+    constructor(data) {
+      this.id = data.id;
+      this.nombre = data.nombre;
+      this.nit = data.nit;
+      this.contacto = data.contacto;
+      this.tel = data.tel;
+      this.email = data.email;
+      this.ciudad = data.ciudad;
+      this.categoria = data.categoria;
+      this.terminos = data.terminos;
+      this.estado = data.estado;
+      this.ingresos = data.ingresos;
+      this.ultimoIngreso = data.ultimoIngreso;
+    }
+    get activo() { return this.estado === "activo"; }
+  }
+
+  class Turno {
+    constructor(data) {
+      this.id = data.id;
+      this.cajero = data.cajero;
+      this.fechaIni = data.fechaIni;
+      this.fechaFin = data.fechaFin;
+      this.baseIni = data.baseIni;
+      this.ventas = data.ventas;
+      this.transacciones = data.transacciones;
+      this.estado = data.estado;
+    }
+    get abierto() { return this.estado === "abierto"; }
+  }
+
+  class Factura {
+    constructor(data) {
+      this.id = data.id;
+      this.fecha = data.fecha;
+      this.hora = data.hora;
+      this.cajero = data.cajero;
+      this.metodo = data.metodo;
+      this.total = data.total;
+      this.items = data.items || [];
+    }
+    get cantidadItems() { return this.items.reduce((sum, it) => sum + (it.q || 0), 0); }
+  }
+
+  // ══════════ SERVICIOS (8) ══════════
+
+  class AuthService {
+    async login(usuario, pass) {
+      if (!window.db) { console.error("Supabase no cargó. Recarga la página."); return null; }
+      const hashed = await hashPass(pass);
+      let { data, error } = await window.db
+        .from("usuarios_sistema").select("*")
+        .ilike("usuario", usuario).eq("pass", hashed).maybeSingle();
+      if (!error && data) return camelize(data);
+      ({ data, error } = await window.db
+        .from("usuarios_sistema").select("*")
+        .ilike("usuario", usuario).eq("pass", pass).maybeSingle());
+      if (error || !data) return null;
+      await window.db.from("usuarios_sistema").update({ pass: hashed }).eq("usuario", data.usuario);
+      return camelize(data);
+    }
+    async updatePassword(usuario, newPass) {
+      const hashed = await hashPass(newPass);
+      const { error } = await window.db.from("usuarios_sistema").update({ pass: hashed }).eq("usuario", usuario);
+      if (error) console.error("updatePassword:", error);
+      return error;
+    }
+  }
+
+  class ProductoService {
+    async getAll() {
+      const { data, error } = await window.db.from("productos").select("*");
+      if (error) { console.error("ProductoService.getAll:", error); return []; }
+      return camelize(data || []).map(d => new Producto(d));
+    }
+    async create(p) {
+      const { error } = await window.db.from("productos").insert({
+        sku: p.sku, nombre: p.nombre, categoria: p.categoria || "General",
+        precio: p.precio || 0, costo: p.costo || 0, stock: p.stock || 0,
+        min: p.min || 0, vence: p.vence || null, unidad: p.unidad || "und",
+        codigo_barras: p.codigoBarras || null,
+      });
+      if (error) console.error("createProducto:", error);
+      return error;
+    }
+    async update(sku, updates) {
+      const row = snakify(updates);
+      const { error } = await window.db.from("productos").update(row).eq("sku", sku);
+      if (error) console.error("updateProducto:", error);
+      return error;
+    }
+    async updateBarcode(sku, codigoBarras) {
+      const { error } = await window.db.from("productos").update({ codigo_barras: codigoBarras }).eq("sku", sku);
+      if (error) console.error("updateCodigoBarras:", error);
+      return error;
+    }
+    async incrementStock(sku, qty) {
+      const { error } = await window.db.rpc("increment_stock", { p_sku: sku, p_qty: qty });
+      if (error) console.error("incrementStock:", error);
+      return error;
+    }
+    generateSku() {
+      const productos = (window.MOCK && window.MOCK.productos) || [];
+      let max = 0;
+      for (const p of productos) {
+        const m = p.sku.match(/^P-(\d+)$/);
+        if (m) { const n = parseInt(m[1], 10); if (n > max) max = n; }
+      }
+      return "P-" + String(max + 1).padStart(5, "0");
+    }
+  }
+
+  class FacturaService {
+    async create(factura, cartItems) {
+      const { error: fErr } = await window.db.from("facturas").insert({
+        id: factura.id, fecha: factura.fecha, hora: factura.hora,
+        cajero: factura.cajero, metodo: factura.metodo, total: factura.total,
+      });
+      if (fErr) console.error("createFactura header:", fErr);
+      const rows = cartItems.map((it) => ({
+        factura_id: factura.id, sku: it.sku, nombre: it.nombre, q: it.q, precio: it.precio,
+      }));
+      const { error: iErr } = await window.db.from("factura_items").insert(rows);
+      if (iErr) console.error("createFactura items:", iErr);
+      for (const it of cartItems) {
+        await window.db.rpc("decrement_stock", { p_sku: it.sku, p_qty: it.q });
+      }
+    }
+  }
+
+  class TurnoService {
+    async create(turno) {
+      const row = snakify(turno);
+      const { error } = await window.db.from("turnos").insert(row);
+      if (error) console.error("createTurno:", error);
+    }
+    async close(id, updates) {
+      const row = snakify(updates);
+      const { error } = await window.db.from("turnos").update(row).eq("id", id);
+      if (error) console.error("closeTurno:", error);
+    }
+  }
+
+  class CajeroService {
+    async update(id, updates) {
+      const row = snakify(updates);
+      const { error } = await window.db.from("cajeros").update(row).eq("id", id);
+      if (error) console.error("updateCajero:", error);
+      return error;
+    }
+    async updateUsuario(usuario, updates) {
+      const { error } = await window.db.from("usuarios_sistema").update(updates).eq("usuario", usuario);
+      if (error) console.error("updateUsuario:", error);
+      return error;
+    }
+  }
+
+  class ProveedorService {
+    async create(p) {
+      const row = snakify(p);
+      const { error } = await window.db.from("proveedores").insert(row);
+      if (error) console.error("createProveedor:", error);
+    }
+    async update(id, updates) {
+      const row = snakify(updates);
+      const { error } = await window.db.from("proveedores").update(row).eq("id", id);
+      if (error) console.error("updateProveedor:", error);
+    }
+  }
+
+  class IngresoService {
+    async create(ingreso, detalle) {
+      const { error: hErr } = await window.db.from("ingresos").insert({
+        id: ingreso.id, fecha: ingreso.fecha, proveedor: ingreso.proveedor,
+        items: ingreso.items, costo: ingreso.costo, recibe: ingreso.recibe, factura: ingreso.factura,
+      });
+      if (hErr) console.error("createIngreso header:", hErr);
+      const rows = detalle.map((d) => ({
+        ingreso_id: ingreso.id, sku: d.sku, nombre: d.nombre,
+        qty: d.qty, costo: d.costo, vence: d.vence || null,
+      }));
+      const { error: dErr } = await window.db.from("ingreso_detalle").insert(rows);
+      if (dErr) console.error("createIngreso detalle:", dErr);
+    }
+    async update(id, header, detalle) {
+      const { error: hErr } = await window.db.from("ingresos")
+        .update({ proveedor: header.proveedor, factura: header.factura, recibe: header.recibe }).eq("id", id);
+      if (hErr) { console.error("updateIngreso header:", hErr); return hErr; }
+      const { error: delErr } = await window.db.from("ingreso_detalle").delete().eq("ingreso_id", id);
+      if (delErr) { console.error("updateIngreso del:", delErr); return delErr; }
+      const rows = detalle.map(d => ({
+        ingreso_id: id, sku: d.sku, nombre: d.nombre,
+        qty: d.qty, costo: d.costo, vence: d.vence || null,
+      }));
+      const { error: dErr } = await window.db.from("ingreso_detalle").insert(rows);
+      if (dErr) { console.error("updateIngreso detalle:", dErr); return dErr; }
+      const totalCosto = detalle.reduce((s, d) => s + d.qty * d.costo, 0);
+      await window.db.from("ingresos").update({ items: detalle.length, costo: totalCosto }).eq("id", id);
+      return null;
+    }
+  }
+
+  class ConfigService {
+    async save(clave, valor) {
+      const v = String(valor ?? "");
+      const { error } = await window.db.from("configuracion").upsert({ clave, valor: v }, { onConflict: "clave" });
+      if (error) console.error("saveConfig:", error);
+      if (window.MOCK && window.MOCK.configuracion) { window.MOCK.configuracion[clave] = v; }
+    }
+    async saveBatch(entries) {
+      const rows = Object.entries(entries).map(([clave, valor]) => ({ clave, valor: String(valor ?? "") }));
+      const { error } = await window.db.from("configuracion").upsert(rows, { onConflict: "clave" });
+      if (error) console.error("saveConfigBatch:", error);
+      if (window.MOCK && window.MOCK.configuracion) {
+        for (const { clave, valor } of rows) { window.MOCK.configuracion[clave] = valor; }
+      }
+    }
+  }
+
+  // ══════════ DATASTORE ══════════
+
+  class DataStore {
+    constructor() {
+      this.today = today;
+      this.productos = [];
+      this.cajeros = [];
+      this.usuarios_sistema = [];
+      this.proveedores = [];
+      this.turnos = [];
+      this.facturas = [];
+      this.ingresos = [];
+      this.ventasMes = [];
+      this.ventasCajero = [];
+      this.topProductos = [];
+      this.ventasHoy = [];
+      this.configuracion = {};
+    }
+    async hydrate() {
+      const d = window.db;
+      if (!d) { console.warn("DataStore.hydrate: window.db no disponible"); return; }
+      const [
+        { data: productos }, { data: cajeros }, { data: usuariosSistema },
+        { data: ventasMes }, { data: ventasCajero }, { data: topProductos },
+        { data: ventasHoy }, { data: proveedores }, { data: turnos },
+        { data: facturas }, { data: ingresos }, { data: configuracion },
+      ] = await Promise.all([
+        d.from("productos").select("*"),
+        d.from("cajeros").select("*"),
+        d.from("usuarios_sistema").select("*"),
+        d.from("ventas_mes").select("*"),
+        d.from("ventas_cajero").select("*"),
+        d.from("top_productos").select("*"),
+        d.from("ventas_hoy").select("*"),
+        d.from("proveedores").select("*"),
+        d.from("turnos").select("*"),
+        d.from("facturas").select("*, factura_items(*)"),
+        d.from("ingresos").select("*, ingreso_detalle(*)"),
+        d.from("configuracion").select("*"),
+      ]);
+      const facturasConItems = (facturas || []).map((f) => {
+        const raw = camelize(f);
+        raw.items = raw.facturaItems || [];
+        delete raw.facturaItems;
+        return new Factura(raw);
+      });
+      facturasConItems.sort((a, b) => (b.fecha + b.hora).localeCompare(a.fecha + a.hora));
+      const ingresosConDetalle = (ingresos || []).map((i) => {
+        const raw = camelize(i);
+        raw.detalle = raw.ingresoDetalle || [];
+        delete raw.ingresoDetalle;
+        return raw;
+      });
+      const configMap = {};
+      (configuracion || []).forEach(r => { configMap[r.clave] = r.valor; });
+
+      this.productos = camelize(productos || []).map(d => new Producto(d));
+      this.cajeros = camelize(cajeros || []).map(d => new Cajero(d));
+      this.usuarios_sistema = camelize(usuariosSistema || []).map(d => new Usuario(d));
+      this.ventasMes = camelize(ventasMes || []);
+      this.ventasCajero = camelize(ventasCajero || []);
+      this.topProductos = camelize(topProductos || []);
+      this.ventasHoy = camelize(ventasHoy || []);
+      this.proveedores = camelize(proveedores || []).map(d => new Proveedor(d));
+      this.turnos = camelize(turnos || []).map(d => new Turno(d));
+      this.facturas = facturasConItems;
+      this.ingresos = ingresosConDetalle;
+      this.configuracion = configMap;
+    }
+  }
+
+  // ══════════ INICIALIZACIÓN GLOBAL ══════════
+
+  window.hashPass = hashPass;
   window.camelize = camelize;
   window.snakify = snakify;
-  window.hashPass = hashPass;
+
+  window.hydrateData = async function () {
+    if (!window._dataStore) { window._dataStore = new DataStore(); }
+    await window._dataStore.hydrate();
+    window.MOCK = window._dataStore;
+  };
+
+  window.DB = {
+    auth: new AuthService(),
+    productos: new ProductoService(),
+    facturas: new FacturaService(),
+    turnos: new TurnoService(),
+    cajeros: new CajeroService(),
+    proveedores: new ProveedorService(),
+    ingresos: new IngresoService(),
+    config: new ConfigService(),
+  };
 
   window.fmtCOP = function (n) {
     if (n == null || isNaN(n)) return "—";
@@ -57,24 +416,10 @@
   };
   window.todayStr = fmt(today);
 
-  // ---------- hydrateData (DataStore) ----------
-  window.hydrateData = async function () {
-    if (!window._dataStore) {
-      window._dataStore = new DataStore();
-    }
-    await window._dataStore.hydrate();
-    window.MOCK = window._dataStore;
-  };
-
-  // ---------- DB: instancias de servicios ----------
-  window.DB = {
-    auth: new AuthService(),
-    productos: new ProductoService(),
-    facturas: new FacturaService(),
-    turnos: new TurnoService(),
-    cajeros: new CajeroService(),
-    proveedores: new ProveedorService(),
-    ingresos: new IngresoService(),
-    config: new ConfigService(),
-  };
+  // Exponer clases para instanceof y UML
+  Object.assign(window, {
+    Producto, Usuario, Cajero, Proveedor, Turno, Factura,
+    AuthService, ProductoService, FacturaService, TurnoService,
+    CajeroService, ProveedorService, IngresoService, ConfigService, DataStore,
+  });
 })();
