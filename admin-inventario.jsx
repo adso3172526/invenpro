@@ -88,7 +88,7 @@ const Inventario = () => {
       </div>
 
       {/* ── KPI mini cards ── */}
-      <div className="tw-grid tw-grid-cols-4 tw-gap-1.5 tw-mb-1.5">
+      <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 tw-mb-1.5">
         {[
           { key: "Todos", lbl: "Productos", val: productos.length, icon: "box", c: "accent" },
           { key: "stock", lbl: "Stock total", val: totalStock.toLocaleString("es-CO"), icon: "cart", c: "good" },
@@ -100,22 +100,19 @@ const Inventario = () => {
             : estado === k.key;
           return (
             <button key={k.key}
-              className="tw-bg-surface tw-border tw-border-border tw-rounded-lg tw-p-2 tw-text-left tw-cursor-pointer tw-transition-colors"
+              className="kpi"
               style={{
+                textAlign: "left",
                 borderColor: active ? "var(--accent)" : undefined,
                 background: active ? "var(--accent-soft)" : undefined,
+                cursor: "pointer",
               }}
               onClick={() => {
                 if (k.key === "stock") { setEstado("Todos"); setCat("Todos"); setQ(""); }
                 else setEstado(estado === k.key ? "Todos" : k.key);
               }}>
-              <div className="muted tw-text-[10px] tw-leading-tight tw-mb-0.5 tw-flex tw-items-center tw-gap-1">
-                <Icon name={k.icon} size={10}/> {k.lbl}
-              </div>
-              <div className={"mono tw-font-bold tw-text-sm tw-leading-none"}
-                style={{ color: k.c !== "good" && k.c !== "accent" && k.val > 0 ? `var(--${k.c})` : undefined }}>
-                {k.val}
-              </div>
+              <div className="label tw-text-xs tw-truncate"><span className={"chip " + k.c}><span className="dot"/></span>{k.lbl}</div>
+              <div className="val" style={{ color: k.c !== "good" && k.c !== "accent" && k.val > 0 ? `var(--${k.c})` : undefined }}>{k.val}</div>
             </button>
           );
         })}
