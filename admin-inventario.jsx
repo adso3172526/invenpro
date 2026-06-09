@@ -73,55 +73,63 @@ const Inventario = () => {
 
   return (
     <>
-      <div className="page-h">
-        <div>
-          <h2>Inventario / Bodega</h2>
-          <p className="sub">{productos.length} productos · {bajo} con stock bajo · valor en bodega {window.fmtCOP(totalValor)}</p>
+      <div className="tw-flex tw-flex-col md:tw-h-[calc(100vh-48px)]" style={{ marginTop: -8 }}>
+
+      {/* ── Header compacto: título + stats + exportar ── */}
+      <div className="tw-flex tw-items-center tw-justify-between tw-mb-1.5">
+        <div className="tw-flex tw-items-baseline tw-gap-2 tw-min-w-0">
+          <h2 className="tw-text-base md:tw-text-lg tw-font-bold tw-m-0 tw-shrink-0">Inventario</h2>
+          <span className="muted tw-text-[11px] tw-truncate">{productos.length} prod · {bajo} bajo · {window.fmtCOP(totalValor)}</span>
         </div>
-        <div className="row">
-          <button className="btn" onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
-            { name: "Inventario", rows: rows.map(p => ({
-              SKU: p.sku, "Código de barras": p.codigoBarras || "", Producto: p.nombre, Categoría: p.categoria,
-              Precio: p.precio, Costo: p.costo, Stock: p.stock, Mínimo: p.min, Unidad: p.unidad, Vence: p.vence || ""
-            })) },
-          ])}><Icon name="download" size={14}/> Exportar Excel</button>
-        </div>
+        <button className="btn sm tw-shrink-0" onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
+          { name: "Inventario", rows: rows.map(p => ({
+            SKU: p.sku, "Código de barras": p.codigoBarras || "", Producto: p.nombre, Categoría: p.categoria,
+            Precio: p.precio, Costo: p.costo, Stock: p.stock, Mínimo: p.min, Unidad: p.unidad, Vence: p.vence || ""
+          })) },
+        ])}><Icon name="download" size={13}/> <span className="tw-hidden sm:tw-inline">Exportar</span></button>
       </div>
 
-      <div className="kpi-grid tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 md:tw-gap-[10px]">
-        <div className="kpi" style={{ cursor: "pointer", borderColor: estado === "Todos" ? "var(--accent)" : undefined, background: estado === "Todos" ? "var(--accent-soft)" : undefined }} onClick={() => setEstado("Todos")}>
-          <div className="label"><Icon name="box" size={14}/> Total productos</div>
-          <div className="val">{productos.length}</div>
+      {/* ── Toolbar: KPI chips + búsqueda + filtros ── */}
+      <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-1.5 tw-mb-1.5">
+        {/* KPI badges clickables */}
+        <div className="tw-flex tw-gap-1 tw-mr-1">
+          {[
+            { key: "Todos", label: `${productos.length}`, icon: "box", active: estado === "Todos" },
+            { key: "Sin código", label: `${sinCodigo} sin cód`, icon: null, active: estado === "Sin código", color: sinCodigo > 0 ? "warn" : "" },
+            { key: "Bajo", label: `${bajo} bajo`, icon: null, active: estado === "Bajo", color: bajo > 0 ? "bad" : "" },
+          ].map(b => (
+            <button key={b.key}
+              className={"chip tw-cursor-pointer" + (b.active ? " accent" : b.color ? " " + b.color : "")}
+              style={{ padding: "3px 8px", fontSize: 11, fontWeight: b.active ? 600 : 400 }}
+              onClick={() => setEstado(estado === b.key ? "Todos" : b.key)}>
+              {b.label}
+            </button>
+          ))}
+          <button
+            className="chip tw-cursor-pointer"
+            style={{ padding: "3px 8px", fontSize: 11, fontWeight: 400 }}
+            onClick={() => { setEstado("Todos"); setCat("Todos"); setQ(""); }}>
+            {totalStock.toLocaleString("es-CO")} stock
+          </button>
         </div>
-        <div className="kpi" style={{ cursor: "pointer", borderColor: estado === "Sin código" ? "#F59E0B" : undefined, background: estado === "Sin código" ? "var(--warn-soft)" : undefined }} onClick={() => setEstado(estado === "Sin código" ? "Todos" : "Sin código")}>
-          <div className="label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Sin código de barras</div>
-          <div className="val" style={{ color: sinCodigo > 0 ? "#F59E0B" : "var(--good)" }}>{sinCodigo}</div>
-        </div>
-        <div className="kpi" style={{ cursor: "pointer", borderColor: estado === "Bajo" ? "var(--bad)" : undefined, background: estado === "Bajo" ? "var(--bad-soft)" : undefined }} onClick={() => setEstado(estado === "Bajo" ? "Todos" : "Bajo")}>
-          <div className="label"><Icon name="alert" size={14}/> Stock bajo</div>
-          <div className="val" style={{ color: bajo > 0 ? "var(--bad)" : "var(--good)" }}>{bajo}</div>
-        </div>
-        <div className="kpi" style={{ cursor: "pointer", borderColor: estado === "Todos" && cat === "Todos" && !q ? "var(--accent)" : undefined, background: estado === "Todos" && cat === "Todos" && !q ? "var(--accent-soft)" : undefined }} onClick={() => { setEstado("Todos"); setCat("Todos"); setQ(""); }}>
-          <div className="label"><Icon name="truck" size={14}/> Stock total</div>
-          <div className="val">{totalStock.toLocaleString("es-CO")}</div>
-        </div>
-      </div>
 
-      <div className="filterbar">
-        <div className="search">
-          <Icon name="search" size={16}/>
-          <input placeholder="Buscar por código de barras, nombre o SKU…" value={q} onChange={e => setQ(e.target.value)}/>
+        {/* Búsqueda */}
+        <div className="search tw-flex-1 tw-min-w-[140px]" style={{ height: 32 }}>
+          <Icon name="search" size={14}/>
+          <input placeholder="Buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ fontSize: 12 }}/>
         </div>
-        <div className="select-pill">
-          <span className="lbl">Categoría</span>
-          <select value={cat} onChange={e => setCat(e.target.value)}>
+
+        {/* Filtros */}
+        <div className="select-pill" style={{ height: 32, fontSize: 12 }}>
+          <span className="lbl">Cat</span>
+          <select value={cat} onChange={e => setCat(e.target.value)} style={{ fontSize: 12 }}>
             <option>Todos</option>
             {CATEGORIAS.slice(1).map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
-        <div className="select-pill">
+        <div className="select-pill" style={{ height: 32, fontSize: 12 }}>
           <span className="lbl">Estado</span>
-          <select value={estado} onChange={e => setEstado(e.target.value)}>
+          <select value={estado} onChange={e => setEstado(e.target.value)} style={{ fontSize: 12 }}>
             <option>Todos</option>
             <option>Bajo</option>
             <option>Sin stock</option>
@@ -130,12 +138,12 @@ const Inventario = () => {
         </div>
       </div>
 
-      {/* Desktop: tabla normal */}
-      <div className="tw-hidden md:tw-block">
-        <div className="card">
-          <div className="tbl-wrap">
+      {/* ── Desktop: tabla que llena el espacio restante ── */}
+      <div className="tw-hidden md:tw-flex tw-flex-col tw-flex-1 tw-min-h-0">
+        <div className="card tw-flex tw-flex-col tw-flex-1 tw-min-h-0">
+          <div className="tbl-wrap tw-flex-1 tw-overflow-y-auto tw-min-h-0">
             <table className="tbl tbl-bodega">
-              <thead>
+              <thead className="tw-sticky tw-top-0 tw-z-10" style={{ background: "var(--surface)" }}>
                 <tr>
                   <th>Producto</th>
                   <th>Categoría</th>
@@ -157,8 +165,8 @@ const Inventario = () => {
                       </td>
                       <td><span className="chip">{p.categoria}</span></td>
                       <td className="num mono">{window.fmtCOP(p.precio)}</td>
-                      <td style={{ minWidth: 130 }}>
-                        <div className="row" style={{ justifyContent: "space-between", marginBottom: 4 }}>
+                      <td style={{ minWidth: 120 }}>
+                        <div className="tw-flex tw-justify-between tw-mb-0.5">
                           <span className="mono" style={{ fontSize: 12, fontWeight: 500 }}>{p.stock} {p.unidad}</span>
                           <span className="muted mono" style={{ fontSize: 11 }}>mín {p.min}</span>
                         </div>
@@ -198,53 +206,52 @@ const Inventario = () => {
         </div>
       </div>
 
-      {/* Mobile: tarjetas con Tailwind */}
-      <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-3">
+      {/* ── Mobile: tarjetas compactas ── */}
+      <div className="tw-flex tw-flex-col tw-gap-2 md:tw-hidden">
         {pag.slice.map(p => {
           const stockPct = Math.min(100, (p.stock / (Math.max(p.min, 1) * 3)) * 100);
           const stockClass = p.stock === 0 ? "bad" : p.stock < p.min ? "warn" : "good";
           return (
             <div key={p.sku} className={
-              "tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm"
+              "tw-bg-surface tw-border tw-border-border tw-rounded-lg tw-p-2.5 tw-shadow-sm"
               + (!p.codigoBarras ? " tw-border-l-[3px] tw-border-l-amber-400" : "")
             }>
-              <div className="tw-flex tw-justify-between tw-items-start tw-mb-2">
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.3 }}>{p.nombre}</div>
-                  <div className="mono muted" style={{ fontSize: 11 }}>{p.sku}</div>
+              <div className="tw-flex tw-justify-between tw-items-start tw-mb-1.5">
+                <div className="tw-min-w-0">
+                  <div className="tw-font-semibold tw-text-[13px] tw-leading-tight tw-truncate">{p.nombre}</div>
+                  <div className="mono muted tw-text-[10px]">{p.sku} · {p.categoria}</div>
                 </div>
-                <button className="btn sm ghost" onClick={() => setEditing({ ...p })} title="Ver / editar"><Icon name="eye" size={13}/></button>
-              </div>
-              <div className="tw-flex tw-items-center tw-gap-2 tw-mb-2">
-                <span className="chip">{p.categoria}</span>
-                <span className="mono" style={{ fontSize: 12, color: "var(--text-2)" }}>{window.fmtCOP(p.precio)}</span>
-              </div>
-              <div className="tw-mb-2">
-                <div className="tw-flex tw-justify-between tw-mb-1">
-                  <span className="mono" style={{ fontSize: 12, fontWeight: 500 }}>{p.stock} {p.unidad}</span>
-                  <span className="muted mono" style={{ fontSize: 11 }}>mín {p.min}</span>
+                <div className="tw-flex tw-items-center tw-gap-1 tw-shrink-0 tw-ml-2">
+                  <span className="mono tw-text-xs" style={{ color: "var(--text-2)" }}>{window.fmtCOP(p.precio)}</span>
+                  <button className="btn sm ghost" onClick={() => setEditing({ ...p })} style={{ padding: 4 }}><Icon name="eye" size={12}/></button>
                 </div>
-                <div className={"progress " + stockClass}><span style={{ width: `${stockPct}%` }}/></div>
               </div>
-              <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 10, marginTop: 6 }}>
-                {p.codigoBarras ? (
-                  <span className="mono" style={{ fontSize: 12 }}>{p.codigoBarras}</span>
-                ) : (
-                  <div className="tw-flex tw-flex-col tw-gap-2">
-                    <input
-                      className="bodega-barcode-input mono"
-                      value={barcodeInputs[p.sku] || ""}
-                      onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
-                      onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
-                      placeholder="Escanear código…"
-                      style={{ width: "100%", minHeight: 44, fontSize: 16 }}
-                    />
-                    <button className="btn sm primary" style={{ width: "100%", justifyContent: "center", minHeight: 44 }} onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
-                      <Icon name="check" size={13}/> Asignar
-                    </button>
+              <div className="tw-flex tw-items-center tw-gap-3 tw-mb-1.5">
+                <div className="tw-flex-1 tw-min-w-0">
+                  <div className="tw-flex tw-justify-between tw-mb-0.5">
+                    <span className="mono tw-text-[11px] tw-font-medium">{p.stock} {p.unidad}</span>
+                    <span className="muted mono tw-text-[10px]">mín {p.min}</span>
                   </div>
-                )}
+                  <div className={"progress " + stockClass}><span style={{ width: `${stockPct}%` }}/></div>
+                </div>
               </div>
+              {!p.codigoBarras ? (
+                <div className="tw-flex tw-gap-1.5 tw-items-center tw-pt-1.5" style={{ borderTop: "1px dashed var(--border)" }}>
+                  <input
+                    className="bodega-barcode-input mono tw-flex-1"
+                    value={barcodeInputs[p.sku] || ""}
+                    onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
+                    onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
+                    placeholder="Escanear código…"
+                    style={{ minHeight: 36, fontSize: 14 }}
+                  />
+                  <button className="btn sm primary" style={{ minHeight: 36 }} onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
+                    <Icon name="check" size={13}/>
+                  </button>
+                </div>
+              ) : (
+                <div className="mono muted tw-text-[11px] tw-pt-1" style={{ borderTop: "1px dashed var(--border)" }}>{p.codigoBarras}</div>
+              )}
             </div>
           );
         })}
@@ -253,6 +260,8 @@ const Inventario = () => {
         )}
         <Pagination {...pag} label="productos"/>
       </div>
+
+      </div>{/* fin flex container */}
 
       {editing && <ProductoEditModal
         producto={editing}
