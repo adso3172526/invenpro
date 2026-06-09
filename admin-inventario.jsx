@@ -75,12 +75,9 @@ const Inventario = () => {
     <>
       <div className="tw-flex tw-flex-col md:tw-h-[calc(100vh-48px)]" style={{ marginTop: -8 }}>
 
-      {/* ── Header compacto: título + stats + exportar ── */}
+      {/* ── Header: título + exportar ── */}
       <div className="tw-flex tw-items-center tw-justify-between tw-mb-1.5">
-        <div className="tw-flex tw-items-baseline tw-gap-2 tw-min-w-0">
-          <h2 className="tw-text-base md:tw-text-lg tw-font-bold tw-m-0 tw-shrink-0">Inventario</h2>
-          <span className="muted tw-text-[11px] tw-truncate">{productos.length} prod · {bajo} bajo · {window.fmtCOP(totalValor)}</span>
-        </div>
+        <h2 className="tw-text-base md:tw-text-lg tw-font-bold tw-m-0">Inventario</h2>
         <button className="btn sm tw-shrink-0" onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
           { name: "Inventario", rows: rows.map(p => ({
             SKU: p.sku, "Código de barras": p.codigoBarras || "", Producto: p.nombre, Categoría: p.categoria,
@@ -89,37 +86,46 @@ const Inventario = () => {
         ])}><Icon name="download" size={13}/> <span className="tw-hidden sm:tw-inline">Exportar</span></button>
       </div>
 
-      {/* ── Toolbar: KPI chips + búsqueda + filtros ── */}
-      <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-1.5 tw-mb-1.5">
-        {/* KPI badges clickables */}
-        <div className="tw-flex tw-gap-1 tw-mr-1">
-          {[
-            { key: "Todos", label: `${productos.length}`, icon: "box", active: estado === "Todos" },
-            { key: "Sin código", label: `${sinCodigo} sin cód`, icon: null, active: estado === "Sin código", color: sinCodigo > 0 ? "warn" : "" },
-            { key: "Bajo", label: `${bajo} bajo`, icon: null, active: estado === "Bajo", color: bajo > 0 ? "bad" : "" },
-          ].map(b => (
-            <button key={b.key}
-              className={"chip tw-cursor-pointer" + (b.active ? " accent" : b.color ? " " + b.color : "")}
-              style={{ padding: "3px 8px", fontSize: 11, fontWeight: b.active ? 600 : 400 }}
-              onClick={() => setEstado(estado === b.key ? "Todos" : b.key)}>
-              {b.label}
+      {/* ── KPI mini cards ── */}
+      <div className="tw-grid tw-grid-cols-4 tw-gap-1.5 tw-mb-1.5">
+        {[
+          { key: "Todos", lbl: "Productos", val: productos.length, icon: "box", c: "accent" },
+          { key: "stock", lbl: "Stock total", val: totalStock.toLocaleString("es-CO"), icon: "cart", c: "good" },
+          { key: "Bajo", lbl: "Stock bajo", val: bajo, icon: "alert", c: bajo > 0 ? "bad" : "good" },
+          { key: "Sin código", lbl: "Sin código", val: sinCodigo, icon: "search", c: sinCodigo > 0 ? "warn" : "good" },
+        ].map(k => {
+          const active = k.key === "stock"
+            ? (estado === "Todos" && cat === "Todos" && !q)
+            : estado === k.key;
+          return (
+            <button key={k.key}
+              className="tw-bg-surface tw-border tw-border-border tw-rounded-lg tw-p-2 tw-text-left tw-cursor-pointer tw-transition-colors"
+              style={{
+                borderColor: active ? "var(--accent)" : undefined,
+                background: active ? "var(--accent-soft)" : undefined,
+              }}
+              onClick={() => {
+                if (k.key === "stock") { setEstado("Todos"); setCat("Todos"); setQ(""); }
+                else setEstado(estado === k.key ? "Todos" : k.key);
+              }}>
+              <div className="muted tw-text-[10px] tw-leading-tight tw-mb-0.5 tw-flex tw-items-center tw-gap-1">
+                <Icon name={k.icon} size={10}/> {k.lbl}
+              </div>
+              <div className={"mono tw-font-bold tw-text-sm tw-leading-none"}
+                style={{ color: k.c !== "good" && k.c !== "accent" && k.val > 0 ? `var(--${k.c})` : undefined }}>
+                {k.val}
+              </div>
             </button>
-          ))}
-          <button
-            className="chip tw-cursor-pointer"
-            style={{ padding: "3px 8px", fontSize: 11, fontWeight: 400 }}
-            onClick={() => { setEstado("Todos"); setCat("Todos"); setQ(""); }}>
-            {totalStock.toLocaleString("es-CO")} stock
-          </button>
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Búsqueda */}
+      {/* ── Toolbar: búsqueda + filtros ── */}
+      <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-1.5 tw-mb-1.5">
         <div className="search tw-flex-1 tw-min-w-[140px]" style={{ height: 32 }}>
           <Icon name="search" size={14}/>
           <input placeholder="Buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ fontSize: 12 }}/>
         </div>
-
-        {/* Filtros */}
         <div className="select-pill" style={{ height: 32, fontSize: 12 }}>
           <span className="lbl">Cat</span>
           <select value={cat} onChange={e => setCat(e.target.value)} style={{ fontSize: 12 }}>
