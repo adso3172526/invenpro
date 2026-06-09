@@ -101,10 +101,9 @@ const Inventario = () => {
           <div className="label"><Icon name="alert" size={14}/> Stock bajo</div>
           <div className="val" style={{ color: bajo > 0 ? "var(--bad)" : "var(--good)" }}>{bajo}</div>
         </div>
-        <div className="kpi" style={{ cursor: "pointer", borderColor: estado === "Sin stock" ? "var(--bad)" : undefined, background: estado === "Sin stock" ? "var(--bad-soft)" : undefined }} onClick={() => setEstado(estado === "Sin stock" ? "Todos" : "Sin stock")}>
+        <div className="kpi" style={{ cursor: "pointer", borderColor: estado === "Todos" && cat === "Todos" && !q ? "var(--accent)" : undefined, background: estado === "Todos" && cat === "Todos" && !q ? "var(--accent-soft)" : undefined }} onClick={() => { setEstado("Todos"); setCat("Todos"); setQ(""); }}>
           <div className="label"><Icon name="truck" size={14}/> Stock total</div>
           <div className="val">{totalStock.toLocaleString("es-CO")}</div>
-          {estado === "Sin stock" && <div className="muted" style={{ fontSize: 10 }}>Filtrando: sin stock</div>}
         </div>
       </div>
 
