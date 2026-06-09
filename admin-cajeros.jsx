@@ -5,16 +5,9 @@ const Cajeros = () => {
   const [tab, setTab] = useStateA("equipo");
   const [showAdd, setShowAdd] = useStateA(false);
   const [cfgCajero, setCfgCajero] = useStateA(null);
-  const [cfgUsuario, setCfgUsuario] = useStateA(null);
   const [toast, setToast] = useStateA(null);
   const pagCaj = usePagination(MOCK.cajeros, 2);
   const pagTur = usePagination(MOCK.turnos, 10);
-
-  const usuarios = useMemoA(() =>
-    (MOCK.usuarios_sistema || []).filter(u => !MOCK.cajeros.some(c => c.nombre === u.nombre)),
-    [MOCK.usuarios_sistema, MOCK.cajeros]
-  );
-  const pagUsr = usePagination(usuarios, 10);
 
   return (
     <>
@@ -27,7 +20,6 @@ const Cajeros = () => {
           <div className="tab-bar">
             <button className={tab === "equipo" ? "on" : ""} onClick={() => setTab("equipo")}>Equipo</button>
             <button className={tab === "turnos" ? "on" : ""} onClick={() => setTab("turnos")}>Turnos</button>
-            <button className={tab === "usuarios" ? "on" : ""} onClick={() => setTab("usuarios")}>Usuarios</button>
           </div>
           <button className="btn primary tw-flex-1 sm:tw-flex-none" onClick={() => setShowAdd(true)}><Icon name="plus" size={14}/> Nuevo cajero</button>
         </div>
@@ -147,55 +139,6 @@ const Cajeros = () => {
         </>
       )}
 
-      {tab === "usuarios" && (
-        <>
-          {/* Desktop: tabla */}
-          <div className="card tw-hidden md:tw-block">
-            <div className="tbl-wrap">
-              <table className="tbl">
-                <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Permisos</th><th></th></tr></thead>
-                <tbody>
-                  {pagUsr.slice.map(u => (
-                    <tr key={u.usuario} className="row-hover">
-                      <td className="mono">{u.usuario}</td>
-                      <td className="tw-font-medium">{u.nombre}</td>
-                      <td><span className="chip">{u.rol}</span></td>
-                      <td className="muted tw-text-xs">{u.permisos ? u.permisos.join(", ") : "—"}</td>
-                      <td className="num">
-                        <button className="btn sm ghost" onClick={() => setCfgUsuario(u)}><Icon name="settings" size={13}/></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Pagination {...pagUsr} label="usuarios"/>
-          </div>
-          {/* Mobile: tarjetas */}
-          <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2.5">
-            {pagUsr.slice.map(u => (
-              <div key={u.usuario} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm">
-                <div className="tw-flex tw-items-center tw-gap-2.5 tw-mb-2">
-                  <div className="tw-w-9 tw-h-9 tw-rounded-full tw-bg-accent-soft tw-grid tw-place-items-center tw-font-semibold tw-text-xs tw-shrink-0" style={{ color: "var(--accent-ink)" }}>
-                    {u.nombre.split(" ").map(x => x[0]).slice(0,2).join("")}
-                  </div>
-                  <div className="tw-flex-1 tw-min-w-0">
-                    <div className="tw-font-medium tw-text-sm">{u.nombre}</div>
-                    <div className="muted mono tw-text-[11px]">{u.usuario}</div>
-                  </div>
-                  <span className="chip">{u.rol}</span>
-                  <button className="btn sm ghost" onClick={() => setCfgUsuario(u)}><Icon name="settings" size={14}/></button>
-                </div>
-                <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
-                  <div><span className="muted">Permisos:</span> {u.permisos ? u.permisos.join(", ") : "—"}</div>
-                </div>
-              </div>
-            ))}
-            <Pagination {...pagUsr} label="usuarios"/>
-          </div>
-        </>
-      )}
-
       {showAdd && (
         <Modal title="Nuevo cajero" onClose={() => setShowAdd(false)} footer={
           <>
@@ -214,7 +157,6 @@ const Cajeros = () => {
         </Modal>
       )}
       {cfgCajero && <CajeroConfig cajero={cfgCajero} onClose={() => setCfgCajero(null)} onDone={(msg) => { setCfgCajero(null); setToast(msg); }}/>}
-      {cfgUsuario && <UsuarioConfig usuario={cfgUsuario} onClose={() => setCfgUsuario(null)} onDone={(msg) => { setCfgUsuario(null); setToast(msg); }}/>}
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
     </>
   );
@@ -313,68 +255,4 @@ const CajeroConfig = ({ cajero, onClose, onDone }) => {
   );
 };
 
-// ---- Modal de configuración de usuario (no-cajero) ----
-const UsuarioConfig = ({ usuario, onClose, onDone }) => {
-  const [nombre, setNombre] = useStateA(usuario.nombre);
-  const [rol, setRol] = useStateA(usuario.rol);
-  const [newPass, setNewPass] = useStateA("");
-  const [saving, setSaving] = useStateA(false);
-
-  const initials = nombre.split(" ").map(x => x[0]).slice(0,2).join("");
-
-  const handleSave = async () => {
-    setSaving(true);
-    const updates = {};
-    if (nombre !== usuario.nombre) updates.nombre = nombre;
-    if (rol !== usuario.rol) updates.rol = rol;
-    if (newPass) updates.pass = await window.hashPass(newPass);
-
-    if (Object.keys(updates).length > 0) {
-      await DB.updateUsuario(usuario.usuario, updates);
-      const idx = MOCK.usuarios_sistema.findIndex(u => u.usuario === usuario.usuario);
-      if (idx !== -1) {
-        if (updates.nombre) MOCK.usuarios_sistema[idx].nombre = updates.nombre;
-        if (updates.rol) MOCK.usuarios_sistema[idx].rol = updates.rol;
-      }
-    }
-
-    setSaving(false);
-    onDone("Usuario actualizado correctamente");
-  };
-
-  return (
-    <Modal title="Configurar usuario" onClose={onClose} footer={
-      <>
-        <button className="btn ghost" onClick={onClose}>Cancelar</button>
-        <button className="btn primary" disabled={saving} onClick={handleSave}><Icon name="check"/> Guardar</button>
-      </>
-    }>
-      {/* Header */}
-      <div className="tw-flex tw-items-center tw-gap-3 tw-mb-4">
-        <div className="tw-w-10 tw-h-10 tw-rounded-full tw-bg-accent-soft tw-grid tw-place-items-center tw-font-semibold tw-text-sm" style={{ color: "var(--accent-ink)" }}>
-          {initials}
-        </div>
-        <div>
-          <div className="tw-font-medium">{usuario.nombre}</div>
-          <div className="muted mono tw-text-xs">{usuario.usuario}</div>
-        </div>
-      </div>
-
-      {/* Datos */}
-      <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide muted tw-mb-2">Datos</div>
-      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
-        <div className="field"><label>Nombre</label><input value={nombre} onChange={e => setNombre(e.target.value)}/></div>
-        <div className="field"><label>Rol</label><select value={rol} onChange={e => setRol(e.target.value)}><option>Supervisor</option><option>Administrador</option></select></div>
-      </div>
-
-      {/* Credenciales */}
-      <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide muted tw-mb-2 tw-mt-4">Credenciales</div>
-      <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
-        <div className="field"><label>Usuario</label><input className="mono" value={usuario.usuario} readOnly style={{opacity:0.6}}/></div>
-        <div className="field"><label>Nueva contraseña</label><input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Dejar vacío para no cambiar"/></div>
-      </div>
-    </Modal>
-  );
-};
-
-Object.assign(window, { Cajeros, CajeroConfig, UsuarioConfig });
+Object.assign(window, { Cajeros, CajeroConfig });
