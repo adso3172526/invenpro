@@ -252,7 +252,7 @@ const CajeroConfig = ({ cajero, onClose, onDone, esSupervisor }) => {
     if (estado !== cajero.estado) updates.estado = estado;
 
     if (Object.keys(updates).length > 0) {
-      const err = await DB.updateCajero(cajero.id, updates);
+      const err = await DB.cajeros.update(cajero.id, updates);
       if (!err) {
         const idx = MOCK.cajeros.findIndex(c => c.id === cajero.id);
         if (idx !== -1) Object.assign(MOCK.cajeros[idx], updates);
@@ -261,13 +261,13 @@ const CajeroConfig = ({ cajero, onClose, onDone, esSupervisor }) => {
 
     if (newPass && usuario) {
       const hashed = await window.hashPass(newPass);
-      await DB.updateUsuario(usuario, { pass: hashed });
+      await DB.cajeros.updateUsuario(usuario, { pass: hashed });
     }
 
     if (updates.nombre && usuario) {
       const uIdx = MOCK.usuarios_sistema.findIndex(u => u.usuario === usuario);
       if (uIdx !== -1) MOCK.usuarios_sistema[uIdx].nombre = updates.nombre;
-      await DB.updateUsuario(usuario, { nombre: updates.nombre });
+      await DB.cajeros.updateUsuario(usuario, { nombre: updates.nombre });
     }
 
     setSaving(false);
@@ -339,7 +339,7 @@ const UsuarioConfig = ({ usuario, onClose, onDone, esSupervisor }) => {
     if (newPass) updates.pass = await window.hashPass(newPass);
 
     if (Object.keys(updates).length > 0) {
-      await DB.updateUsuario(usuario.usuario, updates);
+      await DB.cajeros.updateUsuario(usuario.usuario, updates);
       const idx = MOCK.usuarios_sistema.findIndex(u => u.usuario === usuario.usuario);
       if (idx !== -1) {
         if (updates.nombre) MOCK.usuarios_sistema[idx].nombre = updates.nombre;

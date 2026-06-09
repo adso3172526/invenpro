@@ -37,7 +37,7 @@ const Inventario = () => {
     if (!codigo) { setToast("Escanea o digita un código de barras"); return; }
     const existente = productos.find(p => p.codigoBarras === codigo);
     if (existente) { setToast(`Este código ya está asignado a "${existente.nombre}" (${existente.sku})`); return; }
-    const err = await DB.updateCodigoBarras(sku, codigo);
+    const err = await DB.productos.updateBarcode(sku, codigo);
     if (err) { setToast("Error al guardar: " + (err.message || "Intenta de nuevo")); return; }
     setProductos(ps => ps.map(p => p.sku === sku ? { ...p, codigoBarras: codigo } : p));
     const mp = MOCK.productos.find(p => p.sku === sku);
@@ -52,7 +52,7 @@ const Inventario = () => {
       const dup = productos.find(p => p.codigoBarras === draft.codigoBarras && p.sku !== draft.sku);
       if (dup) { setToast(`Código de barras ya asignado a "${dup.nombre}"`); setSaving(false); return; }
     }
-    const err = await DB.updateProducto(draft.sku, {
+    const err = await DB.productos.update(draft.sku, {
       nombre: draft.nombre,
       categoria: draft.categoria,
       precio: draft.precio,

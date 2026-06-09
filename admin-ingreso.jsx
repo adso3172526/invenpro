@@ -204,7 +204,7 @@ const Ingreso = () => {
             }}><Icon name="download" size={14}/> Exportar</button>
             <button className="btn primary" disabled={guardando} onClick={async () => {
               setGuardando(true);
-              const err = await DB.updateIngreso(editIng.id, editIng, editDet);
+              const err = await DB.ingresos.update(editIng.id, editIng, editDet);
               if (err) { setToast("Error al guardar"); setGuardando(false); return; }
               await hydrateData();
               setVerIngreso(null);
@@ -306,9 +306,9 @@ const Ingreso = () => {
               try {
                 const nuevos = items.filter(it => it.nuevo);
                 for (const it of nuevos) {
-                  const autoSku = DB.generateSku();
+                  const autoSku = DB.productos.generateSku();
                   it.sku = autoSku;
-                  const err = await DB.createProducto({
+                  const err = await DB.productos.create({
                     sku: autoSku,
                     nombre: it.nombre,
                     categoria: it.categoria || "General",
@@ -322,7 +322,7 @@ const Ingreso = () => {
                   MOCK.productos.push({ sku: autoSku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: 0, min: 0, vence: it.vence || null, unidad: "und", codigoBarras: null });
                 }
                 for (const it of items) {
-                  await DB.incrementStock(it.sku, it.qty);
+                  await DB.productos.incrementStock(it.sku, it.qty);
                 }
                 const ingreso = {
                   id: "ING-" + Date.now(),
@@ -333,7 +333,7 @@ const Ingreso = () => {
                   recibe: "Administrador",
                   factura: factura,
                 };
-                await DB.createIngreso(ingreso, items);
+                await DB.ingresos.create(ingreso, items);
                 await hydrateData();
                 setShowForm(false); setItems([]); setVendedor(""); setCelular(""); setOrigen(null);
                 setToast("Ingreso registrado · " + nuevos.length + " producto(s) creado(s) · stock actualizado. Asigna códigos de barras en Bodega.");

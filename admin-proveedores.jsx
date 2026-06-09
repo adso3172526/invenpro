@@ -30,12 +30,12 @@ const Proveedores = () => {
   const pagProv = usePagination(filtered, 10);
   const guardar = async (data) => {
     if (data.id) {
-      await DB.updateProveedor(data.id, data);
+      await DB.proveedores.update(data.id, data);
       setToast("Proveedor actualizado");
     } else {
       const nextId = "PRV-" + String(list.length + 1).padStart(3, "0");
       const nuevo = { ...data, id: nextId, ingresos: 0, ultimoIngreso: null, estado: "activo" };
-      await DB.createProveedor(nuevo);
+      await DB.proveedores.create(nuevo);
       setToast("Proveedor creado");
     }
     await hydrateData();
@@ -45,7 +45,7 @@ const Proveedores = () => {
 
   const toggleEstado = async (p) => {
     const nuevoEstado = p.estado === "activo" ? "inactivo" : "activo";
-    await DB.updateProveedor(p.id, { estado: nuevoEstado });
+    await DB.proveedores.update(p.id, { estado: nuevoEstado });
     setToast(p.estado === "activo" ? "Proveedor dado de baja" : "Proveedor reactivado");
     await hydrateData();
     setList(MOCK.proveedores);

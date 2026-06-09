@@ -11,7 +11,7 @@ const Login = ({ onLogin }) => {
     if (!user || !pass) {
       setShake(true); setTimeout(() => setShake(false), 400); return;
     }
-    const u = await DB.login(user.trim(), pass);
+    const u = await DB.auth.login(user.trim(), pass);
     if (!u) {
       setError("Usuario o contraseña incorrectos.");
       setShake(true); setTimeout(() => setShake(false), 400); return;

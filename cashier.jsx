@@ -24,7 +24,7 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
       transacciones: 0,
     };
     try {
-      await DB.createTurno(turnoRow);
+      await DB.turnos.create(turnoRow);
     } catch (err) {
       console.error("createTurno:", err);
     }
@@ -233,10 +233,10 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     setPay(null);
     setCart([]);
     // Persistir factura en Supabase
-    DB.createFactura(factura, factura.items).catch(err => console.error("POS persist:", err));
+    DB.facturas.create(factura, factura.items).catch(err => console.error("POS persist:", err));
     // Actualizar turno con totales acumulados (así no se pierden si el cajero sale sin cerrar)
     if (shift.id) {
-      DB.closeTurno(shift.id, { ventas: newStats.ventas, transacciones: newStats.trans })
+      DB.turnos.close(shift.id, { ventas: newStats.ventas, transacciones: newStats.trans })
         .catch(err => console.error("updateTurno stats:", err));
     }
   };
@@ -246,7 +246,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     const summary = { ...shift, ...shiftStats, cierre: now };
     // Persistir cierre en Supabase
     if (shift.id) {
-      DB.closeTurno(shift.id, {
+      DB.turnos.close(shift.id, {
         fechaFin: now.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }),
         estado: "cerrado",
         ventas: shiftStats.ventas,

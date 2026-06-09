@@ -295,7 +295,7 @@ const Ajustes = () => {
 
   const guardar = async () => {
     setSaving(true);
-    await DB.saveConfigBatch({
+    await DB.config.saveBatch({
       ia_provider: detected.provider,
       ia_api_key: apiKey.trim(),
       ia_model: detected.model,
@@ -312,7 +312,7 @@ const Ajustes = () => {
     setApiKey("");
     setSaved(false);
     setTestResult(null);
-    await DB.saveConfig("ia_api_key", "");
+    await DB.config.save("ia_api_key", "");
   };
 
   const probarConexion = async () => {
