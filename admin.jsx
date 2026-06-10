@@ -217,6 +217,31 @@ const Ajustes = () => {
   const [testing, setTesting] = useStateA(false);
   const [testResult, setTestResult] = useStateA(null);
 
+  // Datos de facturación del negocio (salen en el recibo impreso)
+  const [negNombre, setNegNombre] = useStateA(cfg.tienda_nombre || "");
+  const [negNit, setNegNit] = useStateA(cfg.tienda_nit || "");
+  const [negDir, setNegDir] = useStateA(cfg.tienda_direccion || "");
+  const [negTel, setNegTel] = useStateA(cfg.tienda_telefono || "");
+  const [negCorreo, setNegCorreo] = useStateA(cfg.tienda_correo || "");
+  const [negFooter, setNegFooter] = useStateA(cfg.tienda_footer || "");
+  const [negSaving, setNegSaving] = useStateA(false);
+  const [negSaved, setNegSaved] = useStateA(false);
+
+  const guardarNegocio = async () => {
+    setNegSaving(true);
+    await DB.config.saveBatch({
+      tienda_nombre: negNombre.trim(),
+      tienda_nit: negNit.trim(),
+      tienda_direccion: negDir.trim(),
+      tienda_telefono: negTel.trim(),
+      tienda_correo: negCorreo.trim(),
+      tienda_footer: negFooter.trim(),
+    });
+    setNegSaving(false);
+    setNegSaved(true);
+    setTimeout(() => setNegSaved(false), 2500);
+  };
+
   // El proveedor se deduce del endpoint; el modelo se toma de la URL si viene
   // (Gemini: /models/MODELO:generateContent). Si no, cae al modelo por defecto del proveedor.
   const detected = detectFromUrl(urlApi);
@@ -279,7 +304,54 @@ const Ajustes = () => {
       <div className="page-h">
         <div>
           <h2><Icon name="settings" size={20}/> Ajustes</h2>
-          <p className="sub">Conexión de IA para el escáner de facturas</p>
+          <p className="sub">Datos del negocio y conexión de IA</p>
+        </div>
+      </div>
+
+      {/* ── Card: Datos de facturación ── */}
+      <div className="card" style={{ marginTop: 16 }}>
+        <div className="card-h">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="store" size={18}/>
+            <h3>Datos de facturación</h3>
+          </div>
+          <p className="sub">Aparecen en el recibo impreso</p>
+        </div>
+        <div className="card-b">
+          <div className="field" style={{ margin: 0 }}>
+            <label>Nombre del negocio</label>
+            <input value={negNombre} onChange={e => { setNegNombre(e.target.value); setNegSaved(false); }} placeholder="Mi Tienda"/>
+          </div>
+          <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3" style={{ marginTop: 12 }}>
+            <div className="field" style={{ margin: 0 }}>
+              <label>NIT</label>
+              <input className="mono" value={negNit} onChange={e => { setNegNit(e.target.value); setNegSaved(false); }} placeholder="900.123.456-7"/>
+            </div>
+            <div className="field" style={{ margin: 0 }}>
+              <label>Teléfono</label>
+              <input className="mono" value={negTel} onChange={e => { setNegTel(e.target.value); setNegSaved(false); }} placeholder="(60) 123 4567"/>
+            </div>
+          </div>
+          <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+            <label>Dirección</label>
+            <input value={negDir} onChange={e => { setNegDir(e.target.value); setNegSaved(false); }} placeholder="Calle 1 # 2-34, Ciudad"/>
+          </div>
+          <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+            <label>Correo</label>
+            <input type="email" value={negCorreo} onChange={e => { setNegCorreo(e.target.value); setNegSaved(false); }} placeholder="contacto@minegocio.com"/>
+          </div>
+          <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+            <label>Pie de factura</label>
+            <textarea rows="2" value={negFooter} onChange={e => { setNegFooter(e.target.value); setNegSaved(false); }} placeholder="¡Gracias por tu compra!"/>
+          </div>
+          <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2" style={{ marginTop: 16 }}>
+            <button className="btn primary" onClick={guardarNegocio} disabled={negSaving}>{negSaving ? "Guardando…" : "Guardar"}</button>
+            {negSaved && (
+              <span style={{ color: "var(--good)", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                <Icon name="check" size={14}/> Guardado
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

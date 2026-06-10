@@ -807,6 +807,7 @@ const printReceipt = (factura) => {
   const nit = cfg.tienda_nit || "";
   const dir = cfg.tienda_direccion || "";
   const tel = cfg.tienda_telefono || "";
+  const correo = cfg.tienda_correo || "";
   const footer = cfg.tienda_footer || "¡Gracias por tu compra!";
   // Ancho de tirilla: 80mm (default) o 58mm. Configurable desde cfg.recibo_ancho_mm.
   const anchoMm = parseInt(cfg.recibo_ancho_mm) === 58 ? 58 : 80;
@@ -840,6 +841,7 @@ const printReceipt = (factura) => {
   ${nit ? `<div class="center info">NIT ${nit}</div>` : ""}
   ${dir ? `<div class="center info">${dir}</div>` : ""}
   ${tel ? `<div class="center info">Tel: ${tel}</div>` : ""}
+  ${correo ? `<div class="center info">${correo}</div>` : ""}
   <div class="center info">${factura.caja || ""}</div>
   <div class="center info">${factura.fecha} ${factura.hora}</div>
   <hr/>
