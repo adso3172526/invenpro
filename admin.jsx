@@ -283,7 +283,6 @@ const Reportes = () => {
 
 // =================== Ajustes (solo admin) ===================
 const Ajustes = () => {
-  useRealtimeSync("configuracion");
   const cfg = (window.MOCK && window.MOCK.configuracion) || {};
   const [apiKey, setApiKey] = useStateA(cfg.ia_api_key || "");
   const [urlApi, setUrlApi] = useStateA(cfg.ia_url || "");
@@ -301,6 +300,24 @@ const Ajustes = () => {
   const [tFooter, setTFooter] = useStateA(cfg.tienda_footer || "");
   const [tSaved, setTSaved] = useStateA(false);
   const [tSaving, setTSaving] = useStateA(false);
+
+  // Realtime: re-sync from MOCK only when not actively saving
+  React.useEffect(() => {
+    return window.EventBus.on("realtime:configuracion", () => {
+      const c = (window.MOCK && window.MOCK.configuracion) || {};
+      if (!tSaving) {
+        setTNombre(v => v || c.tienda_nombre || "");
+        setTNit(v => v || c.tienda_nit || "");
+        setTDir(v => v || c.tienda_direccion || "");
+        setTTel(v => v || c.tienda_telefono || "");
+        setTFooter(v => v || c.tienda_footer || "");
+      }
+      if (!saving) {
+        setApiKey(v => v || c.ia_api_key || "");
+        setUrlApi(v => v || c.ia_url || "");
+      }
+    });
+  }, []);
 
   const guardarTienda = async () => {
     setTSaving(true);
