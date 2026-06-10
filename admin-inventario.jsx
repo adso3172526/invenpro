@@ -1,5 +1,4 @@
 // Inventario / Bodega
-const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Inventario = () => {
   const [q, setQ] = useStateA("");
@@ -297,7 +296,7 @@ const ProductoEditModal = ({ producto, saving, onClose, onSave }) => {
   const venceDays = d.vence ? window.daysFromNow(d.vence) : null;
 
   return (
-    <Modal title="Editar producto" lg onClose={onClose} footer={
+    <Modal title="Editar producto" lg bottomSheet onClose={onClose} footer={
       <>
         <button className="btn ghost" onClick={onClose}>Cancelar</button>
         <button className="btn primary" disabled={saving || !d.nombre} onClick={() => onSave(d)}>

@@ -1,5 +1,4 @@
 // Cajeros y turnos
-const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Cajeros = () => {
   const [tab, setTab] = useStateA("equipo");
@@ -218,7 +217,7 @@ const Cajeros = () => {
       )}
 
       {showAdd && (
-        <Modal title="Nuevo cajero" onClose={() => setShowAdd(false)} footer={
+        <Modal title="Nuevo cajero" bottomSheet onClose={() => setShowAdd(false)} footer={
           <>
             <button className="btn ghost" onClick={() => setShowAdd(false)}>Cancelar</button>
             <button className="btn primary" onClick={() => { setShowAdd(false); setToast("Cajero creado correctamente"); }}><Icon name="check"/> Crear cajero</button>
@@ -292,7 +291,7 @@ const CajeroConfig = ({ cajero, onClose, onDone, esSupervisor }) => {
   const initials = nombre.split(" ").map(x => x[0]).slice(0,2).join("");
 
   return (
-    <Modal title="Configurar cajero" onClose={onClose} footer={
+    <Modal title="Configurar cajero" bottomSheet onClose={onClose} footer={
       <>
         <button className="btn ghost" onClick={onClose}>Cancelar</button>
         <button className="btn primary" disabled={saving} onClick={handleSave}><Icon name="check"/> Guardar</button>
@@ -364,7 +363,7 @@ const UsuarioConfig = ({ usuario, onClose, onDone, esSupervisor }) => {
   };
 
   return (
-    <Modal title="Configurar usuario" onClose={onClose} footer={
+    <Modal title="Configurar usuario" bottomSheet onClose={onClose} footer={
       <>
         <button className="btn ghost" onClick={onClose}>Cancelar</button>
         <button className="btn primary" disabled={saving} onClick={handleSave}><Icon name="check"/> Guardar</button>

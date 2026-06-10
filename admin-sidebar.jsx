@@ -1,5 +1,4 @@
 // Sidebar del panel de administración
-const { useState: useStateA } = React;
 
 const Sidebar = ({ active, setActive, user, onLogout }) => {
   const [open, setOpen] = useStateA(false);

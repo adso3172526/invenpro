@@ -1,5 +1,4 @@
 // Control de vencimientos
-const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Vencimientos = () => {
   const [tab, setTab] = useStateA("preventivo");
@@ -194,7 +193,7 @@ const Vencimientos = () => {
       </div>
 
       {showConfig && (
-        <Modal title="Configurar alertas de vencimiento" lg onClose={() => setShowConfig(false)}>
+        <Modal title="Configurar alertas de vencimiento" lg bottomSheet onClose={() => setShowConfig(false)}>
           <h4 className="tw-m-0 tw-mb-2 tw-text-[13px] tw-font-semibold">Umbrales de notificación</h4>
           <p className="muted tw-m-0 tw-mb-3 tw-text-xs">
             Días antes del vencimiento en que el sistema enviará una alerta. Los umbrales se ordenan automáticamente del más urgente al más preventivo.

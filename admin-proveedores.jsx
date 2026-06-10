@@ -1,5 +1,4 @@
 // Proveedores
-const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Proveedores = () => {
   const [list, setList] = useStateA(MOCK.proveedores);

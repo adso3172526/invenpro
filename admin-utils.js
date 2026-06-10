@@ -1,5 +1,9 @@
 // Utilidades compartidas del panel de administración
 
+// Alias de hooks de React compartidos por todos los módulos admin.
+// Declaración ÚNICA en el scope global (este archivo carga antes que admin-*.jsx y admin.jsx).
+const { useState: useStateA, useMemo: useMemoA } = React;
+
 // Exportar a XLSX usando SheetJS (cargado vía CDN)
 const exportXlsx = (filename, sheets) => {
   if (!window.XLSX) { alert("Librería de Excel no disponible."); return; }

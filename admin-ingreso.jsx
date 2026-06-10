@@ -1,5 +1,4 @@
 // Ingreso de mercancía
-const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Ingreso = () => {
   // Realtime: only refresh when modal is NOT open (avoid closing it mid-edit)
@@ -207,7 +206,7 @@ const Ingreso = () => {
         const updField = (k, v) => setVerIngreso({ ...editIng, [k]: v });
         const updDet = (idx, k, v) => setVerIngreso({ ...editIng, detalle: editDet.map((d, i) => i === idx ? { ...d, [k]: v } : d) });
         return (
-        <Modal title={`Ingreso ${editIng.id}`} lg onClose={() => setVerIngreso(null)} footer={
+        <Modal title={`Ingreso ${editIng.id}`} lg bottomSheet onClose={() => setVerIngreso(null)} footer={
           <>
             <button className="btn ghost" onClick={() => setVerIngreso(null)}>Cancelar</button>
             <button className="btn" onClick={() => {
@@ -272,7 +271,7 @@ const Ingreso = () => {
       })()}
 
       {showSelector && (
-        <Modal title="¿Cómo deseas registrar el ingreso?" lg onClose={() => setShowSelector(false)}>
+        <Modal title="¿Cómo deseas registrar el ingreso?" lg bottomSheet onClose={() => setShowSelector(false)}>
           <p className="muted" style={{ marginTop: 0, marginBottom: 12, fontSize: 13 }}>
             Selecciona el método de captura. En cualquiera podrás revisar y editar los datos antes de guardar.
           </p>
@@ -308,7 +307,7 @@ const Ingreso = () => {
         const nuevos = items.filter(it => it.nuevo);
         const getStock = (sku) => { const p = MOCK.productos.find(x => x.sku === sku); return p ? p.stock : null; };
         return (
-        <Modal title="Confirmar ingreso de mercancía" lg onClose={() => { setShowForm(false); setOrigen(null); }} footer={
+        <Modal title="Confirmar ingreso de mercancía" lg bottomSheet onClose={() => { setShowForm(false); setOrigen(null); }} footer={
           <>
             <button className="btn ghost" onClick={() => { setShowForm(false); setOrigen(null); }}>Cancelar</button>
             <button className="btn accent" disabled={guardando || items.length === 0} onClick={async () => {
@@ -615,7 +614,7 @@ const Ingreso = () => {
       })()}
 
       {showProv && (
-        <Modal title="Crear proveedor" onClose={() => setShowProv(false)} footer={
+        <Modal title="Crear proveedor" bottomSheet onClose={() => setShowProv(false)} footer={
           <>
             <button className="btn ghost" onClick={() => setShowProv(false)}>Cancelar</button>
             <button className="btn primary" disabled={!provDraft.nombre || !provDraft.nit || !provDraft.tel}
