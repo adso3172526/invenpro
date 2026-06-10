@@ -381,7 +381,240 @@
     }
   }
 
+  // ══════════ EVENTBUS ══════════
+
+  class EventBus {
+    constructor() { this._listeners = {}; }
+    on(event, cb) {
+      (this._listeners[event] || (this._listeners[event] = [])).push(cb);
+      return () => this.off(event, cb);
+    }
+    off(event, cb) {
+      const arr = this._listeners[event];
+      if (arr) this._listeners[event] = arr.filter(fn => fn !== cb);
+    }
+    emit(event, payload) {
+      (this._listeners[event] || []).forEach(fn => {
+        try { fn(payload); } catch (e) { console.error("[EventBus]", event, e); }
+      });
+    }
+  }
+
+  // ══════════ REALTIME MANAGER ══════════
+
+  const REALTIME_TABLES = [
+    "productos", "cajeros", "usuarios_sistema", "proveedores",
+    "turnos", "facturas", "factura_items", "ingresos", "ingreso_detalle", "configuracion",
+  ];
+
+  class RealtimeManager {
+    constructor() {
+      this._channel = null;
+      this._viewTimer = null;
+      this._started = false;
+    }
+
+    start() {
+      if (this._started || !window.db) return;
+      this._started = true;
+      const channel = window.db.channel("invenpro-realtime");
+
+      for (const table of REALTIME_TABLES) {
+        channel.on(
+          "postgres_changes",
+          { event: "*", schema: "public", table },
+          (payload) => this._dispatch(table, payload)
+        );
+      }
+
+      channel.subscribe((status) => {
+        console.log("[Realtime]", status);
+      });
+
+      this._channel = channel;
+    }
+
+    stop() {
+      if (this._channel) {
+        window.db.removeChannel(this._channel);
+        this._channel = null;
+      }
+      if (this._viewTimer) { clearTimeout(this._viewTimer); this._viewTimer = null; }
+      this._started = false;
+    }
+
+    _dispatch(table, payload) {
+      const M = window.MOCK;
+      if (!M) return;
+      switch (table) {
+        case "productos":       this._handleProductos(M, payload); break;
+        case "cajeros":         this._handleSimple(M, "cajeros", Cajero, "id", payload); break;
+        case "usuarios_sistema":this._handleSimple(M, "usuarios_sistema", Usuario, "usuario", payload); break;
+        case "proveedores":     this._handleSimple(M, "proveedores", Proveedor, "id", payload); break;
+        case "turnos":          this._handleSimple(M, "turnos", Turno, "id", payload); break;
+        case "facturas":        this._handleFacturas(M, payload); break;
+        case "factura_items":   this._handleFacturaItems(M, payload); break;
+        case "ingresos":        this._handleIngresos(M, payload); break;
+        case "ingreso_detalle": this._handleIngresoDetalle(M, payload); break;
+        case "configuracion":   this._handleConfiguracion(M, payload); break;
+      }
+    }
+
+    // Generic handler for simple tables (cajeros, usuarios_sistema, proveedores, turnos)
+    _handleSimple(M, key, Cls, pk, payload) {
+      const row = camelize(payload.new || {});
+      const oldRow = camelize(payload.old || {});
+      const arr = M[key];
+      if (payload.eventType === "INSERT") {
+        if (!arr.find(x => x[pk] === row[pk])) {
+          arr.push(Cls ? new Cls(row) : row);
+        }
+      } else if (payload.eventType === "UPDATE") {
+        const idx = arr.findIndex(x => x[pk] === row[pk]);
+        if (idx !== -1) arr[idx] = Cls ? new Cls({ ...arr[idx], ...row }) : { ...arr[idx], ...row };
+        else arr.push(Cls ? new Cls(row) : row);
+      } else if (payload.eventType === "DELETE") {
+        const id = oldRow[pk] || row[pk];
+        const idx = arr.findIndex(x => x[pk] === id);
+        if (idx !== -1) arr.splice(idx, 1);
+      }
+      window.EventBus.emit("realtime:" + key, { type: payload.eventType, row });
+    }
+
+    _handleProductos(M, payload) {
+      this._handleSimple(M, "productos", Producto, "sku", payload);
+      this._scheduleViewRefresh();
+    }
+
+    _handleFacturas(M, payload) {
+      const row = camelize(payload.new || {});
+      const oldRow = camelize(payload.old || {});
+      if (payload.eventType === "INSERT") {
+        if (!M.facturas.find(f => f.id === row.id)) {
+          M.facturas.unshift(new Factura({ ...row, items: [] }));
+        }
+      } else if (payload.eventType === "UPDATE") {
+        const idx = M.facturas.findIndex(f => f.id === row.id);
+        if (idx !== -1) {
+          const existing = M.facturas[idx];
+          M.facturas[idx] = new Factura({ ...existing, ...row, items: existing.items });
+        }
+      } else if (payload.eventType === "DELETE") {
+        const id = oldRow.id || row.id;
+        const idx = M.facturas.findIndex(f => f.id === id);
+        if (idx !== -1) M.facturas.splice(idx, 1);
+      }
+      M.facturas.sort((a, b) => (b.fecha + b.hora).localeCompare(a.fecha + a.hora));
+      window.EventBus.emit("realtime:facturas", { type: payload.eventType, row });
+      this._scheduleViewRefresh();
+    }
+
+    _handleFacturaItems(M, payload) {
+      const row = camelize(payload.new || {});
+      if (row.facturaId) {
+        const f = M.facturas.find(x => x.id === row.facturaId);
+        if (f) {
+          if (payload.eventType === "INSERT") {
+            if (!f.items.find(it => it.sku === row.sku && it.facturaId === row.facturaId)) {
+              f.items.push(row);
+            }
+          }
+          window.EventBus.emit("realtime:facturas", { type: "UPDATE", row: f });
+        }
+      }
+    }
+
+    _handleIngresos(M, payload) {
+      const row = camelize(payload.new || {});
+      const oldRow = camelize(payload.old || {});
+      if (payload.eventType === "INSERT") {
+        if (!M.ingresos.find(x => x.id === row.id)) {
+          M.ingresos.unshift({ ...row, detalle: [] });
+        }
+      } else if (payload.eventType === "UPDATE") {
+        const idx = M.ingresos.findIndex(x => x.id === row.id);
+        if (idx !== -1) {
+          const existing = M.ingresos[idx];
+          M.ingresos[idx] = { ...existing, ...row, detalle: existing.detalle };
+        }
+      } else if (payload.eventType === "DELETE") {
+        const id = oldRow.id || row.id;
+        const idx = M.ingresos.findIndex(x => x.id === id);
+        if (idx !== -1) M.ingresos.splice(idx, 1);
+      }
+      window.EventBus.emit("realtime:ingresos", { type: payload.eventType, row });
+    }
+
+    _handleIngresoDetalle(M, payload) {
+      const row = camelize(payload.new || {});
+      if (row.ingresoId) {
+        const ing = M.ingresos.find(x => x.id === row.ingresoId);
+        if (ing) {
+          if (payload.eventType === "INSERT") {
+            ing.detalle = ing.detalle || [];
+            ing.detalle.push(row);
+          } else if (payload.eventType === "DELETE") {
+            ing.detalle = (ing.detalle || []).filter(d => d.sku !== row.sku);
+          }
+          window.EventBus.emit("realtime:ingresos", { type: "UPDATE", row: ing });
+        }
+      }
+    }
+
+    _handleConfiguracion(M, payload) {
+      const row = payload.new || {};
+      if (row.clave != null) {
+        M.configuracion[row.clave] = row.valor;
+      }
+      window.EventBus.emit("realtime:configuracion", { type: payload.eventType, row });
+    }
+
+    _scheduleViewRefresh() {
+      if (this._viewTimer) clearTimeout(this._viewTimer);
+      this._viewTimer = setTimeout(() => this._refreshViews(), 2000);
+    }
+
+    async _refreshViews() {
+      const d = window.db;
+      const M = window.MOCK;
+      if (!d || !M) return;
+      try {
+        const [
+          { data: ventasMes }, { data: ventasCajero },
+          { data: topProductos }, { data: ventasHoy },
+        ] = await Promise.all([
+          d.from("ventas_mes").select("*"),
+          d.from("ventas_cajero").select("*"),
+          d.from("top_productos").select("*"),
+          d.from("ventas_hoy").select("*"),
+        ]);
+        M.ventasMes = camelize(ventasMes || []);
+        M.ventasCajero = camelize(ventasCajero || []);
+        M.topProductos = camelize(topProductos || []);
+        M.ventasHoy = camelize(ventasHoy || []);
+        window.EventBus.emit("realtime:views", {});
+      } catch (e) {
+        console.error("[Realtime] refreshViews:", e);
+      }
+    }
+  }
+
+  // ══════════ useRealtimeSync HOOK ══════════
+
+  function useRealtimeSync(tables) {
+    const [, setTick] = React.useState(0);
+    React.useEffect(() => {
+      const list = Array.isArray(tables) ? tables : [tables];
+      const offs = list.map(t => window.EventBus.on("realtime:" + t, () => setTick(n => n + 1)));
+      return () => offs.forEach(fn => fn());
+    }, [Array.isArray(tables) ? tables.join(",") : tables]);
+  }
+
   // ══════════ INICIALIZACIÓN GLOBAL ══════════
+
+  const _bus = new EventBus();
+  const _rtm = new RealtimeManager();
+  window.EventBus = _bus;
 
   window.hashPass = hashPass;
   window.camelize = camelize;
@@ -391,6 +624,12 @@
     if (!window._dataStore) { window._dataStore = new DataStore(); }
     await window._dataStore.hydrate();
     window.MOCK = window._dataStore;
+    // Start realtime after hydration
+    _rtm.start();
+  };
+
+  window.stopRealtime = function () {
+    _rtm.stop();
   };
 
   window.DB = {
@@ -415,11 +654,13 @@
     return Math.round(ms / (1000 * 60 * 60 * 24));
   };
   window.todayStr = fmt(today);
+  window.useRealtimeSync = useRealtimeSync;
 
   // Exponer clases para instanceof y UML
   Object.assign(window, {
     Producto, Usuario, Cajero, Proveedor, Turno, Factura,
     AuthService, ProductoService, FacturaService, TurnoService,
     CajeroService, ProveedorService, IngresoService, ConfigService, DataStore,
+    EventBus, RealtimeManager,
   });
 })();

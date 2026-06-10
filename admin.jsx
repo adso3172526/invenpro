@@ -3,6 +3,7 @@ const { useState: useStateA, useMemo: useMemoA } = React;
 
 // =================== Reporte de ventas ===================
 const Reportes = () => {
+  useRealtimeSync(["facturas", "productos"]);
   const [filtroMes, setFiltroMes] = useStateA("Todos");
   const [filtroCajero, setFiltroCajero] = useStateA("Todos");
   const [filtroProducto, setFiltroProducto] = useStateA("Todos");
@@ -282,6 +283,7 @@ const Reportes = () => {
 
 // =================== Ajustes (solo admin) ===================
 const Ajustes = () => {
+  useRealtimeSync("configuracion");
   const cfg = (window.MOCK && window.MOCK.configuracion) || {};
   const [apiKey, setApiKey] = useStateA(cfg.ia_api_key || "");
   const [urlApi, setUrlApi] = useStateA(cfg.ia_url || "");

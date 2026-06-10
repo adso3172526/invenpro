@@ -2,6 +2,7 @@
 const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Vencimientos = () => {
+  useRealtimeSync("productos");
   const [tab, setTab] = useStateA("preventivo");
   const [destinatarios, setDestinatarios] = useStateA(() => {
     try { return JSON.parse(localStorage.getItem("invenpro-alert-emails")) || [

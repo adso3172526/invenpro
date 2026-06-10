@@ -2,6 +2,7 @@
 const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Cajeros = () => {
+  useRealtimeSync(["cajeros", "turnos", "usuarios_sistema"]);
   const [tab, setTab] = useStateA("equipo");
   const [showAdd, setShowAdd] = useStateA(false);
   const [cfgCajero, setCfgCajero] = useStateA(null);

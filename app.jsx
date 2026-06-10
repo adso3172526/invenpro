@@ -56,6 +56,7 @@ const App = () => {
   };
 
   const onLogout = () => {
+    window.stopRealtime();
     _ssClear();
     setUser(null); setShift(null); setShiftSummary(null);
     setStage("login"); setAdminPage("dashboard");

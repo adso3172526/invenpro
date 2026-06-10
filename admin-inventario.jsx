@@ -11,6 +11,13 @@ const Inventario = () => {
   const [editing, setEditing] = useStateA(null);
   const [saving, setSaving] = useStateA(false);
 
+  // Realtime: sync productos from MOCK when changed remotely
+  React.useEffect(() => {
+    return window.EventBus.on("realtime:productos", () => {
+      setProductos(MOCK.productos.map(p => ({ ...p })));
+    });
+  }, []);
+
   const sinCodigo = useMemoA(() => productos.filter(p => !p.codigoBarras).length, [productos]);
   const bajo = useMemoA(() => productos.filter(p => p.stock < p.min).length, [productos]);
   const totalValor = useMemoA(() => productos.reduce((s, p) => s + p.stock * p.costo, 0), [productos]);

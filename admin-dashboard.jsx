@@ -20,6 +20,7 @@ const Hub = ({ go, user }) => (
 );
 
 const Dashboard = ({ go }) => {
+  useRealtimeSync("views");
   const sparkData = MOCK.ventasHoy.map(h => h.v);
   const totalHoy = MOCK.ventasHoy.reduce((s, h) => s + h.v, 0);
   const ventasCajeroHoy = MOCK.ventasCajero.map(c => ({ ...c, hoy: Math.round(c.total / 30 * (0.6 + Math.random()*0.8)) }));

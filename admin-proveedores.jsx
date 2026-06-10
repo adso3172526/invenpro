@@ -10,6 +10,13 @@ const Proveedores = () => {
   const [confirmBaja, setConfirmBaja] = useStateA(null);
   const [toast, setToast] = useStateA(null);
 
+  // Realtime: sync proveedores from MOCK
+  React.useEffect(() => {
+    return window.EventBus.on("realtime:proveedores", () => {
+      setList([...MOCK.proveedores]);
+    });
+  }, []);
+
   const categorias = useMemoA(() => ["Todas", ...Array.from(new Set(list.map(p => p.categoria)))], [list]);
 
   const filtered = useMemoA(() => list.filter(p => {
@@ -31,6 +38,10 @@ const Proveedores = () => {
   const guardar = async (data) => {
     if (data.id) {
       await DB.proveedores.update(data.id, data);
+      // Optimistic update
+      const idx = MOCK.proveedores.findIndex(p => p.id === data.id);
+      if (idx !== -1) Object.assign(MOCK.proveedores[idx], data);
+      setList([...MOCK.proveedores]);
       setToast("Proveedor actualizado");
     } else {
       const nextId = "PRV-" + String(list.length + 1).padStart(3, "0");
@@ -38,17 +49,17 @@ const Proveedores = () => {
       await DB.proveedores.create(nuevo);
       setToast("Proveedor creado");
     }
-    await hydrateData();
-    setList(MOCK.proveedores);
     setEditing(null);
   };
 
   const toggleEstado = async (p) => {
     const nuevoEstado = p.estado === "activo" ? "inactivo" : "activo";
     await DB.proveedores.update(p.id, { estado: nuevoEstado });
+    // Optimistic update
+    const idx = MOCK.proveedores.findIndex(x => x.id === p.id);
+    if (idx !== -1) MOCK.proveedores[idx].estado = nuevoEstado;
+    setList([...MOCK.proveedores]);
     setToast(p.estado === "activo" ? "Proveedor dado de baja" : "Proveedor reactivado");
-    await hydrateData();
-    setList(MOCK.proveedores);
     setConfirmBaja(null);
   };
 

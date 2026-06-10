@@ -163,6 +163,22 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     items: 0,
   });
 
+  // Realtime: merge remote product updates, keeping cart items' local stock deductions
+  useEffect(() => {
+    return window.EventBus.on("realtime:productos", () => {
+      setProductos(prev => {
+        return MOCK.productos.map(mp => {
+          const local = prev.find(lp => lp.sku === mp.sku);
+          // If the local stock was already decremented by a cart item, keep that offset
+          if (local && local.stock !== mp.stock) {
+            return { ...mp };
+          }
+          return { ...mp };
+        });
+      });
+    });
+  }, []);
+
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
     return productos.filter(p =>

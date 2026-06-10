@@ -2,6 +2,7 @@
 const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Ingreso = () => {
+  useRealtimeSync(["ingresos", "productos"]);
   const [items, setItems] = useStateA([]);
   const [origen, setOrigen] = useStateA(null); // null | "manual" | "qr" | "ia"
   const [showSelector, setShowSelector] = useStateA(false);
