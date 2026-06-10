@@ -208,41 +208,28 @@ const Reportes = () => {
 // =================== Ajustes (solo admin) ===================
 const Ajustes = () => {
   const cfg = (window.MOCK && window.MOCK.configuracion) || {};
-  const initId = cfg.ia_provider || "gemini";
-  const initPreset = IA_PRESETS.find(p => p.id === initId) || IA_PRESETS[0];
 
-  const [providerId, setProviderId] = useStateA(initId);
+  const [urlApi, setUrlApi] = useStateA(cfg.ia_url || "");
   const [apiKey, setApiKey] = useStateA(cfg.ia_api_key || "");
-  const [modelo, setModelo] = useStateA(cfg.ia_model || initPreset.model);
-  const [urlApi, setUrlApi] = useStateA(cfg.ia_url || initPreset.url);
-  const [formato, setFormato] = useStateA(cfg.ia_format || initPreset.format);
   const [showKey, setShowKey] = useStateA(false);
   const [saved, setSaved] = useStateA(false);
   const [saving, setSaving] = useStateA(false);
   const [testing, setTesting] = useStateA(false);
   const [testResult, setTestResult] = useStateA(null);
 
-  const preset = IA_PRESETS.find(p => p.id === providerId) || IA_PRESETS[IA_PRESETS.length - 1];
-
-  const cambiarProveedor = (id) => {
-    const pr = IA_PRESETS.find(p => p.id === id) || IA_PRESETS[IA_PRESETS.length - 1];
-    setProviderId(id);
-    setModelo(pr.model);
-    setUrlApi(pr.url);
-    setFormato(pr.format);
-    setApiKey("");
-    setSaved(false);
-    setTestResult(null);
-  };
+  // El modelo y el proveedor se deducen del endpoint (campo de solo lectura)
+  const detected = detectFromUrl(urlApi);
+  const provPreset = IA_PRESETS.find(p => p.id === detected.provider);
+  const proveedorLabel = provPreset ? provPreset.name : "Personalizado";
 
   const guardar = async () => {
     setSaving(true);
     await DB.config.saveBatch({
-      ia_provider: providerId,
-      ia_api_key: apiKey.trim(),
-      ia_model: modelo.trim(),
       ia_url: urlApi.trim(),
-      ia_format: formato,
+      ia_api_key: apiKey.trim(),
+      ia_provider: detected.provider,
+      ia_model: detected.model,
+      ia_format: detected.format,
     });
     setSaving(false);
     setSaved(true);
@@ -258,26 +245,27 @@ const Ajustes = () => {
   };
 
   const probarConexion = async () => {
-    if (!apiKey.trim()) return;
+    if (!apiKey.trim() || !urlApi.trim()) return;
     setTesting(true);
     setTestResult(null);
+    const key = apiKey.trim();
+    const url = urlApi.trim();
     try {
-      if (formato === "gemini") {
-        const m = modelo.trim() || "gemini-2.0-flash";
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}?key=${apiKey.trim()}`);
+      if (detected.format === "gemini") {
+        const m = detected.model || "gemini-2.0-flash";
+        const base = url.split("?")[0].replace(/\/+$/, "").replace(/\/models\/.*$/, "") || "https://generativelanguage.googleapis.com/v1beta";
+        const r = await fetch(`${base}/models/${m}?key=${key}`);
         if (!r.ok) throw new Error();
-      } else if (formato === "claude") {
-        const endpoint = urlApi.trim() || "https://api.anthropic.com/v1/messages";
-        const r = await fetch(endpoint, {
+      } else if (detected.format === "claude") {
+        const r = await fetch(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-api-key": apiKey.trim(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-          body: JSON.stringify({ model: modelo.trim(), max_tokens: 10, messages: [{ role: "user", content: "ping" }] }),
+          headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          body: JSON.stringify({ model: detected.model, max_tokens: 10, messages: [{ role: "user", content: "ping" }] }),
         });
         if (!r.ok) throw new Error();
       } else {
-        const endpoint = urlApi.trim() || "https://api.openai.com/v1/chat/completions";
-        const base = endpoint.replace(/\/chat\/completions\/?$/, "/models");
-        const r = await fetch(base, { headers: { "Authorization": `Bearer ${apiKey.trim()}` } });
+        const base = url.replace(/\/chat\/completions\/?$/, "/models");
+        const r = await fetch(base, { headers: { "Authorization": `Bearer ${key}` } });
         if (!r.ok) throw new Error();
       }
       setTestResult("ok");
@@ -292,133 +280,94 @@ const Ajustes = () => {
       <div className="page-h">
         <div>
           <h2><Icon name="settings" size={20}/> Ajustes</h2>
-          <p className="sub">Configuración general del sistema</p>
+          <p className="sub">Conexión de IA para el escáner de facturas</p>
         </div>
       </div>
 
-      {/* ── Card: Proveedor de IA ── */}
+      {/* ── Card: Conexión de IA ── */}
       <div className="card" style={{ marginTop: 16 }}>
         <div className="card-h">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
-            <h3>Proveedor de IA</h3>
+            <h3>Conexión de IA</h3>
           </div>
-          <p className="sub">Escáner de facturas</p>
+          <p className="sub">La configura el administrador; el supervisor la usa</p>
         </div>
         <div className="card-b">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 8 }}>
-            {IA_PRESETS.map(p => (
-              <button key={p.id}
-                className={"btn" + (providerId === p.id ? " primary" : " ghost")}
-                onClick={() => cambiarProveedor(p.id)}
-                style={{ fontSize: 12, fontWeight: providerId === p.id ? 600 : 400, width: "100%", padding: "10px 8px" }}
-              >{p.name}</button>
-            ))}
+          {/* Endpoint / link */}
+          <div className="field" style={{ margin: 0 }}>
+            <label>Endpoint (URL)</label>
+            <input
+              className="mono"
+              value={urlApi}
+              onChange={e => { setUrlApi(e.target.value); setSaved(false); setTestResult(null); }}
+              placeholder="https://generativelanguage.googleapis.com/v1beta"
+              style={{ fontSize: 12 }}
+            />
           </div>
-        </div>
-      </div>
 
-      {/* ── Card: Configuración de conexión ── */}
-      <div className="card" style={{ marginTop: 12 }}>
-        <div className="card-h">
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Icon name="settings" size={16}/>
-            <h3>Configuración de conexión</h3>
-          </div>
-        </div>
-        <div className="card-b">
-          <div className="grid-2" style={{ gap: 12 }}>
-            <div className="field" style={{ margin: 0 }}>
-              <label>Formato de API</label>
-              <select value={formato} onChange={e => { setFormato(e.target.value); setSaved(false); }}>
-                <option value="openai">OpenAI Compatible</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="claude">Anthropic Claude</option>
-              </select>
-            </div>
-            <div className="field" style={{ margin: 0 }}>
-              <label>Modelo</label>
-              <input
-                className="mono"
-                value={modelo}
-                onChange={e => { setModelo(e.target.value); setSaved(false); }}
-                placeholder="nombre-del-modelo"
-              />
-            </div>
-          </div>
-          {formato !== "gemini" && (
-            <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
-              <label>URL del endpoint</label>
-              <input
-                className="mono"
-                value={urlApi}
-                onChange={e => { setUrlApi(e.target.value); setSaved(false); }}
-                placeholder={formato === "openai" ? "https://api.ejemplo.com/v1/chat/completions" : "https://api.anthropic.com/v1/messages"}
-                style={{ fontSize: 12 }}
-              />
-            </div>
-          )}
-          <p className="muted" style={{ fontSize: 11, marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
-            Groq, Together, Mistral, DeepSeek, Ollama, LM Studio, OpenRouter usan formato OpenAI Compatible.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Card: API Key ── */}
-      <div className="card" style={{ marginTop: 12 }}>
-        <div className="card-h">
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-            <h3>API Key</h3>
-          </div>
-        </div>
-        <div className="card-b">
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ flex: "1 1 200px", position: "relative", minWidth: 0 }}>
+          {/* API Key */}
+          <div className="field" style={{ marginTop: 14, marginBottom: 0 }}>
+            <label>API Key</label>
+            <div style={{ position: "relative" }}>
               <input
                 type={showKey ? "text" : "password"}
+                className="mono"
                 value={apiKey}
                 onChange={e => { setApiKey(e.target.value); setSaved(false); setTestResult(null); }}
-                placeholder={preset.placeholder}
-                style={{ width: "100%", fontSize: 13, padding: "8px 36px 8px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "monospace" }}
+                placeholder="tu-api-key"
+                style={{ width: "100%", paddingRight: 44 }}
               />
               <button
                 onClick={() => setShowKey(v => !v)}
-                style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 11, padding: 0 }}
+                className="touch-target"
+                style={{ position: "absolute", right: 2, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-3)" }}
                 title={showKey ? "Ocultar" : "Mostrar"}
               >{showKey ? "🙈" : "👁"}</button>
             </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <button className="btn primary sm" onClick={guardar} disabled={!apiKey.trim() || !modelo.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
-              {apiKey && (
-                <button className="btn ghost sm" onClick={borrarKey} title="Borrar"><Icon name="x" size={14}/></button>
-              )}
-            </div>
           </div>
 
+          {/* Modelo conectado (solo lectura, deducido del endpoint) */}
+          <div className="field" style={{ marginTop: 14, marginBottom: 0 }}>
+            <label>Modelo conectado</label>
+            <input
+              className="mono"
+              value={urlApi.trim() ? `${detected.model}  ·  ${proveedorLabel}` : "—  (ingresa el endpoint)"}
+              readOnly
+              tabIndex={-1}
+              style={{ background: "var(--surface-2)", color: "var(--text-2)", cursor: "default" }}
+            />
+          </div>
+
+          {/* Acciones */}
+          <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2" style={{ marginTop: 16 }}>
+            <button className="btn primary" onClick={guardar} disabled={!apiKey.trim() || !urlApi.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
+            <button className="btn ghost" onClick={probarConexion} disabled={!apiKey.trim() || !urlApi.trim() || testing}>{testing ? "Probando…" : "Probar conexión"}</button>
+            {apiKey && (
+              <button className="btn ghost" onClick={borrarKey} title="Borrar API key"><Icon name="x" size={14}/> Borrar</button>
+            )}
+          </div>
+
+          {/* Estados */}
           {saved && (
-            <div style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4, marginTop: 10 }}>
-              <Icon name="check" size={14}/> Configuración guardada en la nube
+            <div style={{ color: "var(--good)", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4, marginTop: 12 }}>
+              <Icon name="check" size={14}/> Configuración guardada
+            </div>
+          )}
+          {testResult === "ok" && (
+            <div style={{ color: "var(--good)", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4, marginTop: 12 }}>
+              <Icon name="check" size={14}/> Conexión exitosa
+            </div>
+          )}
+          {testResult === "error" && (
+            <div style={{ color: "var(--bad)", fontSize: 12, fontWeight: 500, marginTop: 12 }}>
+              No se pudo conectar. Revisa el endpoint y la API key.
             </div>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-            <button className="btn sm ghost" onClick={probarConexion} disabled={!apiKey.trim() || testing}>
-              {testing ? "Probando…" : "Probar conexión"}
-            </button>
-            {testResult === "ok" && (
-              <span style={{ color: "#22C55E", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                <Icon name="check" size={14}/> Conexión exitosa
-              </span>
-            )}
-            {testResult === "error" && (
-              <span style={{ color: "#EF4444", fontSize: 12, fontWeight: 500 }}>API Key inválida o sin permisos</span>
-            )}
-          </div>
-
-          {preset.link && (
-            <p className="muted" style={{ fontSize: 11, marginTop: 10, marginBottom: 0, lineHeight: 1.5 }}>
-              Obtén tu key en <a href={preset.link} target="_blank" rel="noopener" style={{ color: "var(--primary)" }}>{preset.linkLabel}</a>.
+          {provPreset && provPreset.link && (
+            <p className="muted" style={{ fontSize: 11, marginTop: 12, marginBottom: 0, lineHeight: 1.5 }}>
+              Obtén tu key en <a href={provPreset.link} target="_blank" rel="noopener" style={{ color: "var(--accent)" }}>{provPreset.linkLabel}</a>.
             </p>
           )}
         </div>
