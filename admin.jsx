@@ -217,8 +217,11 @@ const Ajustes = () => {
   const [testing, setTesting] = useStateA(false);
   const [testResult, setTestResult] = useStateA(null);
 
-  // El modelo y el proveedor se deducen del endpoint (campo de solo lectura)
+  // El proveedor se deduce del endpoint; el modelo se toma de la URL si viene
+  // (Gemini: /models/MODELO:generateContent). Si no, cae al modelo por defecto del proveedor.
   const detected = detectFromUrl(urlApi);
+  const urlModel = (urlApi.match(/\/models\/([^:/?]+)/) || [])[1];
+  const model = urlModel || detected.model;
   const provPreset = IA_PRESETS.find(p => p.id === detected.provider);
   const proveedorLabel = provPreset ? provPreset.name : "Personalizado";
 
@@ -228,7 +231,7 @@ const Ajustes = () => {
       ia_url: urlApi.trim(),
       ia_api_key: apiKey.trim(),
       ia_provider: detected.provider,
-      ia_model: detected.model,
+      ia_model: model,
       ia_format: detected.format,
     });
     setSaving(false);
@@ -251,26 +254,29 @@ const Ajustes = () => {
     const key = apiKey.trim();
     const url = urlApi.trim();
     try {
+      let r;
       if (detected.format === "gemini") {
-        const m = detected.model || "gemini-2.0-flash";
-        const base = url.split("?")[0].replace(/\/+$/, "").replace(/\/models\/.*$/, "") || "https://generativelanguage.googleapis.com/v1beta";
-        const r = await fetch(`${base}/models/${m}?key=${key}`);
-        if (!r.ok) throw new Error();
+        const base = url.split("?")[0].replace(/\/+$/, "").replace(/\/models.*$/, "") || "https://generativelanguage.googleapis.com/v1beta";
+        r = await fetch(`${base}/models?key=${key}`);
       } else if (detected.format === "claude") {
-        const r = await fetch(url, {
+        r = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-          body: JSON.stringify({ model: detected.model, max_tokens: 10, messages: [{ role: "user", content: "ping" }] }),
+          body: JSON.stringify({ model: model, max_tokens: 10, messages: [{ role: "user", content: "ping" }] }),
         });
-        if (!r.ok) throw new Error();
       } else {
         const base = url.replace(/\/chat\/completions\/?$/, "/models");
-        const r = await fetch(base, { headers: { "Authorization": `Bearer ${key}` } });
-        if (!r.ok) throw new Error();
+        r = await fetch(base, { headers: { "Authorization": `Bearer ${key}` } });
       }
-      setTestResult("ok");
-    } catch {
-      setTestResult("error");
+      if (r.ok) {
+        setTestResult("ok");
+      } else {
+        const body = await r.text().catch(() => "");
+        setTestResult(parseApiError(r.status, body, proveedorLabel));
+      }
+    } catch (e) {
+      // Un fetch que lanza (sin status) suele ser bloqueo CORS del proveedor o URL inválida
+      setTestResult("No se pudo conectar: el navegador bloqueó la petición (CORS) o el endpoint no es válido. Verifica la URL. Detalle: " + (e && e.message ? e.message : "error de red"));
     }
     setTesting(false);
   };
@@ -332,7 +338,7 @@ const Ajustes = () => {
             <label>Modelo conectado</label>
             <input
               className="mono"
-              value={urlApi.trim() ? `${detected.model}  ·  ${proveedorLabel}` : "—  (ingresa el endpoint)"}
+              value={urlApi.trim() ? `${model}  ·  ${proveedorLabel}` : "—  (ingresa el endpoint)"}
               readOnly
               tabIndex={-1}
               style={{ background: "var(--surface-2)", color: "var(--text-2)", cursor: "default" }}
@@ -359,9 +365,9 @@ const Ajustes = () => {
               <Icon name="check" size={14}/> Conexión exitosa
             </div>
           )}
-          {testResult === "error" && (
-            <div style={{ color: "var(--bad)", fontSize: 12, fontWeight: 500, marginTop: 12 }}>
-              No se pudo conectar. Revisa el endpoint y la API key.
+          {testResult && testResult !== "ok" && (
+            <div style={{ color: "var(--bad)", fontSize: 12, fontWeight: 500, marginTop: 12, lineHeight: 1.5 }}>
+              {testResult}
             </div>
           )}
 
