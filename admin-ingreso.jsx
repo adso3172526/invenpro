@@ -896,6 +896,7 @@ const ItemAdder = ({ onAdd }) => {
     setCodigoBarras(p.codigoBarras || "");
     setCosto(p.costo);
     setPrecio(p.precio);
+    setCategoria(p.categoria || "General");
     setOpen(false);
     setHighlight(-1);
   };
@@ -961,14 +962,18 @@ const ItemAdder = ({ onAdd }) => {
         </div>
       </div>
 
-      {/* Fila 2: Categoría (solo si producto nuevo) */}
-      {esNuevo && query && (
+      {/* Fila 2: Categoría — readonly si existe, editable si es nuevo */}
+      {query && (
         <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-[1fr_200px] tw-gap-2 tw-mb-2">
           <div className="field" style={{ margin: 0 }}>
             <label>Categoría</label>
-            <select value={categoria} onChange={e => setCategoria(e.target.value)}>
-              {[...new Set(["General", ...MOCK.productos.map(p => p.categoria)])].sort().map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            {esNuevo ? (
+              <select value={categoria} onChange={e => setCategoria(e.target.value)}>
+                {[...new Set(["General", ...MOCK.productos.map(p => p.categoria)])].sort().map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            ) : (
+              <input value={categoria} readOnly style={{ background: "var(--surface-2)", color: "var(--text-3)", cursor: "default" }}/>
+            )}
           </div>
         </div>
       )}
