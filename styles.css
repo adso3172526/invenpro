@@ -55,7 +55,6 @@
 }
 
 * { box-sizing: border-box; }
-html { overflow-x: hidden; }
 html, body, #root { height: 100%; }
 body {
   margin: 0;
@@ -63,13 +62,12 @@ body {
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
-  overflow-x: hidden;
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "ss01", "cv11";
 }
 button { font: inherit; color: inherit; cursor: pointer; }
-input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width: 100%; }
+input, select, textarea { font: inherit; color: inherit; }
 .mono { font-family: var(--mono); font-feature-settings: "tnum"; }
 .tnum { font-variant-numeric: tabular-nums; }
 
@@ -209,7 +207,7 @@ input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width
 /* ============ App shell (admin) ============ */
 .app {
   min-height: 100vh; display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
+  grid-template-columns: 110px 1fr;
   background: var(--bg);
 }
 .sidebar {
@@ -364,7 +362,6 @@ input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width
 .main {
   display: flex; flex-direction: column;
   min-width: 0;
-  max-width: 100%;
   max-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
@@ -470,7 +467,7 @@ input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width
 
 /* Tablet vertical / pequeño */
 @media (max-width: 900px) {
-  .app { grid-template-columns: minmax(0, 1fr); }
+  .app { grid-template-columns: 1fr; }
 
   /* Topbar mobile fijo */
   .mobile-topbar {
@@ -906,15 +903,15 @@ input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width
   .chart-bars .lbl, .chart-bars .val { font-size: 9px; }
 }
 
-.page { padding: 36px 48px 60px; margin: 0 auto; }
-.page:has(.dash) { padding: 24px 40px 24px; }
+.page { padding: 36px 48px 60px; max-width: 100%; margin: 0 auto; width: 100%; }
+.page:has(.dash) { padding: 24px 40px 24px; max-width: 100%; }
 @media (max-width: 767px) {
   .page { padding: 16px 12px 40px; }
   .page:has(.dash) { padding: 12px 10px 20px; }
 }
 
 /* Dashboard — base structure (layout controlled by Tailwind) */
-.dash { box-sizing: border-box; }
+.dash { width: 100%; box-sizing: border-box; }
 .dash-h { margin: 0; }
 .dash-kpi { margin: 0 !important; }
 .dash-kpi .kpi .val { font-size: 24px; }
@@ -929,7 +926,9 @@ input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
+  box-sizing: border-box; max-width: 100%;
 }
+.page-h > * { min-width: 0; }
 .page-h h2 { font-size: 22px; margin: 0 0 4px 0; font-weight: 600; letter-spacing: -0.015em; }
 .page-h .sub { color: var(--text-2); margin: 0; font-size: 13px; }
 @media (max-width: 767px) {
