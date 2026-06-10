@@ -409,11 +409,11 @@ const Ajustes = () => {
               <input value={tTel} onChange={e => { setTTel(e.target.value); setTSaved(false); }} placeholder="Ej: 310 123 4567"/>
             </div>
           </div>
-          <div className="field tw-mb-3" style={{ margin: 0 }}>
+          <div className="field" style={{ margin: "0 0 12px 0" }}>
             <label>Mensaje pie de recibo</label>
             <input value={tFooter} onChange={e => { setTFooter(e.target.value); setTSaved(false); }} placeholder="¡Gracias por tu compra!"/>
           </div>
-          <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2">
+          <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-mt-3">
             <button className="btn primary sm tw-w-full sm:tw-w-auto" onClick={guardarTienda} disabled={tSaving}>{tSaving ? "Guardando…" : "Guardar"}</button>
             {tSaved && (
               <span className="tw-text-xs tw-font-medium tw-flex tw-items-center tw-gap-1" style={{ color: "#22C55E" }}>
@@ -457,7 +457,7 @@ const Ajustes = () => {
             </div>
           )}
 
-          <div className="field tw-mb-3" style={{ margin: 0 }}>
+          <div className="field" style={{ margin: "0 0 12px 0" }}>
             <label>API Key / Token</label>
             <div className="tw-relative">
               <input
@@ -476,7 +476,7 @@ const Ajustes = () => {
             </div>
           </div>
 
-          <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2">
+          <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-mt-3">
             <button className="btn primary sm tw-w-full sm:tw-w-auto" onClick={guardar} disabled={!apiKey.trim() || !urlApi.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
             <button className="btn sm ghost tw-w-full sm:tw-w-auto" onClick={probarConexion} disabled={!apiKey.trim() || !urlApi.trim() || testing}>
               {testing ? "Probando…" : "Probar conexión"}

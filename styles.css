@@ -364,6 +364,7 @@ input, select, textarea { font: inherit; color: inherit; }
   min-width: 0;
   max-height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .topbar {
   height: 60px;
