@@ -928,6 +928,11 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 .page-h h2 { font-size: 22px; margin: 0 0 4px 0; font-weight: 600; letter-spacing: -0.015em; }
 .page-h .sub { color: var(--text-2); margin: 0; font-size: 13px; }
+@media (max-width: 767px) {
+  .page-h { padding: 12px 14px; gap: 10px; margin-bottom: 14px; overflow: hidden; }
+  .page-h h2 { font-size: 18px; }
+  .page-h .sub { font-size: 12px; }
+}
 
 /* ============ Cards & grids ============ */
 .card {

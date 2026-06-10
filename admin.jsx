@@ -413,8 +413,8 @@ const Ajustes = () => {
             <label>Mensaje pie de recibo</label>
             <input value={tFooter} onChange={e => { setTFooter(e.target.value); setTSaved(false); }} placeholder="¡Gracias por tu compra!"/>
           </div>
-          <div className="tw-flex tw-items-center tw-gap-2">
-            <button className="btn primary sm" onClick={guardarTienda} disabled={tSaving}>{tSaving ? "Guardando…" : "Guardar"}</button>
+          <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2">
+            <button className="btn primary sm tw-w-full sm:tw-w-auto" onClick={guardarTienda} disabled={tSaving}>{tSaving ? "Guardando…" : "Guardar"}</button>
             {tSaved && (
               <span className="tw-text-xs tw-font-medium tw-flex tw-items-center tw-gap-1" style={{ color: "#22C55E" }}>
                 <Icon name="check" size={14}/> Guardado
@@ -477,8 +477,8 @@ const Ajustes = () => {
           </div>
 
           <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2">
-            <button className="btn primary sm tw-flex-1 sm:tw-flex-none" onClick={guardar} disabled={!apiKey.trim() || !urlApi.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
-            <button className="btn sm ghost tw-flex-1 sm:tw-flex-none" onClick={probarConexion} disabled={!apiKey.trim() || !urlApi.trim() || testing}>
+            <button className="btn primary sm tw-w-full sm:tw-w-auto" onClick={guardar} disabled={!apiKey.trim() || !urlApi.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
+            <button className="btn sm ghost tw-w-full sm:tw-w-auto" onClick={probarConexion} disabled={!apiKey.trim() || !urlApi.trim() || testing}>
               {testing ? "Probando…" : "Probar conexión"}
             </button>
             {apiKey && (
