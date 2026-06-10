@@ -661,6 +661,5 @@
     Producto, Usuario, Cajero, Proveedor, Turno, Factura,
     AuthService, ProductoService, FacturaService, TurnoService,
     CajeroService, ProveedorService, IngresoService, ConfigService, DataStore,
-    EventBus, RealtimeManager,
   });
 })();
