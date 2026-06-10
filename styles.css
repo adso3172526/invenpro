@@ -1754,3 +1754,38 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   Modales en MOBILE (≤639px): hoja inferior a ancho completo
+   y contención de desbordes horizontales. Solo afecta mobile.
+   ============================================================ */
+@media (max-width: 639px) {
+  /* Todos los modales se comportan como hoja inferior a ancho completo */
+  .modal-bg { place-items: end stretch; }
+  .modal,
+  .modal.lg {
+    width: 100%;
+    max-width: 100vw;
+    max-height: 90dvh;
+    max-height: 90vh; /* fallback */
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+  }
+  @supports (max-height: 1dvh) {
+    .modal, .modal.lg { max-height: 90dvh; }
+  }
+  /* El cuerpo contiene su contenido: nada se desborda hacia los lados */
+  .modal-b {
+    overflow-x: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  /* Las tablas anchas hacen scroll horizontal DENTRO del modal, no lo desbordan */
+  .modal-b .tbl-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Imágenes/medios nunca exceden el ancho del modal */
+  .modal-b img, .modal-b video, .modal-b canvas, .modal-b svg { max-width: 100%; }
+}
