@@ -925,7 +925,9 @@ input, select, textarea { font: inherit; color: inherit; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
+  box-sizing: border-box; max-width: 100%;
 }
+.page-h > * { min-width: 0; }
 .page-h h2 { font-size: 22px; margin: 0 0 4px 0; font-weight: 600; letter-spacing: -0.015em; }
 .page-h .sub { color: var(--text-2); margin: 0; font-size: 13px; }
 @media (max-width: 767px) {
