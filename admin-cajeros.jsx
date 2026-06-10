@@ -43,13 +43,13 @@ const Cajeros = () => {
           <h2>Cajeros y turnos</h2>
           <p className="sub">Administra usuarios del POS y supervisa la actividad de cada turno.</p>
         </div>
-        <div className="tw-flex tw-gap-2 tw-w-full sm:tw-w-auto">
-          <div className="tab-bar">
+        <div className="tw-flex tw-flex-wrap tw-gap-2 tw-w-full sm:tw-w-auto">
+          <div className="tab-bar tw-w-full sm:tw-w-auto">
             <button className={tab === "equipo" ? "on" : ""} onClick={() => setTab("equipo")}>Equipo</button>
             <button className={tab === "turnos" ? "on" : ""} onClick={() => setTab("turnos")}>Turnos</button>
             <button className={tab === "usuarios" ? "on" : ""} onClick={() => setTab("usuarios")}>Usuarios</button>
           </div>
-          <button className="btn primary tw-flex-1 sm:tw-flex-none" onClick={() => setShowAdd(true)}><Icon name="plus" size={14}/> Nuevo cajero</button>
+          <button className="btn primary tw-w-full sm:tw-w-auto" onClick={() => setShowAdd(true)}><Icon name="plus" size={14}/> Nuevo cajero</button>
         </div>
       </div>
 
