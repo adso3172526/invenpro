@@ -209,7 +209,7 @@ input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width
 /* ============ App shell (admin) ============ */
 .app {
   min-height: 100vh; display: grid;
-  grid-template-columns: 110px 1fr;
+  grid-template-columns: 110px minmax(0, 1fr);
   background: var(--bg);
 }
 .sidebar {
@@ -470,7 +470,7 @@ input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width
 
 /* Tablet vertical / pequeño */
 @media (max-width: 900px) {
-  .app { grid-template-columns: 1fr; }
+  .app { grid-template-columns: minmax(0, 1fr); }
 
   /* Topbar mobile fijo */
   .mobile-topbar {
@@ -906,7 +906,7 @@ input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width
   .chart-bars .lbl, .chart-bars .val { font-size: 9px; }
 }
 
-.page { padding: 36px 48px 60px; margin: 0 auto; overflow-x: hidden; }
+.page { padding: 36px 48px 60px; margin: 0 auto; }
 .page:has(.dash) { padding: 24px 40px 24px; }
 @media (max-width: 767px) {
   .page { padding: 16px 12px 40px; }
