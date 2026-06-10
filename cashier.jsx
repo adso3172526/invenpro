@@ -206,6 +206,10 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     items: 0,
   });
 
+  // Al entrar al POS, refresca los datos de facturación desde la BD
+  // (red de seguridad por si el realtime estaba caído cuando el admin los cambió)
+  useEffect(() => { if (window.refreshConfig) window.refreshConfig(); }, []);
+
   // Realtime: merge remote product updates, keeping cart items' local stock deductions
   useEffect(() => {
     return window.EventBus.on("realtime:productos", () => {

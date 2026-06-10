@@ -632,6 +632,18 @@
     _rtm.stop();
   };
 
+  // Recarga puntual de la configuración desde la BD.
+  // Red de seguridad para que el recibo use los datos de facturación más recientes
+  // aunque el WebSocket de realtime esté caído o la sesión lleve mucho tiempo abierta.
+  window.refreshConfig = async function () {
+    if (!window.db || !window.MOCK) return;
+    try {
+      const { data, error } = await window.db.from("configuracion").select("*");
+      if (error || !data) return;
+      data.forEach(r => { window.MOCK.configuracion[r.clave] = r.valor; });
+    } catch (e) { console.error("refreshConfig:", e); }
+  };
+
   window.DB = {
     auth: new AuthService(),
     productos: new ProductoService(),
