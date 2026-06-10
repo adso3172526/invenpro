@@ -115,14 +115,14 @@ const Ingreso = () => {
       </div>
 
       <div className="card mb-3">
-        <div className="card-h" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <h3>Historial de ingresos</h3>
-          <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-            <div className="row" style={{ gap: 6, alignItems: "center" }}>
-              <span className="muted" style={{ fontSize: 12 }}>Desde</span>
-              <input type="date" value={desde} onChange={e => setDesde(e.target.value)} style={{ width: 145 }}/>
-              <span className="muted" style={{ fontSize: 12 }}>Hasta</span>
-              <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} style={{ width: 145 }}/>
+        <div className="card-h tw-flex tw-flex-col sm:tw-flex-row tw-items-start sm:tw-items-center tw-justify-between tw-gap-2.5" style={{ flexWrap: "wrap" }}>
+          <h3 className="tw-m-0">Historial de ingresos</h3>
+          <div className="tw-flex tw-flex-col sm:tw-flex-row tw-items-stretch sm:tw-items-center tw-gap-2 tw-w-full sm:tw-w-auto">
+            <div className="tw-grid tw-grid-cols-[auto_1fr_auto_1fr] tw-gap-1.5 tw-items-center">
+              <span className="muted tw-text-xs">Desde</span>
+              <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="tw-text-xs" style={{ width: "100%" }}/>
+              <span className="muted tw-text-xs">Hasta</span>
+              <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="tw-text-xs" style={{ width: "100%" }}/>
             </div>
             <button className="btn" onClick={() => {
               const ings = MOCK.ingresos.filter(i => i.fecha >= desde && i.fecha <= hasta);
@@ -175,17 +175,17 @@ const Ingreso = () => {
         <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2.5" style={{ padding: "0 2px 4px" }}>
           {pagIng.slice.map(i => (
             <div key={i.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm" style={{ cursor: "pointer" }} onClick={() => setVerIngreso(i)}>
-              <div className="tw-flex tw-justify-between tw-items-start tw-mb-1.5">
-                <div>
-                  <span className="mono" style={{ fontWeight: 600, fontSize: 13 }}>{i.id}</span>
-                  {i.factura && <span className="mono muted" style={{ fontSize: 11, marginLeft: 8 }}>{i.factura}</span>}
+              <div className="tw-flex tw-justify-between tw-items-start tw-gap-2 tw-mb-1.5">
+                <div className="tw-min-w-0">
+                  <div className="mono tw-font-semibold tw-text-[13px] tw-truncate">{i.id}</div>
+                  {i.factura && <div className="mono muted tw-text-[11px] tw-truncate">{i.factura}</div>}
                 </div>
-                <span className="muted" style={{ fontSize: 11 }}>{i.fecha}</span>
+                <span className="muted tw-text-[11px] tw-shrink-0">{i.fecha}</span>
               </div>
-              <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 4 }}>{i.proveedor}</div>
+              <div className="tw-font-medium tw-text-[13px] tw-mb-1 tw-truncate">{i.proveedor}</div>
               <div className="tw-flex tw-justify-between tw-items-center tw-pt-2" style={{ borderTop: "1px dashed var(--border)" }}>
-                <span className="muted" style={{ fontSize: 11 }}>{i.items} items · {i.recibe}</span>
-                <span className="mono" style={{ fontWeight: 600, fontSize: 14 }}>{window.fmtCOP(i.costo)}</span>
+                <span className="muted tw-text-[11px]">{i.items} items · {i.recibe}</span>
+                <span className="mono tw-font-semibold tw-text-[14px]">{window.fmtCOP(i.costo)}</span>
               </div>
             </div>
           ))}
