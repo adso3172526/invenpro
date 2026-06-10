@@ -240,13 +240,6 @@ const Ajustes = () => {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const borrarKey = async () => {
-    setApiKey("");
-    setSaved(false);
-    setTestResult(null);
-    await DB.config.save("ia_api_key", "");
-  };
-
   const probarConexion = async () => {
     if (!apiKey.trim() || !urlApi.trim()) return;
     setTesting(true);
@@ -349,9 +342,6 @@ const Ajustes = () => {
           <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2" style={{ marginTop: 16 }}>
             <button className="btn primary" onClick={guardar} disabled={!apiKey.trim() || !urlApi.trim() || saving}>{saving ? "Guardando…" : "Guardar"}</button>
             <button className="btn ghost" onClick={probarConexion} disabled={!apiKey.trim() || !urlApi.trim() || testing}>{testing ? "Probando…" : "Probar conexión"}</button>
-            {apiKey && (
-              <button className="btn ghost" onClick={borrarKey} title="Borrar API key"><Icon name="x" size={14}/> Borrar</button>
-            )}
           </div>
 
           {/* Estados */}
