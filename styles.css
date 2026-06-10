@@ -55,6 +55,7 @@
 }
 
 * { box-sizing: border-box; }
+html { overflow-x: hidden; }
 html, body, #root { height: 100%; }
 body {
   margin: 0;
@@ -62,12 +63,13 @@ body {
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
+  overflow-x: hidden;
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "ss01", "cv11";
 }
 button { font: inherit; color: inherit; cursor: pointer; }
-input, select, textarea { font: inherit; color: inherit; }
+input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width: 100%; }
 .mono { font-family: var(--mono); font-feature-settings: "tnum"; }
 .tnum { font-variant-numeric: tabular-nums; }
 
@@ -362,10 +364,12 @@ input, select, textarea { font: inherit; color: inherit; }
 .main {
   display: flex; flex-direction: column;
   min-width: 0;
+  max-width: 100%;
   max-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
 }
+.page > * { max-width: 100%; }
 .topbar {
   height: 60px;
   display: flex; align-items: center; justify-content: space-between;
