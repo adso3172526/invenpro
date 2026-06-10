@@ -905,6 +905,9 @@ const ReceiptModal = ({ factura, onClose }) => {
     <div className="receipt">
       <h4>{cfg.tienda_nombre || "Mi Tienda"}</h4>
       <div className="center">{cfg.tienda_nit ? `NIT ${cfg.tienda_nit} · ` : ""}{factura.caja}</div>
+      {cfg.tienda_direccion && <div className="center">{cfg.tienda_direccion}</div>}
+      {cfg.tienda_telefono && <div className="center">Tel: {cfg.tienda_telefono}</div>}
+      {cfg.tienda_correo && <div className="center">{cfg.tienda_correo}</div>}
       <div className="center">{factura.fecha} {factura.hora}</div>
       <hr/>
       <div className="line"><span>Factura</span><span>{factura.id}</span></div>
