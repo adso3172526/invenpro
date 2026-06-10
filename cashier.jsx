@@ -401,9 +401,9 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
                     <div className="tw-text-xs tw-font-medium tw-leading-tight">{l.nombre}</div>
                     <div className="mono tw-text-[10px] tw-text-txt-3">{window.fmtCOP(l.precio)} × {l.q}</div>
                     <div className="tw-inline-flex tw-items-center tw-border tw-border-border tw-rounded tw-overflow-hidden tw-mt-0.5">
-                      <button className="tw-bg-transparent tw-border-0 tw-w-6 tw-h-6 tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-cursor-pointer" onClick={() => setQty(l.sku, -1)}><Icon name="minus" size={10}/></button>
+                      <button className="tw-bg-transparent tw-border-0 tw-w-7 tw-h-7 tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-cursor-pointer" onClick={() => setQty(l.sku, -1)}><Icon name="minus" size={11}/></button>
                       <span className="tw-px-1.5 tw-tabular-nums tw-text-[11px] tw-font-medium">{l.q}</span>
-                      <button className="tw-bg-transparent tw-border-0 tw-w-6 tw-h-6 tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-cursor-pointer" onClick={() => setQty(l.sku, +1)}><Icon name="plus" size={10}/></button>
+                      <button className="tw-bg-transparent tw-border-0 tw-w-7 tw-h-7 tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-cursor-pointer" onClick={() => setQty(l.sku, +1)}><Icon name="plus" size={11}/></button>
                     </div>
                   </div>
                   <div className="tw-text-right">
@@ -452,7 +452,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
               {q && (
                 <button className="tw-bg-transparent tw-border-0 tw-p-0 tw-cursor-pointer tw-text-txt-3" onClick={() => setQ("")}><Icon name="x" size={14}/></button>
               )}
-              <button className="tw-bg-accent tw-text-white tw-border-0 tw-rounded-lg tw-w-8 tw-h-8 tw-grid tw-place-items-center tw-cursor-pointer tw-shrink-0"
+              <button className="tw-bg-accent tw-text-white tw-border-0 tw-rounded-lg tw-w-10 tw-h-10 tw-grid tw-place-items-center tw-cursor-pointer tw-shrink-0"
                 onClick={() => setScanOpen(true)} title="Escanear código">
                 <Icon name="scan" size={16}/>
               </button>
@@ -530,9 +530,9 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
                     </div>
                     <div className="tw-flex tw-items-center tw-gap-1.5 tw-shrink-0">
                       <div className="tw-inline-flex tw-items-center tw-border tw-border-border tw-rounded-lg tw-overflow-hidden tw-bg-surface-2">
-                        <button className="tw-bg-transparent tw-border-0 tw-w-7 tw-h-7 tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-3 tw-transition-colors" onClick={() => setQty(l.sku, -1)}><Icon name="minus" size={10}/></button>
+                        <button className="tw-bg-transparent tw-border-0 tw-w-9 tw-h-9 tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-3 tw-transition-colors" onClick={() => setQty(l.sku, -1)}><Icon name="minus" size={12}/></button>
                         <span className="tw-px-1 tw-tabular-nums tw-text-[11px] tw-font-semibold tw-min-w-[20px] tw-text-center">{l.q}</span>
-                        <button className="tw-bg-transparent tw-border-0 tw-w-7 tw-h-7 tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-3 tw-transition-colors" onClick={() => setQty(l.sku, +1)}><Icon name="plus" size={10}/></button>
+                        <button className="tw-bg-transparent tw-border-0 tw-w-9 tw-h-9 tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-3 tw-transition-colors" onClick={() => setQty(l.sku, +1)}><Icon name="plus" size={12}/></button>
                       </div>
                       <span className="mono tw-font-semibold tw-text-xs tw-tabular-nums tw-min-w-[60px] tw-text-right">{window.fmtCOP(l.q * l.precio)}</span>
                       <button className="tw-text-txt-3 tw-bg-transparent tw-border-0 tw-p-0 tw-cursor-pointer hover:tw-text-bad tw-transition-colors" onClick={() => removeLine(l.sku)}><Icon name="x" size={14}/></button>
@@ -542,7 +542,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
               </div>
               {/* Footer: total + cobrar */}
               <div className="tw-flex tw-items-center tw-gap-3 tw-px-4 tw-py-3 tw-border-t tw-border-border tw-bg-surface-2">
-                <button className="tw-bg-transparent tw-border tw-border-border tw-rounded-lg tw-w-8 tw-h-8 tw-grid tw-place-items-center tw-cursor-pointer tw-text-bad hover:tw-bg-bad-soft tw-transition-colors tw-shrink-0" onClick={() => setCart([])} title="Vaciar carrito">
+                <button className="tw-bg-transparent tw-border tw-border-border tw-rounded-lg tw-w-9 tw-h-9 tw-grid tw-place-items-center tw-cursor-pointer tw-text-bad hover:tw-bg-bad-soft tw-transition-colors tw-shrink-0" onClick={() => setCart([])} title="Vaciar carrito">
                   <Icon name="trash" size={14}/>
                 </button>
                 <div className="tw-flex-1">
@@ -674,7 +674,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
           {/* Métodos de pago — horizontal */}
           <div className="tw-px-4 tw-pt-3 tw-pb-2">
             <div className="tw-text-[10px] tw-text-txt-3 tw-uppercase tw-tracking-wider tw-mb-2">Método de pago</div>
-            <div className="tw-grid tw-grid-cols-4 tw-gap-1.5">
+            <div className="tw-grid tw-grid-cols-2 min-[360px]:tw-grid-cols-4 tw-gap-1.5">
               {["Efectivo", "Transfer.", "Nequi", "Daviplata"].map((label, idx) => {
                 const val = ["Efectivo", "Transferencia", "Nequi", "Daviplata"][idx];
                 return (
@@ -709,7 +709,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
               </div>
 
               {/* Sugerencias rápidas */}
-              <div className="tw-grid tw-grid-cols-4 tw-gap-1.5 tw-mb-2">
+              <div className="tw-grid tw-grid-cols-2 min-[400px]:tw-grid-cols-4 tw-gap-1.5 tw-mb-2">
                 {[total, 50000, 100000, 200000].map((v, i) => (
                   <button key={i}
                     className={"tw-py-1.5 tw-rounded-lg tw-border tw-text-[11px] tw-font-medium tw-cursor-pointer tw-transition-all mono "

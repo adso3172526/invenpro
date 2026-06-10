@@ -105,7 +105,7 @@ const Cajeros = () => {
                   <span className={"chip " + (c.estado === "activo" ? "good" : "bad")}><span className="dot"/>{c.estado}</span>
                   <button className="btn sm ghost" onClick={() => setCfgCajero(c)}><Icon name="settings" size={14}/></button>
                 </div>
-                <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
+                <div className="tw-grid tw-grid-cols-1 min-[360px]:tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
                   <div><span className="muted">Rol:</span> {c.rol}</div>
                   <div><span className="muted">Turno:</span> {c.turnoActivo ? "En turno" : "—"}</div>
                   <div><span className="muted">Ingreso:</span> {c.ingreso}</div>
@@ -154,7 +154,7 @@ const Cajeros = () => {
                   </div>
                   <span className={"chip " + (t.estado === "abierto" ? "good" : "")}>{t.estado === "abierto" ? <><span className="dot"/>abierto</> : "cerrado"}</span>
                 </div>
-                <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
+                <div className="tw-grid tw-grid-cols-1 min-[360px]:tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
                   <div><span className="muted">Apertura:</span> <span className="mono">{t.fechaIni}</span></div>
                   <div><span className="muted">Cierre:</span> <span className="mono">{t.fechaFin || "—"}</span></div>
                   <div><span className="muted">Base:</span> <span className="mono">{window.fmtCOP(t.baseIni)}</span></div>
@@ -206,7 +206,7 @@ const Cajeros = () => {
                   <span className="chip">{u.rol}</span>
                   <button className="btn sm ghost" onClick={() => setCfgUsuario(u)}><Icon name="settings" size={14}/></button>
                 </div>
-                <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
+                <div className="tw-grid tw-grid-cols-1 min-[360px]:tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
                   <div><span className="muted">Permisos:</span> {u.permisos ? u.permisos.join(", ") : "—"}</div>
                 </div>
               </div>

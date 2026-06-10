@@ -191,7 +191,7 @@ const Reportes = () => {
                   </div>
                   <span className="num mono tw-font-semibold tw-whitespace-nowrap">{window.fmtCOP(f.total)}</span>
                 </div>
-                <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
+                <div className="tw-grid tw-grid-cols-1 min-[360px]:tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
                   <div><span className="muted">Cajero:</span> <span className="tw-font-medium">{f.cajero}</span></div>
                   <div><span className="muted">Items:</span> <span className="mono tw-font-medium">{f.items.reduce((s,i)=>s+i.q,0)}</span></div>
                   <div className="tw-col-span-2 tw-mt-0.5"><span className="chip">{f.metodo}</span></div>

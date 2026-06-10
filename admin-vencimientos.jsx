@@ -180,7 +180,7 @@ const Vencimientos = () => {
                     </div>
                     <span className={"chip " + cls + " tw-whitespace-nowrap"}>{d < 0 ? `Hace ${-d}d` : d === 0 ? "Hoy" : `${d} días`}</span>
                   </div>
-                  <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-text-xs">
+                  <div className="tw-grid tw-grid-cols-1 min-[360px]:tw-grid-cols-2 tw-gap-x-3 tw-text-xs">
                     <div><span className="muted">Stock:</span> <span className="mono tw-font-medium">{p.stock} {p.unidad}</span></div>
                     <div><span className="muted">Vence:</span> <span className="mono tw-font-medium">{p.vence}</span></div>
                   </div>

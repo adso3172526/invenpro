@@ -81,7 +81,7 @@ const Dashboard = ({ go }) => {
               <p className="sub tw-text-xs">Distribución del día en curso</p>
             </div>
           </div>
-          <div className="card-b tw-flex-1 tw-min-h-0">
+          <div className="card-b tw-flex-1 tw-min-h-0 tw-overflow-x-auto">
             <div className="chart-bars tw-h-[160px] md:tw-h-full md:tw-min-h-[240px] tw-gap-1 md:tw-gap-[14px] tw-px-0.5 md:tw-px-1.5 tw-pt-1.5">
               {MOCK.ventasHoy.map((h, i) => {
                 const pct = (h.v/maxHora)*100;

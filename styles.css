@@ -1696,3 +1696,61 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
     font-size: 16px;
   }
 }
+
+/* ============================================================
+   Pulido v3 — interacción + responsividad (aditivo)
+   Solo tokens existentes. No cambia el diseño, solo lo refina.
+   ============================================================ */
+:root { --transition: .15s ease; --transition-fast: .12s ease; }
+
+/* Utilidad: área táctil mínima 44px (WCAG) para botones icon-only */
+.touch-target { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+
+/* Utilidad: feedback táctil estándar */
+.tap { transition: transform var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast); }
+.tap:active { transform: scale(.96); }
+
+/* Foco visible consistente (especificidad 0: solo añade, nunca pisa estilos existentes) */
+:where(button, .btn, .cat-tab, .nav-card, [role="button"]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+/* Micro-interacciones: feedback al presionar (componentes que aún no lo tenían) */
+.btn:active { transform: scale(.97); }
+.nav-card:active { transform: scale(.98); }
+.cat-tab { transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast); }
+.cat-tab:hover { border-color: var(--border-strong); }
+.cat-tab:active { transform: scale(.97); }
+.cash-suggestions button:active { transform: scale(.96); }
+.keypad button:active { transform: scale(.96); }
+.product:active { transform: scale(.98); }
+
+/* Botón cerrar (x) de modal: target cómodo + hover sutil */
+.modal-h .x {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.modal-h .x:hover { background: var(--surface-2); color: var(--text); }
+
+/* Chart de horas: legible con scroll horizontal en móvil (envuelto con overflow-x en JSX) */
+@media (max-width: 640px) {
+  .chart-bars { min-width: 560px; }
+}
+
+/* Targets cómodos en dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+  .modal-h .x { width: 44px; height: 44px; }
+}
+
+/* Respeta la preferencia de movimiento reducido del sistema */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

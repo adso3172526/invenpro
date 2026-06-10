@@ -117,7 +117,7 @@ const Ingreso = () => {
         <div className="card-h tw-flex tw-flex-col sm:tw-flex-row tw-items-start sm:tw-items-center tw-justify-between tw-gap-2.5" style={{ flexWrap: "wrap" }}>
           <h3 className="tw-m-0">Historial de ingresos</h3>
           <div className="tw-flex tw-flex-col sm:tw-flex-row tw-items-stretch sm:tw-items-center tw-gap-2 tw-w-full sm:tw-w-auto">
-            <div className="tw-grid tw-grid-cols-[auto_1fr_auto_1fr] tw-gap-1.5 tw-items-center">
+            <div className="tw-grid tw-grid-cols-[auto_1fr] min-[400px]:tw-grid-cols-[auto_1fr_auto_1fr] tw-gap-1.5 tw-gap-y-2 tw-items-center">
               <span className="muted tw-text-xs">Desde</span>
               <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="tw-text-xs" style={{ width: "100%" }}/>
               <span className="muted tw-text-xs">Hasta</span>

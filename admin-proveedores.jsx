@@ -183,7 +183,7 @@ const Proveedores = () => {
                 </div>
                 <span className={"chip tw-shrink-0 " + (p.estado === "activo" ? "good" : "bad")}><span className="dot"/>{p.estado}</span>
               </div>
-              <div className="tw-grid tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1.5 tw-text-xs tw-mb-3 tw-pl-[42px]">
+              <div className="tw-grid tw-grid-cols-1 min-[360px]:tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1.5 tw-text-xs tw-mb-3 tw-pl-0 min-[360px]:tw-pl-[42px]">
                 <div><span className="muted">NIT:</span> <span className="mono">{p.nit}</span></div>
                 <div><span className="muted">Categoría:</span> {p.categoria}</div>
                 <div><span className="muted">Contacto:</span> {p.contacto}</div>
