@@ -171,28 +171,32 @@ const Ingreso = () => {
             </table>
           </div>
         </div>
-        {/* Mobile: tarjetas */}
-        <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2.5" style={{ padding: "0 2px 4px" }}>
-          {pagIng.slice.map(i => (
-            <div key={i.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm" style={{ cursor: "pointer" }} onClick={() => setVerIngreso(i)}>
-              <div className="tw-flex tw-justify-between tw-items-start tw-gap-2 tw-mb-1.5">
-                <div className="tw-min-w-0">
-                  <div className="mono tw-font-semibold tw-text-[13px] tw-truncate">{i.id}</div>
-                  {i.factura && <div className="mono muted tw-text-[11px] tw-truncate">{i.factura}</div>}
-                </div>
-                <span className="muted tw-text-[11px] tw-shrink-0">{i.fecha}</span>
-              </div>
-              <div className="tw-font-medium tw-text-[13px] tw-mb-1 tw-truncate">{i.proveedor}</div>
-              <div className="tw-flex tw-justify-between tw-items-center tw-pt-2" style={{ borderTop: "1px dashed var(--border)" }}>
-                <span className="muted tw-text-[11px]">{i.items} items · {i.recibe}</span>
-                <span className="mono tw-font-semibold tw-text-[14px]">{window.fmtCOP(i.costo)}</span>
-              </div>
-            </div>
-          ))}
-          {ingresosFiltrados.length === 0 && (
-            <div className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ingresos en el rango seleccionado</div>
-          )}
+        <div className="tw-hidden md:tw-block">
+          <Pagination {...pagIng} label="ingresos"/>
         </div>
+      </div>
+
+      {/* Mobile: tarjetas separadas fuera de la card */}
+      <div className="tw-flex tw-flex-col tw-gap-2.5 md:tw-hidden tw-mt-2.5">
+        {pagIng.slice.map(i => (
+          <div key={i.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm" style={{ cursor: "pointer" }} onClick={() => setVerIngreso(i)}>
+            <div className="tw-flex tw-justify-between tw-items-start tw-gap-2 tw-mb-1.5">
+              <div className="tw-min-w-0">
+                <div className="mono tw-font-semibold tw-text-[13px] tw-truncate">{i.id}</div>
+                {i.factura && <div className="mono muted tw-text-[11px] tw-truncate">{i.factura}</div>}
+              </div>
+              <span className="muted tw-text-[11px] tw-shrink-0">{i.fecha}</span>
+            </div>
+            <div className="tw-font-medium tw-text-[13px] tw-mb-1 tw-truncate">{i.proveedor}</div>
+            <div className="tw-flex tw-justify-between tw-items-center tw-pt-2" style={{ borderTop: "1px dashed var(--border)" }}>
+              <span className="muted tw-text-[11px]">{i.items} items · {i.recibe}</span>
+              <span className="mono tw-font-semibold tw-text-[14px]">{window.fmtCOP(i.costo)}</span>
+            </div>
+          </div>
+        ))}
+        {ingresosFiltrados.length === 0 && (
+          <div className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ingresos en el rango seleccionado</div>
+        )}
         <Pagination {...pagIng} label="ingresos"/>
       </div>
 
