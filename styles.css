@@ -906,7 +906,7 @@ input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width
   .chart-bars .lbl, .chart-bars .val { font-size: 9px; }
 }
 
-.page { padding: 36px 48px 60px; margin: 0 auto; }
+.page { padding: 36px 48px 60px; margin: 0 auto; overflow-x: hidden; }
 .page:has(.dash) { padding: 24px 40px 24px; }
 @media (max-width: 767px) {
   .page { padding: 16px 12px 40px; }
@@ -914,7 +914,7 @@ input, select, textarea { font: inherit; color: inherit; min-width: 0; max-width
 }
 
 /* Dashboard — base structure (layout controlled by Tailwind) */
-.dash { width: 100%; box-sizing: border-box; }
+.dash { box-sizing: border-box; }
 .dash-h { margin: 0; }
 .dash-kpi { margin: 0 !important; }
 .dash-kpi .kpi .val { font-size: 24px; }
