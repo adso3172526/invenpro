@@ -87,7 +87,10 @@ const Inventario = () => {
 
       {/* ── Header ── */}
       <div className="page-h tw-flex tw-flex-col sm:tw-flex-row tw-gap-3 sm:tw-items-center sm:tw-justify-between">
-        <div></div>
+        <div>
+          <h2>Inventario</h2>
+          <p className="sub">Gestiona productos, stock y códigos de barras.</p>
+        </div>
         <button className="btn sm tw-shrink-0" onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
           { name: "Inventario", rows: rows.map(p => ({
             SKU: p.sku, "Código de barras": p.codigoBarras || "", Producto: p.nombre, Categoría: p.categoria,
