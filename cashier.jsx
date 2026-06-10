@@ -808,6 +808,9 @@ const printReceipt = (factura) => {
   const dir = cfg.tienda_direccion || "";
   const tel = cfg.tienda_telefono || "";
   const footer = cfg.tienda_footer || "¡Gracias por tu compra!";
+  // Ancho de tirilla: 80mm (default) o 58mm. Configurable desde cfg.recibo_ancho_mm.
+  const anchoMm = parseInt(cfg.recibo_ancho_mm) === 58 ? 58 : 80;
+  const bodyMm = anchoMm - 8;
 
   const lineas = factura.items.map(l =>
     `<tr><td colspan="3" style="padding:1px 0 0">${l.nombre}</td></tr>
@@ -821,9 +824,9 @@ const printReceipt = (factura) => {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
 <title>Recibo ${factura.id}</title>
 <style>
-  @page { size: 80mm auto; margin: 0; }
+  @page { size: ${anchoMm}mm auto; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Courier New', monospace; font-size: 12px; width: 72mm; margin: 0 auto; padding: 4mm 0; color: #000; }
+  body { font-family: 'Courier New', monospace; font-size: 12px; width: ${bodyMm}mm; margin: 0 auto; padding: 4mm 0; color: #000; }
   .center { text-align: center; }
   h2 { font-size: 14px; margin-bottom: 2px; }
   .info { font-size: 11px; margin-bottom: 1px; }
@@ -854,11 +857,33 @@ const printReceipt = (factura) => {
   </table>
   <hr/>
   <div class="center footer">${footer}</div>
-<script>window.onload=function(){window.print();}<\/script>
 </body></html>`;
 
-  const w = window.open("", "_blank", "width=320,height=600");
-  if (w) { w.document.write(html); w.document.close(); }
+  // Imprime vía un iframe oculto (más confiable que window.open; el bloqueador no lo tumba).
+  // El usuario elige la impresora POS en el diálogo de Windows; o sale directo si Chrome
+  // se abre con --kiosk-printing y la POS está como impresora predeterminada.
+  const prev = document.getElementById("receipt-print-frame");
+  if (prev) prev.remove();
+  const frame = document.createElement("iframe");
+  frame.id = "receipt-print-frame";
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.cssText = "position:fixed; left:-9999px; top:0; width:0; height:0; border:0;";
+  document.body.appendChild(frame);
+
+  const fw = frame.contentWindow;
+  const cleanup = () => { try { frame.remove(); } catch (e) {} };
+  fw.onafterprint = () => setTimeout(cleanup, 100);
+
+  const fdoc = fw.document;
+  fdoc.open(); fdoc.write(html); fdoc.close();
+
+  // Pequeña espera para que el contenido se renderice antes de imprimir
+  setTimeout(() => {
+    try { fw.focus(); fw.print(); }
+    catch (e) { console.error("printReceipt:", e); cleanup(); }
+  }, 200);
+  // Respaldo: limpiar el iframe pase lo que pase
+  setTimeout(cleanup, 60000);
 };
 
 // =================== Recibo ===================
