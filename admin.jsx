@@ -291,6 +291,29 @@ const Ajustes = () => {
   const [testing, setTesting] = useStateA(false);
   const [testResult, setTestResult] = useStateA(null);
 
+  // Datos de tienda
+  const [tNombre, setTNombre] = useStateA(cfg.tienda_nombre || "");
+  const [tNit, setTNit] = useStateA(cfg.tienda_nit || "");
+  const [tDir, setTDir] = useStateA(cfg.tienda_direccion || "");
+  const [tTel, setTTel] = useStateA(cfg.tienda_telefono || "");
+  const [tFooter, setTFooter] = useStateA(cfg.tienda_footer || "");
+  const [tSaved, setTSaved] = useStateA(false);
+  const [tSaving, setTSaving] = useStateA(false);
+
+  const guardarTienda = async () => {
+    setTSaving(true);
+    await DB.config.saveBatch({
+      tienda_nombre: tNombre.trim(),
+      tienda_nit: tNit.trim(),
+      tienda_direccion: tDir.trim(),
+      tienda_telefono: tTel.trim(),
+      tienda_footer: tFooter.trim() || "¡Gracias por tu compra!",
+    });
+    setTSaving(false);
+    setTSaved(true);
+    setTimeout(() => setTSaved(false), 2500);
+  };
+
   const detected = detectFromUrl(urlApi);
 
   const guardar = async () => {
@@ -351,6 +374,51 @@ const Ajustes = () => {
         <div>
           <h2><Icon name="settings" size={20}/> Ajustes</h2>
           <p className="sub">Configuración general del sistema</p>
+        </div>
+      </div>
+
+      {/* ── Card: Datos de Tienda ── */}
+      <div className="card tw-mt-4">
+        <div className="card-h">
+          <div className="tw-flex tw-items-center tw-gap-2">
+            <Icon name="box" size={18}/>
+            <h3>Datos de tienda</h3>
+          </div>
+          <p className="sub">Información que aparece en los recibos impresos.</p>
+        </div>
+        <div className="card-b">
+          <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5 tw-mb-3">
+            <div className="field" style={{ margin: 0 }}>
+              <label>Nombre de tienda</label>
+              <input value={tNombre} onChange={e => { setTNombre(e.target.value); setTSaved(false); }} placeholder="Ej: Minimercado El Vecino"/>
+            </div>
+            <div className="field" style={{ margin: 0 }}>
+              <label>NIT</label>
+              <input value={tNit} onChange={e => { setTNit(e.target.value); setTSaved(false); }} placeholder="Ej: 901.234.567-8"/>
+            </div>
+          </div>
+          <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5 tw-mb-3">
+            <div className="field" style={{ margin: 0 }}>
+              <label>Dirección</label>
+              <input value={tDir} onChange={e => { setTDir(e.target.value); setTSaved(false); }} placeholder="Ej: Cra 10 #45-12, Bogotá"/>
+            </div>
+            <div className="field" style={{ margin: 0 }}>
+              <label>Teléfono</label>
+              <input value={tTel} onChange={e => { setTTel(e.target.value); setTSaved(false); }} placeholder="Ej: 310 123 4567"/>
+            </div>
+          </div>
+          <div className="field tw-mb-3" style={{ margin: 0 }}>
+            <label>Mensaje pie de recibo</label>
+            <input value={tFooter} onChange={e => { setTFooter(e.target.value); setTSaved(false); }} placeholder="¡Gracias por tu compra!"/>
+          </div>
+          <div className="tw-flex tw-items-center tw-gap-2">
+            <button className="btn primary sm" onClick={guardarTienda} disabled={tSaving}>{tSaving ? "Guardando…" : "Guardar"}</button>
+            {tSaved && (
+              <span className="tw-text-xs tw-font-medium tw-flex tw-items-center tw-gap-1" style={{ color: "#22C55E" }}>
+                <Icon name="check" size={14}/> Guardado
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

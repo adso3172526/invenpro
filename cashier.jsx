@@ -739,17 +739,80 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
   );
 };
 
+// =================== Imprimir recibo 80mm ===================
+const printReceipt = (factura) => {
+  const cfg = (window.MOCK && window.MOCK.configuracion) || {};
+  const nombre = cfg.tienda_nombre || "Mi Tienda";
+  const nit = cfg.tienda_nit || "";
+  const dir = cfg.tienda_direccion || "";
+  const tel = cfg.tienda_telefono || "";
+  const footer = cfg.tienda_footer || "¡Gracias por tu compra!";
+
+  const lineas = factura.items.map(l =>
+    `<tr><td colspan="3" style="padding:1px 0 0">${l.nombre}</td></tr>
+     <tr>
+       <td style="padding:0 0 1px 8px">${l.q} x $${l.precio.toLocaleString("es-CO")}</td>
+       <td></td>
+       <td style="text-align:right">$${(l.q * l.precio).toLocaleString("es-CO")}</td>
+     </tr>`
+  ).join("");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>Recibo ${factura.id}</title>
+<style>
+  @page { size: 80mm auto; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Courier New', monospace; font-size: 12px; width: 72mm; margin: 0 auto; padding: 4mm 0; color: #000; }
+  .center { text-align: center; }
+  h2 { font-size: 14px; margin-bottom: 2px; }
+  .info { font-size: 11px; margin-bottom: 1px; }
+  hr { border: none; border-top: 1px dashed #000; margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .total-row td { font-weight: bold; font-size: 13px; padding-top: 2px; }
+  .right { text-align: right; }
+  .footer { margin-top: 6px; font-size: 11px; }
+</style></head><body>
+  <div class="center"><h2>${nombre}</h2></div>
+  ${nit ? `<div class="center info">NIT ${nit}</div>` : ""}
+  ${dir ? `<div class="center info">${dir}</div>` : ""}
+  ${tel ? `<div class="center info">Tel: ${tel}</div>` : ""}
+  <div class="center info">${factura.caja || ""}</div>
+  <div class="center info">${factura.fecha} ${factura.hora}</div>
+  <hr/>
+  <table>
+    <tr><td>Factura</td><td></td><td class="right">${factura.id}</td></tr>
+    <tr><td>Cajero</td><td></td><td class="right">${factura.cajero}</td></tr>
+  </table>
+  <hr/>
+  <table>${lineas}</table>
+  <hr/>
+  <table>
+    <tr class="total-row"><td>TOTAL</td><td></td><td class="right">$${factura.total.toLocaleString("es-CO")}</td></tr>
+    <tr><td>${factura.metodo}</td><td></td><td class="right">$${factura.recibido.toLocaleString("es-CO")}</td></tr>
+    ${factura.cambio > 0 ? `<tr><td>Cambio</td><td></td><td class="right">$${factura.cambio.toLocaleString("es-CO")}</td></tr>` : ""}
+  </table>
+  <hr/>
+  <div class="center footer">${footer}</div>
+<script>window.onload=function(){window.print();}<\/script>
+</body></html>`;
+
+  const w = window.open("", "_blank", "width=320,height=600");
+  if (w) { w.document.write(html); w.document.close(); }
+};
+
 // =================== Recibo ===================
-const ReceiptModal = ({ factura, onClose }) => (
+const ReceiptModal = ({ factura, onClose }) => {
+  const cfg = (window.MOCK && window.MOCK.configuracion) || {};
+  return (
   <Modal title="Venta completada" onClose={onClose} bottomSheet footer={
     <>
-      <button className="btn"><Icon name="print"/> Imprimir</button>
+      <button className="btn" onClick={() => printReceipt(factura)}><Icon name="print"/> Imprimir</button>
       <button className="btn primary" onClick={onClose}>Nueva venta <Icon name="arrowRight"/></button>
     </>
   }>
     <div className="receipt">
-      <h4>Minimercado El Vecino</h4>
-      <div className="center">NIT 901.234.567-8 · {factura.caja}</div>
+      <h4>{cfg.tienda_nombre || "Mi Tienda"}</h4>
+      <div className="center">{cfg.tienda_nit ? `NIT ${cfg.tienda_nit} · ` : ""}{factura.caja}</div>
       <div className="center">{factura.fecha} {factura.hora}</div>
       <hr/>
       <div className="line"><span>Factura</span><span>{factura.id}</span></div>
@@ -769,10 +832,11 @@ const ReceiptModal = ({ factura, onClose }) => (
       <div className="line"><span>{factura.metodo}</span><span>${factura.recibido.toLocaleString("es-CO")}</span></div>
       {factura.cambio > 0 && <div className="line"><span>Cambio</span><span>${factura.cambio.toLocaleString("es-CO")}</span></div>}
       <hr/>
-      <div className="center">¡Gracias por tu compra!</div>
+      <div className="center">{cfg.tienda_footer || "¡Gracias por tu compra!"}</div>
     </div>
   </Modal>
-);
+  );
+};
 
 // =================== Cierre de turno ===================
 const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
