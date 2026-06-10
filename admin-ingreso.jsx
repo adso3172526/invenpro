@@ -34,13 +34,13 @@ const Ingreso = () => {
   const ingresosFiltrados = MOCK.ingresos.filter(i => i.fecha >= desde && i.fecha <= hasta);
   const pagIng = usePagination(ingresosFiltrados, 8);
 
-  const add = (sku, qty, costo, vence, nombreManual, codigoBarras, precio) => {
+  const add = (sku, qty, costo, vence, nombreManual, codigoBarras, precio, categoriaManual) => {
     const p = MOCK.productos.find(x => x.sku === sku);
     const esNuevo = !p;
     const nombre = p ? p.nombre : (nombreManual || sku);
     const item = { sku, nombre, qty: parseInt(qty)||0, costo: parseInt(costo)||0, vence, nuevo: esNuevo, codigoBarras: codigoBarras || (p && p.codigoBarras) || "" };
     if (esNuevo) {
-      item.categoria = "General";
+      item.categoria = categoriaManual || "General";
       item.precio = parseInt(precio) || Math.round((parseInt(costo)||0) * 1.3);
     } else {
       item.precio = parseInt(precio) || p.precio || 0;
@@ -876,6 +876,7 @@ const ItemAdder = ({ onAdd }) => {
   const [costo, setCosto] = useStateA("");
   const [precio, setPrecio] = useStateA("");
   const [vence, setVence] = useStateA("");
+  const [categoria, setCategoria] = useStateA("General");
   const [open, setOpen] = useStateA(false);
   const [highlight, setHighlight] = useStateA(-1);
   const opts = MOCK.productos;
@@ -900,7 +901,7 @@ const ItemAdder = ({ onAdd }) => {
   };
 
   const reset = () => {
-    setSku(""); setQuery(""); setCodigoBarras(""); setQty(""); setCosto(""); setPrecio(""); setVence(""); setHighlight(-1);
+    setSku(""); setQuery(""); setCodigoBarras(""); setQty(""); setCosto(""); setPrecio(""); setVence(""); setCategoria("General"); setHighlight(-1);
   };
 
   const esNuevo = query && !sku;
@@ -960,7 +961,19 @@ const ItemAdder = ({ onAdd }) => {
         </div>
       </div>
 
-      {/* Fila 2: Cantidad, Costo, Precio, Vence, Botón */}
+      {/* Fila 2: Categoría (solo si producto nuevo) */}
+      {esNuevo && query && (
+        <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-[1fr_200px] tw-gap-2 tw-mb-2">
+          <div className="field" style={{ margin: 0 }}>
+            <label>Categoría</label>
+            <select value={categoria} onChange={e => setCategoria(e.target.value)}>
+              {[...new Set(["General", ...MOCK.productos.map(p => p.categoria)])].sort().map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Fila 3: Cantidad, Costo, Precio, Vence, Botón */}
       <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-[1fr_1fr_1fr_1fr_auto] tw-gap-2 tw-items-end">
         <div className="field" style={{ margin: 0 }}>
           <label>Cantidad</label>
@@ -979,7 +992,7 @@ const ItemAdder = ({ onAdd }) => {
           <input type="date" value={vence} onChange={e => setVence(e.target.value)}/>
         </div>
         <button className="btn primary tw-w-full md:tw-w-auto" disabled={(!sku && !query) || !qty} onClick={() => {
-          onAdd(sku || ("NUEVO-" + Date.now()), qty, costo, vence, esNuevo ? query : undefined, codigoBarras, precio);
+          onAdd(sku || ("NUEVO-" + Date.now()), qty, costo, vence, esNuevo ? query : undefined, codigoBarras, precio, esNuevo ? categoria : undefined);
           reset();
         }}><Icon name="plus" size={14}/> Agregar</button>
       </div>
