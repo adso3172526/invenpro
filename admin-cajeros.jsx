@@ -2,12 +2,23 @@
 const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Cajeros = () => {
-  useRealtimeSync(["cajeros", "turnos", "usuarios_sistema"]);
   const [tab, setTab] = useStateA("equipo");
   const [showAdd, setShowAdd] = useStateA(false);
   const [cfgCajero, setCfgCajero] = useStateA(null);
   const [cfgUsuario, setCfgUsuario] = useStateA(null);
   const [toast, setToast] = useStateA(null);
+
+  // Realtime: only re-render when no modal is open
+  const [, _rtTick] = React.useState(0);
+  const _modalRef = React.useRef(false);
+  _modalRef.current = showAdd || !!cfgCajero || !!cfgUsuario;
+  React.useEffect(() => {
+    const tables = ["cajeros", "turnos", "usuarios_sistema"];
+    const offs = tables.map(t => window.EventBus.on("realtime:" + t, () => {
+      if (!_modalRef.current) _rtTick(n => n + 1);
+    }));
+    return () => offs.forEach(fn => fn());
+  }, []);
   const pagCaj = usePagination(MOCK.cajeros, 2);
   const pagTur = usePagination(MOCK.turnos, 10);
 

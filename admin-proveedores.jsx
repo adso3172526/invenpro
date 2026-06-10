@@ -10,10 +10,12 @@ const Proveedores = () => {
   const [confirmBaja, setConfirmBaja] = useStateA(null);
   const [toast, setToast] = useStateA(null);
 
-  // Realtime: sync proveedores from MOCK
+  // Realtime: sync proveedores only when no modal is open
+  const _modalRef = React.useRef(false);
+  _modalRef.current = !!editing || !!confirmBaja;
   React.useEffect(() => {
     return window.EventBus.on("realtime:proveedores", () => {
-      setList([...MOCK.proveedores]);
+      if (!_modalRef.current) setList([...MOCK.proveedores]);
     });
   }, []);
 

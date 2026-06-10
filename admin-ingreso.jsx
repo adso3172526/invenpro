@@ -2,12 +2,22 @@
 const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Ingreso = () => {
-  useRealtimeSync(["ingresos", "productos"]);
+  // Realtime: only refresh when modal is NOT open (avoid closing it mid-edit)
+  const [, _rtTick] = React.useState(0);
+  const _formOpenRef = React.useRef(false);
   const [items, setItems] = useStateA([]);
   const [origen, setOrigen] = useStateA(null); // null | "manual" | "qr" | "ia"
   const [showSelector, setShowSelector] = useStateA(false);
   const [showIaScanner, setShowIaScanner] = useStateA(false);
   const [showForm, setShowForm] = useStateA(false);
+  _formOpenRef.current = showForm;
+  React.useEffect(() => {
+    const tables = ["ingresos", "productos"];
+    const offs = tables.map(t => window.EventBus.on("realtime:" + t, () => {
+      if (!_formOpenRef.current) _rtTick(n => n + 1);
+    }));
+    return () => offs.forEach(fn => fn());
+  }, []);
   const [verIngreso, setVerIngreso] = useStateA(null);
   const hoy = new Date().toISOString().slice(0,10);
   const hace30 = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);

@@ -2,7 +2,6 @@
 const { useState: useStateA, useMemo: useMemoA } = React;
 
 const Vencimientos = () => {
-  useRealtimeSync("productos");
   const [tab, setTab] = useStateA("preventivo");
   const [destinatarios, setDestinatarios] = useStateA(() => {
     try { return JSON.parse(localStorage.getItem("invenpro-alert-emails")) || [
@@ -20,6 +19,16 @@ const Vencimientos = () => {
   const [showConfig, setShowConfig] = useStateA(false);
   const [logs, setLogs] = useStateA([]);
   const [toast, setToast] = useStateA(null);
+
+  // Realtime: only re-render when config modal is closed
+  const [, _rtTick] = React.useState(0);
+  const _modalRef = React.useRef(false);
+  _modalRef.current = showConfig;
+  React.useEffect(() => {
+    return window.EventBus.on("realtime:productos", () => {
+      if (!_modalRef.current) _rtTick(n => n + 1);
+    });
+  }, []);
 
   React.useEffect(() => {
     try { localStorage.setItem("invenpro-alert-emails", JSON.stringify(destinatarios)); } catch {}

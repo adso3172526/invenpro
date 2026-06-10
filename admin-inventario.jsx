@@ -11,10 +11,12 @@ const Inventario = () => {
   const [editing, setEditing] = useStateA(null);
   const [saving, setSaving] = useStateA(false);
 
-  // Realtime: sync productos from MOCK when changed remotely
+  // Realtime: sync productos only when edit modal is closed
+  const _editingRef = React.useRef(null);
+  _editingRef.current = editing;
   React.useEffect(() => {
     return window.EventBus.on("realtime:productos", () => {
-      setProductos(MOCK.productos.map(p => ({ ...p })));
+      if (!_editingRef.current) setProductos(MOCK.productos.map(p => ({ ...p })));
     });
   }, []);
 
