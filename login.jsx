@@ -11,7 +11,14 @@ const Login = ({ onLogin }) => {
     if (!user || !pass) {
       setShake(true); setTimeout(() => setShake(false), 400); return;
     }
-    const u = await DB.auth.login(user.trim(), pass);
+    let u;
+    try {
+      u = await DB.auth.login(user.trim(), pass);
+    } catch (err) {
+      console.error("login:", err);
+      setError("No se pudo conectar. Revisa tu conexión e intenta de nuevo.");
+      setShake(true); setTimeout(() => setShake(false), 400); return;
+    }
     if (!u) {
       setError("Usuario o contraseña incorrectos.");
       setShake(true); setTimeout(() => setShake(false), 400); return;
