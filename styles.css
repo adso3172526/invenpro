@@ -906,8 +906,11 @@ input, select, textarea { font: inherit; color: inherit; }
 .page { padding: 36px 48px 60px; max-width: 100%; margin: 0 auto; width: 100%; }
 .page:has(.dash) { padding: 24px 40px 24px; max-width: 100%; }
 @media (max-width: 767px) {
-  .page { padding: 16px 12px 40px; }
+  .page { padding: 16px 12px 40px; overflow-x: hidden; }
   .page:has(.dash) { padding: 12px 10px 20px; }
+  .page-h, .card { max-width: 100%; box-sizing: border-box; }
+  .card-b { overflow-x: hidden; }
+  .card-b input, .card-b select { max-width: 100%; }
 }
 
 /* Dashboard — base structure (layout controlled by Tailwind) */
