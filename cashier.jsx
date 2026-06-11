@@ -6,9 +6,22 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
   const [base, setBase] = useState(200000);
   const [caja, setCaja] = useState("Caja 01");
   const [loading, setLoading] = useState(false);
+  const [existing, setExisting] = useState(null); // turno ya abierto del cajero
 
   const handleOpen = async () => {
     setLoading(true);
+    // Un cajero solo puede tener UN turno abierto: verificar en la BD antes de crear
+    try {
+      const { data } = await window.db
+        .from("turnos").select("*")
+        .eq("cajero", cajero.nombre).eq("estado", "abierto").limit(1);
+      if (data && data.length) {
+        setExisting(window.camelize(data[0]));
+        setLoading(false);
+        return;
+      }
+    } catch (err) { console.error("checkTurnoAbierto:", err); }
+
     const now = new Date();
     const turnoId = "T-" + Date.now();
     const fechaIni = now.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
@@ -30,6 +43,11 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
     }
     // Pasar al POS con datos adicionales para la UI
     onOpen({ ...turnoRow, caja, base, ini: now });
+  };
+
+  const reanudar = () => {
+    const t = existing;
+    onOpen({ ...t, caja: t.caja || caja, base: t.baseIni || base, ini: new Date() });
   };
 
   return (
@@ -70,8 +88,17 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
             </div>
           </div>
         </div>
+        {existing && (
+          <div style={{ padding: "0 24px" }}>
+            <div className="tw-bg-warn-soft tw-text-warn tw-rounded-lg tw-p-3 tw-text-sm tw-font-medium">
+              Ya tienes un turno abierto{existing.fechaIni ? ` desde ${existing.fechaIni}` : ""}. Debes cerrarlo antes de abrir uno nuevo.
+            </div>
+          </div>
+        )}
         <div className="modal-f tw-bg-surface-2 tw-p-6 md:tw-px-8">
-          <button className="btn primary" disabled={loading} onClick={handleOpen}>{loading ? "Abriendo…" : "Abrir turno"} <Icon name="arrowRight"/></button>
+          {existing
+            ? <button className="btn primary" onClick={reanudar}>Reanudar turno abierto <Icon name="arrowRight"/></button>
+            : <button className="btn primary" disabled={loading} onClick={handleOpen}>{loading ? "Abriendo…" : "Abrir turno"} <Icon name="arrowRight"/></button>}
           <button className="btn ghost" onClick={onLogout}><Icon name="logout"/> Salir</button>
         </div>
       </div>
