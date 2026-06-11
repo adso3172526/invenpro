@@ -159,7 +159,7 @@ const Reportes = () => {
         </div>
       </div>
 
-      <div className="mt-3 tw-grid tw-grid-cols-1 lg:tw-grid-cols-2 tw-gap-[10px] tw-items-start">
+      <div className="mt-3 tw-grid tw-grid-cols-1 lg:tw-grid-cols-[1.4fr_1fr] tw-gap-[10px] tw-items-start">
         {/* Productos más vendidos */}
         <div className="card">
           <div className="card-h"><h3>Productos más vendidos</h3><p className="sub">Top {topProductosFiltro.length}</p></div>
