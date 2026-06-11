@@ -23,7 +23,6 @@ const Reportes = () => {
     if (filtroProducto !== "Todos" && !f.items.some(i => i.nombre === filtroProducto)) return false;
     return true;
   }), [filtroMes, filtroCajero, filtroProducto, filtroMetodo]);
-  const pagRep = usePagination(filtered, 10);
 
   const totalFiltro = filtered.reduce((s,f) => s + f.total, 0);
   const tickets = filtered.length;
@@ -51,7 +50,8 @@ const Reportes = () => {
     const map = {};
     filtered.forEach(f => { map[f.metodo] = (map[f.metodo] || 0) + f.total; });
     const sum = Object.values(map).reduce((a,b)=>a+b, 0) || 1;
-    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([n,v]) => ({ nombre: n, total: v, pct: (v/sum)*100 }));
+    // Ordenado de MENOR a MAYOR (ascendente)
+    return Object.entries(map).sort((a,b)=>a[1]-b[1]).map(([n,v]) => ({ nombre: n, total: v, pct: (v/sum)*100 }));
   }, [filtered]);
 
   // Top productos del filtro
@@ -83,6 +83,8 @@ const Reportes = () => {
           })) },
           { name: "Por mes", rows: byMonth.map(x => ({ Mes: x.mes, Total: x.total })) },
           { name: "Por cajero", rows: byCajero.map(x => ({ Cajero: x.nombre, Total: x.total })) },
+          { name: "Productos más vendidos", rows: topProductosFiltro.map(p => ({ Producto: p.nombre, Unidades: p.qty, Total: p.total })) },
+          { name: "Medios de pago", rows: byMetodo.map(m => ({ Método: m.nombre, Total: m.total, "%": Math.round(m.pct*10)/10 })) },
         ])}><Icon name="download" size={14}/> Exportar reporte</button>
       </div>
 
@@ -157,49 +159,46 @@ const Reportes = () => {
         </div>
       </div>
 
-      <div className="card mt-3">
-        <div className="card-h" id="detalle-facturas"><h3>Detalle de facturas</h3><p className="sub">{filtered.length} resultados</p></div>
-        {/* Desktop: tabla */}
-        <div className="tbl-wrap tw-hidden md:tw-block" style={{ maxHeight: 460, overflowY: "auto" }}>
-          <table className="tbl">
-            <thead><tr><th>Factura</th><th>Fecha</th><th>Hora</th><th>Cajero</th><th>Items</th><th>Método</th><th className="num">Total</th></tr></thead>
-            <tbody>
-              {pagRep.slice.map(f => (
-                <tr key={f.id} className="row-hover">
-                  <td className="mono">{f.id}</td>
-                  <td className="mono">{f.fecha}</td>
-                  <td className="mono muted">{f.hora}</td>
-                  <td>{f.cajero}</td>
-                  <td className="mono">{f.items.reduce((s,i)=>s+i.q,0)}</td>
-                  <td><span className="chip">{f.metodo}</span></td>
-                  <td className="num mono" style={{ fontWeight: 600 }}>{window.fmtCOP(f.total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {/* Mobile: tarjetas */}
-        <div className="tw-flex tw-flex-col tw-gap-2.5 md:tw-hidden tw-p-3">
-          {filtered.length === 0
-            ? <div className="empty-state">Sin facturas con estos filtros.</div>
-            : pagRep.slice.map(f => (
-              <div key={f.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm">
-                <div className="tw-flex tw-items-start tw-justify-between tw-gap-2 tw-mb-2">
-                  <div>
-                    <div className="tw-font-semibold tw-text-sm mono">{f.id}</div>
-                    <div className="muted mono tw-text-xs">{f.fecha} · {f.hora}</div>
+      <div className="mt-3 tw-grid tw-grid-cols-1 lg:tw-grid-cols-2 tw-gap-[10px] tw-items-start">
+        {/* Productos más vendidos */}
+        <div className="card">
+          <div className="card-h"><h3>Productos más vendidos</h3><p className="sub">Top {topProductosFiltro.length}</p></div>
+          <div>
+            {topProductosFiltro.length > 0 ? topProductosFiltro.map((p, i) => {
+              const max = topProductosFiltro[0].qty || 1;
+              return (
+                <div key={p.nombre} style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
+                  <div className="row spaced" style={{ marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}><span className="muted mono" style={{ marginRight: 6 }}>{i + 1}.</span>{p.nombre}</span>
+                    <span className="mono" style={{ fontWeight: 600 }}>{p.qty} u</span>
                   </div>
-                  <span className="num mono tw-font-semibold tw-whitespace-nowrap">{window.fmtCOP(f.total)}</span>
+                  <div className="progress"><span style={{ width: `${(p.qty / max) * 100}%` }}/></div>
+                  <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{window.fmtCOP(p.total)}</div>
                 </div>
-                <div className="tw-grid tw-grid-cols-1 min-[360px]:tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs">
-                  <div><span className="muted">Cajero:</span> <span className="tw-font-medium">{f.cajero}</span></div>
-                  <div><span className="muted">Items:</span> <span className="mono tw-font-medium">{f.items.reduce((s,i)=>s+i.q,0)}</span></div>
-                  <div className="tw-col-span-2 tw-mt-0.5"><span className="chip">{f.metodo}</span></div>
-                </div>
-              </div>
-            ))}
+              );
+            }) : <div className="empty-state">Sin datos.</div>}
+          </div>
         </div>
-        {filtered.length > 0 && <Pagination {...pagRep} label="facturas"/>}
+
+        {/* Medios de pago (de menor a mayor) */}
+        <div className="card">
+          <div className="card-h"><h3>Medios de pago</h3><p className="sub">de menor a mayor</p></div>
+          <div>
+            {byMetodo.length > 0 ? byMetodo.map(m => (
+              <div key={m.nombre} style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
+                <div className="row spaced" style={{ marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: metodoColors[m.nombre] || "var(--text-3)" }}/>
+                    {m.nombre}
+                  </span>
+                  <span className="mono" style={{ fontWeight: 600 }}>{window.fmtCOP(m.total)}</span>
+                </div>
+                <div className="progress"><span style={{ width: `${m.pct}%`, background: metodoColors[m.nombre] || undefined }}/></div>
+                <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{m.pct.toFixed(1)}% del total</div>
+              </div>
+            )) : <div className="empty-state">Sin datos.</div>}
+          </div>
+        </div>
       </div>
     </>
   );
