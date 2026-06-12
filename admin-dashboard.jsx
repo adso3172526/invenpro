@@ -81,21 +81,30 @@ const Dashboard = ({ go }) => {
               <p className="sub tw-text-xs">Distribución del día en curso</p>
             </div>
           </div>
-          <div className="card-b tw-flex-1 tw-min-h-0 tw-overflow-x-auto">
-            <div className="chart-bars tw-h-[160px] md:tw-h-full md:tw-min-h-[240px] tw-gap-1 md:tw-gap-[14px] tw-px-0.5 md:tw-px-1.5 tw-pt-1.5">
-              {MOCK.ventasHoy.map((h, i) => {
-                const pct = (h.v/maxHora)*100;
-                const isPico = h.v === maxHora;
-                return (
-                  <div key={h.h} className="col">
-                    <div className="bar-wrap">
-                      <div className="val mono tw-text-[9px] md:tw-text-[11px]">{(h.v/1000).toFixed(0)}k</div>
-                      <div className={"bar" + (isPico ? "" : " alt")} style={{ height: `${pct}%`, animationDelay: `${i*50}ms` }}/>
-                    </div>
-                    <div className="lbl tw-text-[9px] md:tw-text-[11px]">{h.h}h</div>
-                  </div>
-                );
-              })}
+          <div className="card-b tw-flex-1 tw-min-h-0">
+            <div className="tw-relative tw-h-[200px] md:tw-h-full md:tw-min-h-[240px] tw-p-1">
+              <ChartCanvas type="bar"
+                data={{
+                  labels: MOCK.ventasHoy.map(h => h.h + "h"),
+                  datasets: [{
+                    data: MOCK.ventasHoy.map(h => h.v),
+                    backgroundColor: MOCK.ventasHoy.map(h => h.v === maxHora ? "--accent" : "--accent/45"),
+                    hoverBackgroundColor: "--accent",
+                    borderRadius: 5,
+                    maxBarThickness: 26,
+                  }],
+                }}
+                options={{
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => " " + window.fmtCOP(ctx.parsed.y) } },
+                  },
+                  scales: {
+                    x: { grid: { display: false }, border: { color: "--border" }, ticks: { color: "--text-3", font: { size: 10 }, maxRotation: 0, autoSkip: true } },
+                    y: { grid: { color: "--border/55" }, border: { display: false }, ticks: { color: "--text-3", font: { size: 10 }, maxTicksLimit: 5, callback: v => v >= 1000000 ? (v/1000000) + "M" : (v/1000) + "k" } },
+                  },
+                }}
+              />
             </div>
           </div>
         </div>

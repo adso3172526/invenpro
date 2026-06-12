@@ -110,4 +110,58 @@ const Pagination = ({ page, setPage, totalPages, total, pageSize, label = "regis
   );
 };
 
-Object.assign(window, { Icon, Toast, Modal, Spark, usePagination, Pagination });
+// ===== Gráficos (Chart.js vía CDN) =====
+// Los colores se pasan como tokens del tema: "--accent", o con alfa "--accent/45".
+// El componente los resuelve en vivo y se redibuja al cambiar los datos o el tema.
+const _hexToRgba = (hex, a) => {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map(c => c + c).join("");
+  const n = parseInt(h, 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
+const _resolveChartTokens = (val, css) => {
+  if (typeof val === "string" && val.startsWith("--")) {
+    const [name, alpha] = val.split("/");
+    const c = css.getPropertyValue(name).trim();
+    return alpha ? _hexToRgba(c, parseInt(alpha, 10) / 100) : c;
+  }
+  if (Array.isArray(val)) return val.map(v => _resolveChartTokens(v, css));
+  if (val && typeof val === "object") {
+    const out = {};
+    for (const k of Object.keys(val)) out[k] = _resolveChartTokens(val[k], css);
+    return out;
+  }
+  return val; // números, funciones (callbacks de tooltip), etc.
+};
+
+const ChartCanvas = ({ type, data, options }) => {
+  const ref = React.useRef(null);
+  const chartRef = React.useRef(null);
+  const [, setThemeTick] = React.useState(0);
+
+  // Redibujar cuando cambia el tema (light/dark) para releer los tokens
+  React.useEffect(() => {
+    const obs = new MutationObserver(() => setThemeTick(t => t + 1));
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => obs.disconnect();
+  }, []);
+
+  const dataKey = JSON.stringify(data);
+  const theme = document.documentElement.dataset.theme || "light";
+
+  React.useEffect(() => {
+    if (!window.Chart || !ref.current) return;
+    const css = getComputedStyle(document.documentElement);
+    if (chartRef.current) chartRef.current.destroy();
+    chartRef.current = new window.Chart(ref.current, {
+      type,
+      data: _resolveChartTokens(data, css),
+      options: { responsive: true, maintainAspectRatio: false, ..._resolveChartTokens(options || {}, css) },
+    });
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  }, [type, dataKey, theme]);
+
+  return <canvas ref={ref}/>;
+};
+
+Object.assign(window, { Icon, Toast, Modal, Spark, usePagination, Pagination, ChartCanvas });

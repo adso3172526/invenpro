@@ -123,19 +123,29 @@ const Reportes = () => {
           <div className="card-h"><h3>Ventas por mes</h3><p className="sub">{byMonth.length} mes(es)</p></div>
           <div className="card-b">
             {byMonth.length > 0 ? (
-              <div className="chart-bars">
-                {byMonth.map((b, i) => {
-                  const max = Math.max(...byMonth.map(x => x.total));
-                  return (
-                    <div key={b.mes} className="col">
-                      <div className="bar-wrap">
-                        <div className="val mono">{(b.total/1000000).toFixed(1)}M</div>
-                        <div className="bar" style={{ height: `${(b.total/max)*100}%` }}/>
-                      </div>
-                      <div className="lbl">{b.mes}</div>
-                    </div>
-                  );
-                })}
+              <div className="tw-relative tw-h-[200px] md:tw-h-[240px]">
+                <ChartCanvas type="bar"
+                  data={{
+                    labels: byMonth.map(b => b.mes),
+                    datasets: [{
+                      data: byMonth.map(b => b.total),
+                      backgroundColor: "--accent/80",
+                      hoverBackgroundColor: "--accent",
+                      borderRadius: 8,
+                      maxBarThickness: 56,
+                    }],
+                  }}
+                  options={{
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: { callbacks: { label: ctx => " " + window.fmtCOP(ctx.parsed.y) } },
+                    },
+                    scales: {
+                      x: { grid: { display: false }, border: { color: "--border" }, ticks: { color: "--text-3", font: { size: 11 } } },
+                      y: { grid: { color: "--border/55" }, border: { display: false }, ticks: { color: "--text-3", font: { size: 10 }, maxTicksLimit: 5, callback: v => v >= 1000000 ? (v/1000000).toFixed(1) + "M" : (v/1000).toFixed(0) + "k" } },
+                    },
+                  }}
+                />
               </div>
             ) : <div className="empty-state">Sin ventas con estos filtros.</div>}
           </div>
@@ -183,6 +193,29 @@ const Reportes = () => {
         {/* Medios de pago (de menor a mayor) */}
         <div className="card">
           <div className="card-h"><h3>Medios de pago</h3><p className="sub">de menor a mayor</p></div>
+          {byMetodo.length > 0 && (
+            <div className="tw-relative tw-h-[170px] tw-mt-3">
+              <ChartCanvas type="doughnut"
+                data={{
+                  labels: byMetodo.map(m => m.nombre),
+                  datasets: [{
+                    data: byMetodo.map(m => m.total),
+                    backgroundColor: byMetodo.map(m => metodoColors[m.nombre] || "--text-3"),
+                    borderColor: "--surface",
+                    borderWidth: 3,
+                    hoverOffset: 6,
+                  }],
+                }}
+                options={{
+                  cutout: "62%",
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => ` ${window.fmtCOP(ctx.parsed)} · ${byMetodo[ctx.dataIndex].pct.toFixed(1)}%` } },
+                  },
+                }}
+              />
+            </div>
+          )}
           <div>
             {byMetodo.length > 0 ? byMetodo.map(m => (
               <div key={m.nombre} style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
