@@ -412,6 +412,9 @@
       this._channel = null;
       this._viewTimer = null;
       this._started = false;
+      this._everSubscribed = false;
+      this._needResync = false;
+      this._detTimers = {};
     }
 
     start() {
@@ -429,6 +432,17 @@
 
       channel.subscribe((status) => {
         console.log("[Realtime]", status);
+        if (status === "SUBSCRIBED") {
+          // Si veníamos de una caída, los eventos perdidos no se reenvían:
+          // hay que resincronizar la caché local completa.
+          if (this._needResync) { this._needResync = false; this._resync(); }
+          this._everSubscribed = true;
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          if (this._everSubscribed && this._started) {
+            console.warn("[Realtime] conexión perdida; se resincronizará al reconectar");
+            this._needResync = true;
+          }
+        }
       });
 
       this._channel = channel;
@@ -440,7 +454,28 @@
         this._channel = null;
       }
       if (this._viewTimer) { clearTimeout(this._viewTimer); this._viewTimer = null; }
+      for (const id of Object.keys(this._detTimers)) clearTimeout(this._detTimers[id]);
+      this._detTimers = {};
       this._started = false;
+      this._everSubscribed = false;
+      this._needResync = false;
+    }
+
+    // Recarga toda la caché local tras una reconexión y notifica a los componentes.
+    // (Los consumidores releen window.MOCK e ignoran el payload, así que el evento
+    // sintético {type:"RESYNC"} solo dispara su re-render.)
+    async _resync() {
+      if (!window._dataStore) return;
+      try {
+        await window._dataStore.hydrate();
+        ["productos", "cajeros", "usuarios_sistema", "proveedores", "turnos",
+         "facturas", "ingresos", "configuracion", "views"]
+          .forEach(t => window.EventBus.emit("realtime:" + t, { type: "RESYNC" }));
+        console.log("[Realtime] resincronizado tras reconexión");
+      } catch (e) {
+        console.error("[Realtime] resync:", e);
+        this._needResync = true; // reintentar en la próxima reconexión
+      }
     }
 
     _dispatch(table, payload) {
@@ -543,6 +578,26 @@
         if (idx !== -1) M.ingresos.splice(idx, 1);
       }
       window.EventBus.emit("realtime:ingresos", { type: payload.eventType, row });
+      // Editar un ingreso borra y reinserta su detalle; los DELETE de realtime no
+      // traen datos útiles (payload.old solo trae la PK), así que tras un UPDATE
+      // del encabezado se refetchea el detalle completo de ese ingreso.
+      if (payload.eventType === "UPDATE" && row.id) this._scheduleDetalleRefetch(row.id);
+    }
+
+    _scheduleDetalleRefetch(id) {
+      if (this._detTimers[id]) clearTimeout(this._detTimers[id]);
+      this._detTimers[id] = setTimeout(async () => {
+        delete this._detTimers[id];
+        try {
+          const { data, error } = await window.db.from("ingreso_detalle").select("*").eq("ingreso_id", id);
+          if (error || !data) return;
+          const ing = window.MOCK && window.MOCK.ingresos.find(x => x.id === id);
+          if (ing) {
+            ing.detalle = camelize(data);
+            window.EventBus.emit("realtime:ingresos", { type: "UPDATE", row: ing });
+          }
+        } catch (e) { console.error("[Realtime] detalle refetch:", e); }
+      }, 800);
     }
 
     _handleIngresoDetalle(M, payload) {
@@ -552,9 +607,7 @@
         if (ing) {
           if (payload.eventType === "INSERT") {
             ing.detalle = ing.detalle || [];
-            ing.detalle.push(row);
-          } else if (payload.eventType === "DELETE") {
-            ing.detalle = (ing.detalle || []).filter(d => d.sku !== row.sku);
+            if (!ing.detalle.find(d => d.sku === row.sku)) ing.detalle.push(row);
           }
           window.EventBus.emit("realtime:ingresos", { type: "UPDATE", row: ing });
         }
