@@ -486,7 +486,6 @@ input, select, textarea { font: inherit; color: inherit; }
   .mobile-burger span {
     display: block; height: 2px; background: var(--text); border-radius: 2px;
   }
-  .mobile-active-label { font-weight: 600; font-size: 14px; }
 
   .mobile-backdrop {
     display: block; position: fixed; inset: 0;

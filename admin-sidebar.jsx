@@ -3,17 +3,15 @@
 const Sidebar = ({ active, setActive, user, onLogout }) => {
   const [open, setOpen] = useStateA(false);
   const goTo = (id) => { setActive(id); setOpen(false); };
-  const activeItem = NAV.find(n => n.id === active);
 
   return (
     <>
-      {/* Mobile topbar: hamburger + título */}
+      {/* Mobile topbar: hamburger + logo (el título de la sección ya va en el page-h) */}
       <div className="mobile-topbar">
         <button className="mobile-burger" onClick={() => setOpen(o => !o)} aria-label="Menú">
           <span/><span/><span/>
         </button>
         <img src="logo.png" alt="InvenPro" style={{ height: 26, objectFit: "contain" }}/>
-        <div className="mobile-active-label">{activeItem ? activeItem.label : ""}</div>
       </div>
 
       {/* Sidebar lateral (desktop) y menú overlay (mobile) */}
