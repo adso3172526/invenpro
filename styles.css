@@ -1800,6 +1800,15 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   @supports (max-height: 1dvh) {
     .modal, .modal.lg { max-height: 90dvh; }
   }
+  /* Modales de formulario (bottom-sheet): PANTALLA COMPLETA en el celular.
+     Antes quedaban anclados abajo (max 85dvh) desaprovechando la parte superior. */
+  .modal.bottom-sheet {
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
   /* El cuerpo contiene su contenido: nada se desborda hacia los lados */
   .modal-b {
     overflow-x: hidden;
