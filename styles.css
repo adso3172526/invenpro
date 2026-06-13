@@ -585,7 +585,8 @@ input, select, textarea { font: inherit; color: inherit; }
 /* Móvil */
 @media (max-width: 640px) {
   body { font-size: 13px; }
-  .page-h { flex-direction: column; align-items: flex-start; gap: 10px; }
+  /* (la regla responsive de .page-h vive junto a su regla base, más abajo,
+     para ganar en el orden del cascade) */
   .page-h h2 { font-size: 18px; }
   .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .kpi { padding: 12px; }
@@ -930,6 +931,11 @@ input, select, textarea { font: inherit; color: inherit; }
 .page-h > * { min-width: 0; }
 .page-h h2 { font-size: 22px; margin: 0 0 4px 0; font-weight: 600; letter-spacing: -0.015em; }
 .page-h .sub { color: var(--text-2); margin: 0; font-size: 13px; }
+/* Mobile: apilar el header SIEMPRE alineado a la izquierda.
+   Debe ir DESPUÉS de la regla base: align-items:end + column empujaba el título a la derecha. */
+@media (max-width: 640px) {
+  .page-h { flex-direction: column; align-items: flex-start; gap: 10px; }
+}
 @media (max-width: 767px) {
   .page-h { padding: 12px 14px; gap: 10px; margin-bottom: 14px; overflow: hidden; }
   .page-h h2 { font-size: 18px; }

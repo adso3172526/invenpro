@@ -26,16 +26,18 @@ const VIBE_PALETTES = {
   },
 };
 
+// Valores alineados con el tema v2 de styles.css (estos se aplican inline y
+// pisan los tokens del stylesheet, así que el default DEBE coincidir con v2).
 const DENSITY = {
-  comoda:    { fs: "15px", pad: "1.25", radius: "12px", radiusLg: "20px" },
-  regular:   { fs: "14px", pad: "1.00", radius: "10px", radiusLg: "16px" },
-  compacta:  { fs: "13px", pad: "0.80", radius: "8px",  radiusLg: "12px" },
+  comoda:    { fs: "15px", pad: "1.25", radius: "14px", radiusLg: "22px" },
+  regular:   { fs: "14px", pad: "1.00", radius: "12px", radiusLg: "18px" },
+  compacta:  { fs: "13px", pad: "0.80", radius: "10px", radiusLg: "14px" },
 };
 
 const FINISH = {
-  suave:    { shSm: "0 1px 2px rgba(24,23,15,0.04), 0 1px 1px rgba(24,23,15,0.03)",
-              shMd: "0 6px 22px -8px rgba(24,23,15,0.10), 0 2px 6px rgba(24,23,15,0.04)",
-              shLg: "0 24px 60px -20px rgba(24,23,15,0.18), 0 8px 16px -8px rgba(24,23,15,0.08)",
+  suave:    { shSm: "0 1px 2px rgba(16,24,40,0.06), 0 1px 3px rgba(16,24,40,0.05)",
+              shMd: "0 2px 4px rgba(16,24,40,0.05), 0 10px 28px -8px rgba(16,24,40,0.12)",
+              shLg: "0 8px 18px -8px rgba(16,24,40,0.12), 0 28px 64px -18px rgba(16,24,40,0.22)",
               borderW: "1px" },
   plano:    { shSm: "none", shMd: "none", shLg: "none", borderW: "1px" },
   marcado:  { shSm: "0 2px 0 rgba(0,0,0,0.05)",
