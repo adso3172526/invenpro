@@ -198,12 +198,10 @@ const BarcodeScanner = ({ onScan, onClose, closeOnScan }) => {
           <>
             <div id="barcode-reader" className="tw-w-full tw-max-w-[320px] tw-rounded-2xl tw-overflow-hidden"
               style={{ boxShadow: flash ? "0 0 0 4px var(--good)" : undefined, transition: "box-shadow .15s ease" }}/>
-            {last ? (
+            {last && (
               <div className={"tw-text-sm tw-font-semibold tw-px-4 tw-py-2 tw-rounded-lg tw-text-center tw-max-w-[320px] " + (last.ok ? "tw-bg-good-soft tw-text-good" : "tw-bg-bad-soft tw-text-bad")}>
                 {last.ok ? "✓ " : "✗ "}{last.msg}
               </div>
-            ) : (
-              <p className="tw-text-white/60 tw-text-xs tw-text-center">Apunta al código. Puedes escanear varios productos seguidos.</p>
             )}
           </>
         )}
@@ -329,10 +327,12 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     // El pendiente se libera cuando el servidor confirme la baja vía realtime.
     cart.forEach(l => { pendingStock.current[l.sku] = (pendingStock.current[l.sku] || 0) + l.q; });
     rebuildFromServer();
+    const ahora = new Date();
+    const fechaActual = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
     const factura = {
       id: "F-" + (10310 + shiftStats.trans),
-      fecha: window.todayStr,
-      hora: new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }),
+      fecha: fechaActual,
+      hora: ahora.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }),
       cajero: cajero.nombre,
       caja: shift.caja,
       metodo,

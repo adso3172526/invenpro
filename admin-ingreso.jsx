@@ -2,14 +2,29 @@
 
 // Lista de categorías = las guardadas en config (clave "categorias", JSON) + las que
 // ya usan los productos, sin repetir, con "General" siempre primero.
-const getCategorias = () => {
+// Todas las categorías como objetos { nombre, activo }: las de config (clave "categorias")
+// + las que ya usan los productos. Compatible con el formato viejo (lista de strings).
+const getCategoriasAll = () => {
   const cfg = (window.MOCK && MOCK.configuracion) || {};
   let custom = [];
   try { const v = JSON.parse(cfg.categorias || "[]"); if (Array.isArray(v)) custom = v; } catch {}
-  const fromProd = (window.MOCK && MOCK.productos ? MOCK.productos : []).map(p => p.categoria).filter(Boolean);
-  return Array.from(new Set(["General", ...custom, ...fromProd]))
-    .sort((a, b) => a === "General" ? -1 : b === "General" ? 1 : a.localeCompare(b));
+  const map = new Map();
+  map.set("General", { nombre: "General", activo: true });
+  custom.forEach(c => {
+    const nombre = typeof c === "string" ? c : (c && c.nombre);
+    if (!nombre) return;
+    const activo = typeof c === "string" ? true : (c.activo !== false);
+    map.set(nombre, { nombre, activo });
+  });
+  (window.MOCK && MOCK.productos ? MOCK.productos : []).forEach(p => {
+    if (p.categoria && !map.has(p.categoria)) map.set(p.categoria, { nombre: p.categoria, activo: true });
+  });
+  return Array.from(map.values())
+    .sort((a, b) => a.nombre === "General" ? -1 : b.nombre === "General" ? 1 : a.nombre.localeCompare(b.nombre));
 };
+
+// Para los selects: solo las categorías ACTIVAS (nombres).
+const getCategorias = () => getCategoriasAll().filter(c => c.activo).map(c => c.nombre);
 
 const Ingreso = () => {
   // Realtime: only refresh when modal is NOT open (avoid closing it mid-edit)
@@ -1080,8 +1095,8 @@ const ItemAdder = ({ onAdd, nextSku }) => {
 // y al renombrar/eliminar actualiza los productos afectados.
 const CategoriasModal = ({ onClose }) => {
   const productos = (window.MOCK && MOCK.productos) || [];
-  const initial = getCategorias().filter(c => c !== "General"); // "General" es fija
-  const [rows, setRows] = useStateA(initial.map(name => ({ orig: name, name })));
+  const initial = getCategoriasAll().filter(c => c.nombre !== "General"); // "General" es fija
+  const [rows, setRows] = useStateA(initial.map(c => ({ orig: c.nombre, nombre: c.nombre, activo: c.activo })));
   const [nueva, setNueva] = useStateA("");
   const [saving, setSaving] = useStateA(false);
   const [error, setError] = useStateA("");
@@ -1091,19 +1106,19 @@ const CategoriasModal = ({ onClose }) => {
   const addCat = () => {
     const n = nueva.trim();
     if (!n) return;
-    if (n.toLowerCase() === "general" || rows.some(r => r.name.trim().toLowerCase() === n.toLowerCase())) { setError("Esa categoría ya existe"); return; }
-    setRows(r => [...r, { orig: null, name: n }]);
+    if (n.toLowerCase() === "general" || rows.some(r => r.nombre.trim().toLowerCase() === n.toLowerCase())) { setError("Esa categoría ya existe"); return; }
+    setRows(r => [...r, { orig: null, nombre: n, activo: true }]);
     setNueva(""); setError("");
   };
 
   const guardar = async () => {
-    const names = rows.map(r => r.name.trim()).filter(Boolean);
+    const names = rows.map(r => r.nombre.trim()).filter(Boolean);
     if (new Set(names.map(n => n.toLowerCase())).size !== names.length) { setError("Hay categorías repetidas"); return; }
     setSaving(true); setError("");
     try {
-      // Renombrados: orig -> name (actualiza los productos que la usaban)
+      // Renombrados: orig -> nombre (actualiza los productos que la usaban)
       for (const r of rows) {
-        const nn = r.name.trim();
+        const nn = r.nombre.trim();
         if (r.orig && nn && r.orig !== nn) {
           for (const p of productos.filter(x => x.categoria === r.orig)) {
             await DB.productos.update(p.sku, { categoria: nn });
@@ -1111,15 +1126,9 @@ const CategoriasModal = ({ onClose }) => {
           }
         }
       }
-      // Eliminados: una categoría que existía y ya no tiene fila -> sus productos pasan a "General"
-      const eliminados = initial.filter(c => !rows.some(r => r.orig === c));
-      for (const cat of eliminados) {
-        for (const p of productos.filter(x => x.categoria === cat)) {
-          await DB.productos.update(p.sku, { categoria: "General" });
-          p.categoria = "General";
-        }
-      }
-      await DB.config.save("categorias", JSON.stringify(names));
+      // No se elimina ninguna categoría: solo se guarda su estado activo/inactivo
+      const lista = rows.map(r => ({ nombre: r.nombre.trim(), activo: !!r.activo })).filter(r => r.nombre);
+      await DB.config.save("categorias", JSON.stringify(lista));
       onClose();
     } catch (e) {
       setError("Error al guardar: " + (e && e.message ? e.message : ""));
@@ -1135,7 +1144,7 @@ const CategoriasModal = ({ onClose }) => {
       </>
     }>
       <p className="muted tw-text-xs tw-mb-3" style={{ lineHeight: 1.5 }}>
-        Crea, renombra o elimina categorías. Al renombrar o eliminar, los productos que las usaban se actualizan automáticamente.
+        Crea o renombra categorías. Las categorías no se eliminan: se <b>desactivan</b> para que dejen de aparecer al clasificar productos nuevos, sin afectar a los productos que ya las usan.
       </p>
       <div className="tw-flex tw-gap-1.5 tw-mb-3">
         <input className="tw-flex-1" style={{ minWidth: 0 }} value={nueva} onChange={e => setNueva(e.target.value)}
@@ -1148,12 +1157,15 @@ const CategoriasModal = ({ onClose }) => {
           <span className="muted tw-text-[11px] tw-shrink-0">{countOf("General")} prod. · fija</span>
         </div>
         {rows.map((r, i) => (
-          <div key={i} className="tw-flex tw-items-center tw-gap-1.5">
-            <input className="tw-flex-1" style={{ minWidth: 0 }} value={r.name}
-              onChange={e => setRows(rs => rs.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x))}/>
-            <span className="muted tw-text-[11px] tw-shrink-0" style={{ width: 56, textAlign: "right" }}>{r.orig ? countOf(r.orig) + " prod." : "nueva"}</span>
-            <button type="button" className="btn ghost sm tw-shrink-0" style={{ color: "var(--bad)" }}
-              onClick={() => setRows(rs => rs.filter((_, idx) => idx !== i))} title="Eliminar"><Icon name="trash" size={14}/></button>
+          <div key={i} className="tw-flex tw-items-center tw-gap-1.5" style={{ opacity: r.activo ? 1 : 0.55 }}>
+            <input className="tw-flex-1" style={{ minWidth: 0 }} value={r.nombre}
+              onChange={e => setRows(rs => rs.map((x, idx) => idx === i ? { ...x, nombre: e.target.value } : x))}/>
+            <span className="muted tw-text-[11px] tw-shrink-0" style={{ width: 50, textAlign: "right" }}>{r.orig ? countOf(r.orig) + " prod." : "nueva"}</span>
+            <button type="button" className="btn sm tw-shrink-0" style={{ width: 84, justifyContent: "center", borderColor: r.activo ? "var(--good)" : "var(--border)", color: r.activo ? "var(--good)" : "var(--text-3)" }}
+              onClick={() => setRows(rs => rs.map((x, idx) => idx === i ? { ...x, activo: !x.activo } : x))}
+              title={r.activo ? "Desactivar categoría" : "Activar categoría"}>
+              {r.activo ? "Activa" : "Inactiva"}
+            </button>
           </div>
         ))}
         {rows.length === 0 && <div className="muted tw-text-xs tw-px-1 tw-py-2">Sin categorías personalizadas. Agrega una arriba.</div>}
