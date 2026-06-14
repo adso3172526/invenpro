@@ -108,7 +108,7 @@ const ShiftOpen = ({ cajero, onOpen, onLogout }) => {
 
 // =================== Escáner de código de barras ===================
 // Escáner CONTINUO: queda abierto y agrega varios productos seguidos.
-const BarcodeScanner = ({ onScan, onClose }) => {
+const BarcodeScanner = ({ onScan, onClose, closeOnScan }) => {
   const scannerRef = React.useRef(null);
   const lastRef = React.useRef({ code: null, t: 0 }); // debounce de lecturas repetidas
   const closingRef = React.useRef(false);
@@ -134,6 +134,14 @@ const BarcodeScanner = ({ onScan, onClose }) => {
       { facingMode: "environment" },
       { fps: 10, qrbox: { width: 250, height: 150 } },
       (decodedText) => {
+        // Modo "un disparo": lee un código, detiene la cámara y cierra (para llenar un campo)
+        if (closeOnScan) {
+          if (closingRef.current) return;
+          closingRef.current = true;
+          try { if (navigator.vibrate) navigator.vibrate(60); } catch {}
+          stopThen(() => onScan(decodedText));
+          return;
+        }
         const now = Date.now();
         // Ignora el mismo código si se leyó hace < 1.8s (la librería dispara muchas veces/seg)
         if (decodedText === lastRef.current.code && now - lastRef.current.t < 1800) return;
@@ -232,25 +240,40 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     trans: shift.transacciones || 0,
     items: 0,
   });
+  // Descuentos locales optimistas aún no confirmados por el servidor (sku -> unidades)
+  const pendingStock = React.useRef({});
+  const prevServer = React.useRef({});
+
+  // Reconstruye la grilla desde el servidor (MOCK.productos) aplicando los descuentos
+  // locales pendientes; cada pendiente se libera cuando el servidor confirma la baja.
+  const rebuildFromServer = () => {
+    const pend = pendingStock.current;
+    const prev = prevServer.current;
+    const nextPrev = {};
+    const out = MOCK.productos.map(mp => {
+      const serverStock = mp.stock;
+      nextPrev[mp.sku] = serverStock;
+      let p = pend[mp.sku] || 0;
+      if (p > 0 && typeof prev[mp.sku] === "number") {
+        const drop = prev[mp.sku] - serverStock; // el servidor bajó stock => confirmó una venta
+        if (drop > 0) p = Math.max(0, p - drop);
+      }
+      pend[mp.sku] = p;
+      return { ...mp, stock: Math.max(0, serverStock - p) };
+    });
+    prevServer.current = nextPrev;
+    setProductos(out);
+  };
 
   // Al entrar al POS, refresca los datos de facturación desde la BD
   // (red de seguridad por si el realtime estaba caído cuando el admin los cambió)
   useEffect(() => { if (window.refreshConfig) window.refreshConfig(); }, []);
 
-  // Realtime: merge remote product updates, keeping cart items' local stock deductions
+  // Realtime: los productos nuevos y los cambios de stock (ingresos de mercancía,
+  // ventas de otros cajeros) se reflejan en la grilla, respetando los descuentos
+  // locales que este cajero hizo y que el servidor aún no confirma.
   useEffect(() => {
-    return window.EventBus.on("realtime:productos", () => {
-      setProductos(prev => {
-        return MOCK.productos.map(mp => {
-          const local = prev.find(lp => lp.sku === mp.sku);
-          // If the local stock was already decremented by a cart item, keep that offset
-          if (local && local.stock !== mp.stock) {
-            return { ...mp };
-          }
-          return { ...mp };
-        });
-      });
-    });
+    return window.EventBus.on("realtime:productos", rebuildFromServer);
   }, []);
 
   const filtered = useMemo(() => {
@@ -302,11 +325,10 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   };
 
   const completePay = async (metodo, recibido) => {
-    // Descontar inventario localmente para UI inmediata
-    setProductos(prev => prev.map(p => {
-      const l = cart.find(x => x.sku === p.sku);
-      return l ? { ...p, stock: Math.max(0, p.stock - l.q) } : p;
-    }));
+    // Reservar el descuento localmente (UI inmediata) y refrescar la grilla.
+    // El pendiente se libera cuando el servidor confirme la baja vía realtime.
+    cart.forEach(l => { pendingStock.current[l.sku] = (pendingStock.current[l.sku] || 0) + l.q; });
+    rebuildFromServer();
     const factura = {
       id: "F-" + (10310 + shiftStats.trans),
       fecha: window.todayStr,

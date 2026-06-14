@@ -330,10 +330,10 @@ const Ingreso = () => {
                     costo: it.costo,
                     stock: 0,
                     vence: it.vence || null,
-                    codigoBarras: null,
+                    codigoBarras: it.codigoBarras || null,
                   });
                   if (err) { setToast("Error creando producto: " + it.nombre); setGuardando(false); return; }
-                  MOCK.productos.push({ sku: autoSku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: 0, min: 0, vence: it.vence || null, unidad: "und", codigoBarras: null });
+                  MOCK.productos.push({ sku: autoSku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: 0, min: 0, vence: it.vence || null, unidad: "und", codigoBarras: it.codigoBarras || null });
                 }
                 for (const it of items) {
                   await DB.productos.incrementStock(it.sku, it.qty);
@@ -892,6 +892,7 @@ const ItemAdder = ({ onAdd }) => {
   const [categoria, setCategoria] = useStateA("General");
   const [open, setOpen] = useStateA(false);
   const [highlight, setHighlight] = useStateA(-1);
+  const [scanOpen, setScanOpen] = useStateA(false);
   const opts = MOCK.productos;
   const sugeridos = useMemoA(() => {
     if (!query) return [];
@@ -971,9 +972,24 @@ const ItemAdder = ({ onAdd }) => {
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label>Código de barras</label>
-          <input className="mono" value={codigoBarras} onChange={e => setCodigoBarras(e.target.value)} placeholder="7702001148"/>
+          <div className="tw-flex tw-gap-1.5">
+            <input className="mono tw-flex-1" style={{ minWidth: 0 }} value={codigoBarras} onChange={e => setCodigoBarras(e.target.value)} placeholder="Escanear o escribir…"/>
+            <button type="button" className="btn touch-target tw-shrink-0" onClick={() => setScanOpen(true)} title="Escanear código de barras">
+              <Icon name="scan" size={16}/>
+            </button>
+          </div>
         </div>
       </div>
+
+      {scanOpen && <BarcodeScanner closeOnScan
+        onScan={code => {
+          // Si el producto ya existe (por código de barras o SKU), autollena su descripción
+          const p = MOCK.productos.find(x => x.codigoBarras === code) || MOCK.productos.find(x => x.sku === code);
+          if (p) elegir(p);
+          else { setSku(""); setQuery(""); setCodigoBarras(code); }
+          setScanOpen(false);
+        }}
+        onClose={() => setScanOpen(false)}/>}
 
       {/* Fila 2: Categoría — readonly si existe, editable si es nuevo */}
       {query && (
@@ -994,8 +1010,9 @@ const ItemAdder = ({ onAdd }) => {
       {/* Fila 3: Cantidad, Costo, Precio, Vence, Botón */}
       <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-[1fr_1fr_1fr_1fr_auto] tw-gap-2 tw-items-end">
         <div className="field" style={{ margin: 0 }}>
-          <label>Cantidad</label>
-          <input className="mono" value={qty} onChange={e => setQty(e.target.value.replace(/\D/g,""))} placeholder="0"/>
+          <label>Cantidad <span style={{ color: "var(--bad)" }}>*</span></label>
+          <input className="mono" value={qty} onChange={e => setQty(e.target.value.replace(/\D/g,""))} placeholder="0"
+            style={{ borderColor: (query && (!qty || parseInt(qty) <= 0)) ? "var(--bad)" : undefined }}/>
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label>Costo unit.</label>
@@ -1009,7 +1026,7 @@ const ItemAdder = ({ onAdd }) => {
           <label>Vence</label>
           <input type="date" value={vence} onChange={e => setVence(e.target.value)}/>
         </div>
-        <button className="btn primary tw-w-full md:tw-w-auto" disabled={(!sku && !query) || !qty} onClick={() => {
+        <button className="btn primary tw-w-full md:tw-w-auto" disabled={(!sku && !query) || !qty || parseInt(qty) <= 0} onClick={() => {
           onAdd(sku || ("NUEVO-" + Date.now()), qty, costo, vence, esNuevo ? query : undefined, codigoBarras, precio, esNuevo ? categoria : undefined);
           reset();
         }}><Icon name="plus" size={14}/> Agregar</button>
