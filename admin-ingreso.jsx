@@ -1,5 +1,16 @@
 // Ingreso de mercancía
 
+// Lista de categorías = las guardadas en config (clave "categorias", JSON) + las que
+// ya usan los productos, sin repetir, con "General" siempre primero.
+const getCategorias = () => {
+  const cfg = (window.MOCK && MOCK.configuracion) || {};
+  let custom = [];
+  try { const v = JSON.parse(cfg.categorias || "[]"); if (Array.isArray(v)) custom = v; } catch {}
+  const fromProd = (window.MOCK && MOCK.productos ? MOCK.productos : []).map(p => p.categoria).filter(Boolean);
+  return Array.from(new Set(["General", ...custom, ...fromProd]))
+    .sort((a, b) => a === "General" ? -1 : b === "General" ? 1 : a.localeCompare(b));
+};
+
 const Ingreso = () => {
   // Realtime: only refresh when modal is NOT open (avoid closing it mid-edit)
   const [, _rtTick] = React.useState(0);
@@ -9,6 +20,7 @@ const Ingreso = () => {
   const [showSelector, setShowSelector] = useStateA(false);
   const [showIaScanner, setShowIaScanner] = useStateA(false);
   const [showForm, setShowForm] = useStateA(false);
+  const [showCategorias, setShowCategorias] = useStateA(false);
   _formOpenRef.current = showForm;
   React.useEffect(() => {
     const tables = ["ingresos", "productos"];
@@ -120,10 +132,13 @@ const Ingreso = () => {
           <h2>Ingreso de mercancía</h2>
           <p className="sub">Registra entradas a la bodega y actualiza inventario y costos.</p>
         </div>
-        <div className="row">
-          <button className="btn primary" onClick={() => setShowSelector(true)}><Icon name="plus" size={14}/> Nuevo ingreso</button>
+        <div className="row tw-flex-wrap tw-gap-2 tw-w-full sm:tw-w-auto">
+          <button className="btn ghost tw-flex-1 sm:tw-flex-none" onClick={() => setShowCategorias(true)}><Icon name="box" size={14}/> Categorías</button>
+          <button className="btn primary tw-flex-1 sm:tw-flex-none" onClick={() => setShowSelector(true)}><Icon name="plus" size={14}/> Nuevo ingreso</button>
         </div>
       </div>
+
+      {showCategorias && <CategoriasModal onClose={() => setShowCategorias(false)}/>}
 
       <div className="card mb-3">
         <div className="card-h tw-flex tw-flex-col sm:tw-flex-row tw-items-start sm:tw-items-center tw-justify-between tw-gap-2.5" style={{ flexWrap: "wrap" }}>
@@ -1018,7 +1033,7 @@ const ItemAdder = ({ onAdd, nextSku }) => {
             <label>Categoría</label>
             {esNuevo ? (
               <select value={categoria} onChange={e => setCategoria(e.target.value)}>
-                {[...new Set(["General", ...MOCK.productos.map(p => p.categoria)])].sort().map(c => <option key={c} value={c}>{c}</option>)}
+                {getCategorias().map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             ) : (
               <input value={categoria} readOnly style={{ background: "var(--surface-2)", color: "var(--text-3)", cursor: "default" }}/>
@@ -1061,4 +1076,91 @@ const ItemAdder = ({ onAdd, nextSku }) => {
   );
 };
 
-Object.assign(window, { Ingreso, QrScannerModal, IaScannerModal, ItemAdder });
+// Gestor de categorías: crear, renombrar y eliminar. Persiste en config (clave "categorias")
+// y al renombrar/eliminar actualiza los productos afectados.
+const CategoriasModal = ({ onClose }) => {
+  const productos = (window.MOCK && MOCK.productos) || [];
+  const initial = getCategorias().filter(c => c !== "General"); // "General" es fija
+  const [rows, setRows] = useStateA(initial.map(name => ({ orig: name, name })));
+  const [nueva, setNueva] = useStateA("");
+  const [saving, setSaving] = useStateA(false);
+  const [error, setError] = useStateA("");
+
+  const countOf = (name) => productos.filter(p => p.categoria === name).length;
+
+  const addCat = () => {
+    const n = nueva.trim();
+    if (!n) return;
+    if (n.toLowerCase() === "general" || rows.some(r => r.name.trim().toLowerCase() === n.toLowerCase())) { setError("Esa categoría ya existe"); return; }
+    setRows(r => [...r, { orig: null, name: n }]);
+    setNueva(""); setError("");
+  };
+
+  const guardar = async () => {
+    const names = rows.map(r => r.name.trim()).filter(Boolean);
+    if (new Set(names.map(n => n.toLowerCase())).size !== names.length) { setError("Hay categorías repetidas"); return; }
+    setSaving(true); setError("");
+    try {
+      // Renombrados: orig -> name (actualiza los productos que la usaban)
+      for (const r of rows) {
+        const nn = r.name.trim();
+        if (r.orig && nn && r.orig !== nn) {
+          for (const p of productos.filter(x => x.categoria === r.orig)) {
+            await DB.productos.update(p.sku, { categoria: nn });
+            p.categoria = nn;
+          }
+        }
+      }
+      // Eliminados: una categoría que existía y ya no tiene fila -> sus productos pasan a "General"
+      const eliminados = initial.filter(c => !rows.some(r => r.orig === c));
+      for (const cat of eliminados) {
+        for (const p of productos.filter(x => x.categoria === cat)) {
+          await DB.productos.update(p.sku, { categoria: "General" });
+          p.categoria = "General";
+        }
+      }
+      await DB.config.save("categorias", JSON.stringify(names));
+      onClose();
+    } catch (e) {
+      setError("Error al guardar: " + (e && e.message ? e.message : ""));
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal title="Categorías de producto" bottomSheet onClose={onClose} footer={
+      <>
+        <button className="btn ghost" onClick={onClose} disabled={saving}>Cancelar</button>
+        <button className="btn primary" onClick={guardar} disabled={saving}>{saving ? "Guardando…" : "Guardar"}</button>
+      </>
+    }>
+      <p className="muted tw-text-xs tw-mb-3" style={{ lineHeight: 1.5 }}>
+        Crea, renombra o elimina categorías. Al renombrar o eliminar, los productos que las usaban se actualizan automáticamente.
+      </p>
+      <div className="tw-flex tw-gap-1.5 tw-mb-3">
+        <input className="tw-flex-1" style={{ minWidth: 0 }} value={nueva} onChange={e => setNueva(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCat(); } }} placeholder="Nueva categoría…"/>
+        <button type="button" className="btn primary tw-shrink-0" onClick={addCat}><Icon name="plus" size={14}/> Agregar</button>
+      </div>
+      <div className="tw-flex tw-flex-col tw-gap-1.5">
+        <div className="tw-flex tw-items-center tw-gap-2 tw-py-1 tw-px-1">
+          <span className="tw-flex-1 tw-text-sm tw-font-medium">General</span>
+          <span className="muted tw-text-[11px] tw-shrink-0">{countOf("General")} prod. · fija</span>
+        </div>
+        {rows.map((r, i) => (
+          <div key={i} className="tw-flex tw-items-center tw-gap-1.5">
+            <input className="tw-flex-1" style={{ minWidth: 0 }} value={r.name}
+              onChange={e => setRows(rs => rs.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x))}/>
+            <span className="muted tw-text-[11px] tw-shrink-0" style={{ width: 56, textAlign: "right" }}>{r.orig ? countOf(r.orig) + " prod." : "nueva"}</span>
+            <button type="button" className="btn ghost sm tw-shrink-0" style={{ color: "var(--bad)" }}
+              onClick={() => setRows(rs => rs.filter((_, idx) => idx !== i))} title="Eliminar"><Icon name="trash" size={14}/></button>
+          </div>
+        ))}
+        {rows.length === 0 && <div className="muted tw-text-xs tw-px-1 tw-py-2">Sin categorías personalizadas. Agrega una arriba.</div>}
+      </div>
+      {error && <div className="tw-mt-3 tw-text-xs tw-font-medium" style={{ color: "var(--bad)" }}>{error}</div>}
+    </Modal>
+  );
+};
+
+Object.assign(window, { Ingreso, QrScannerModal, IaScannerModal, ItemAdder, CategoriasModal });
