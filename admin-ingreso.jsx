@@ -40,7 +40,10 @@ const Ingreso = () => {
   const [provDraft, setProvDraft] = useStateA({ nombre: "", nit: "", tel: "" });
   const [toast, setToast] = useStateA(null);
   const [guardando, setGuardando] = useStateA(false);
-  const ingresosFiltrados = MOCK.ingresos.filter(i => i.fecha >= desde && i.fecha <= hasta);
+  // Más reciente primero: por fecha desc y, en empate, por id (ING-<timestamp>) desc
+  const ingresosFiltrados = MOCK.ingresos
+    .filter(i => i.fecha >= desde && i.fecha <= hasta)
+    .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || "") || (b.id || "").localeCompare(a.id || ""));
   const pagIng = usePagination(ingresosFiltrados, 8);
 
   const add = (sku, qty, costo, vence, nombreManual, codigoBarras, precio, categoriaManual) => {
@@ -55,6 +58,15 @@ const Ingreso = () => {
       item.precio = parseInt(precio) || p.precio || 0;
     }
     setItems(it => [...it, item]);
+  };
+
+  // Próximo SKU automático (P-xxxxx), considerando los productos existentes
+  // Y los ya agregados a este ingreso, para que no se repitan entre ítems nuevos.
+  const nextSku = () => {
+    const used = new Set([...MOCK.productos.map(p => p.sku), ...items.map(it => it.sku)]);
+    let max = 0;
+    used.forEach(s => { const m = /^P-(\d+)$/.exec(s || ""); if (m) max = Math.max(max, parseInt(m[1], 10)); });
+    return "P-" + String(max + 1).padStart(5, "0");
   };
 
   const actualizarItem = (idx, campo, valor) => {
@@ -320,10 +332,10 @@ const Ingreso = () => {
               try {
                 const nuevos = items.filter(it => it.nuevo);
                 for (const it of nuevos) {
-                  const autoSku = DB.productos.generateSku();
-                  it.sku = autoSku;
+                  // Usa el SKU ya asignado (P-xxxxx) al escanear/agregar; si no trae uno, lo genera
+                  if (!/^P-\d+$/.test(it.sku || "")) it.sku = nextSku();
                   const err = await DB.productos.create({
-                    sku: autoSku,
+                    sku: it.sku,
                     nombre: it.nombre,
                     categoria: it.categoria || "General",
                     precio: it.precio || Math.round(it.costo * 1.3),
@@ -333,7 +345,7 @@ const Ingreso = () => {
                     codigoBarras: it.codigoBarras || null,
                   });
                   if (err) { setToast("Error creando producto: " + it.nombre); setGuardando(false); return; }
-                  MOCK.productos.push({ sku: autoSku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: 0, min: 0, vence: it.vence || null, unidad: "und", codigoBarras: it.codigoBarras || null });
+                  MOCK.productos.push({ sku: it.sku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: 0, min: 0, vence: it.vence || null, unidad: "und", codigoBarras: it.codigoBarras || null });
                 }
                 for (const it of items) {
                   await DB.productos.incrementStock(it.sku, it.qty);
@@ -474,7 +486,7 @@ const Ingreso = () => {
             </div>
           )}
 
-          <ItemAdder onAdd={add}/>
+          <ItemAdder onAdd={add} nextSku={nextSku}/>
 
           {items.length > 0 && (
             <div className="card mt-2">
@@ -881,7 +893,7 @@ const IaScannerModal = ({ onClose, onRead }) => {
   );
 };
 
-const ItemAdder = ({ onAdd }) => {
+const ItemAdder = ({ onAdd, nextSku }) => {
   const [sku, setSku] = useStateA("");
   const [query, setQuery] = useStateA("");
   const [codigoBarras, setCodigoBarras] = useStateA("");
@@ -919,7 +931,10 @@ const ItemAdder = ({ onAdd }) => {
     setSku(""); setQuery(""); setCodigoBarras(""); setQty(""); setCosto(""); setPrecio(""); setVence(""); setCategoria("General"); setHighlight(-1);
   };
 
-  const esNuevo = query && !sku;
+  // Es nuevo si hay nombre o código escaneado y no corresponde a un producto existente.
+  const esNuevo = (query || codigoBarras) && !sku;
+  // SKU automático asignado al instante para productos nuevos.
+  const autoSku = esNuevo && nextSku ? nextSku() : "";
 
   return (
     <div className="tw-bg-surface-2 tw-border tw-border-border tw-rounded-lg tw-p-3 md:tw-p-4 tw-mt-3">
@@ -930,7 +945,7 @@ const ItemAdder = ({ onAdd }) => {
       {/* Fila 1: Producto (predictivo) + Código de barras */}
       <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-[1fr_200px] tw-gap-2 tw-mb-2">
         <div className="field" style={{ margin: 0, position: "relative" }}>
-          <label>Producto</label>
+          <label>Nombre del producto</label>
           <input
             value={query}
             onChange={e => { setQuery(e.target.value); setSku(""); setOpen(true); setHighlight(-1); }}
@@ -991,9 +1006,14 @@ const ItemAdder = ({ onAdd }) => {
         }}
         onClose={() => setScanOpen(false)}/>}
 
-      {/* Fila 2: Categoría — readonly si existe, editable si es nuevo */}
-      {query && (
-        <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-[1fr_200px] tw-gap-2 tw-mb-2">
+      {/* Fila 2: SKU (solo lectura) + Categoría */}
+      {(query || codigoBarras) && (
+        <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 tw-gap-2 tw-mb-2">
+          <div className="field" style={{ margin: 0 }}>
+            <label>SKU {esNuevo && <span className="muted tw-font-normal">· automático</span>}</label>
+            <input className="mono" value={esNuevo ? autoSku : sku} readOnly tabIndex={-1}
+              style={{ background: "var(--surface-2)", color: "var(--text-3)", cursor: "default" }}/>
+          </div>
           <div className="field" style={{ margin: 0 }}>
             <label>Categoría</label>
             {esNuevo ? (
@@ -1027,7 +1047,7 @@ const ItemAdder = ({ onAdd }) => {
           <input type="date" value={vence} onChange={e => setVence(e.target.value)}/>
         </div>
         <button className="btn primary tw-w-full md:tw-w-auto" disabled={(!sku && !query) || !qty || parseInt(qty) <= 0} onClick={() => {
-          onAdd(sku || ("NUEVO-" + Date.now()), qty, costo, vence, esNuevo ? query : undefined, codigoBarras, precio, esNuevo ? categoria : undefined);
+          onAdd(sku || autoSku || ("NUEVO-" + Date.now()), qty, costo, vence, esNuevo ? query : undefined, codigoBarras, precio, esNuevo ? categoria : undefined);
           reset();
         }}><Icon name="plus" size={14}/> Agregar</button>
       </div>
