@@ -1018,7 +1018,23 @@ const ItemAdder = ({ onAdd, nextSku }) => {
         <div className="field" style={{ margin: 0 }}>
           <label>Código de barras</label>
           <div className="tw-flex tw-gap-1.5">
-            <input className="mono tw-flex-1" style={{ minWidth: 0 }} value={codigoBarras} onChange={e => setCodigoBarras(e.target.value)} placeholder="Escanear o escribir…"/>
+            <input className="mono tw-flex-1" style={{ minWidth: 0 }} value={codigoBarras}
+              onChange={e => {
+                const v = e.target.value;
+                setCodigoBarras(v);
+                // Si lo escrito/pegado coincide EXACTO con un producto existente, autollenar
+                const p = MOCK.productos.find(x => x.codigoBarras && x.codigoBarras === v.trim());
+                if (p && p.sku !== sku) elegir(p);
+              }}
+              onKeyDown={e => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const code = codigoBarras.trim();
+                  const p = MOCK.productos.find(x => x.codigoBarras === code) || MOCK.productos.find(x => x.sku === code);
+                  if (p) elegir(p);
+                }
+              }}
+              placeholder="Escanear o escribir…"/>
             <button type="button" className="btn touch-target tw-shrink-0" onClick={() => setScanOpen(true)} title="Escanear código de barras">
               <Icon name="scan" size={16}/>
             </button>
@@ -1031,7 +1047,13 @@ const ItemAdder = ({ onAdd, nextSku }) => {
           // Si el producto ya existe (por código de barras o SKU), autollena su descripción
           const p = MOCK.productos.find(x => x.codigoBarras === code) || MOCK.productos.find(x => x.sku === code);
           if (p) elegir(p);
-          else { setSku(""); setQuery(""); setCodigoBarras(code); }
+          else {
+            // Producto nuevo: asigna el código sin perder el nombre que ya se haya escrito.
+            // (Solo se limpia el nombre si venía de un producto existente seleccionado.)
+            if (sku) setQuery("");
+            setSku("");
+            setCodigoBarras(code);
+          }
           setScanOpen(false);
         }}
         onClose={() => setScanOpen(false)}/>}
