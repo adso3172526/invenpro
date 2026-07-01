@@ -1,22 +1,24 @@
 // Control de vencimientos
 
 const Vencimientos = () => {
+  // Config de alertas: la BD (tabla configuracion) es la fuente de verdad —
+  // el cron del envío automático la lee desde el servidor. localStorage queda
+  // como respaldo/caché local. Orden: BD → localStorage → valor por defecto.
+  const _initCfg = (window.MOCK && window.MOCK.configuracion) || {};
+  const initConf = (dbKey, lsKey, def) => {
+    try { if (_initCfg[dbKey]) return JSON.parse(_initCfg[dbKey]); } catch {}
+    try { const v = JSON.parse(localStorage.getItem(lsKey)); if (v) return v; } catch {}
+    return def;
+  };
+
   const [tab, setTab] = useStateA("preventivo");
-  const [destinatarios, setDestinatarios] = useStateA(() => {
-    try { return JSON.parse(localStorage.getItem("invenpro-alert-emails")) || [
-      { email: "admin@invenpro.co", nombre: "Administrador" },
-      { email: "bodega@invenpro.co", nombre: "Bodega" },
-    ]; } catch { return []; }
-  });
-  const [umbrales, setUmbrales] = useStateA(() => {
-    try { return JSON.parse(localStorage.getItem("invenpro-umbrales")) || { critico: 8, atencion: 15, preventivo: 30 }; }
-    catch { return { critico: 8, atencion: 15, preventivo: 30 }; }
-  });
+  const [destinatarios, setDestinatarios] = useStateA(() => initConf("alerta_destinatarios", "invenpro-alert-emails", [
+    { email: "admin@invenpro.co", nombre: "Administrador" },
+    { email: "bodega@invenpro.co", nombre: "Bodega" },
+  ]));
+  const [umbrales, setUmbrales] = useStateA(() => initConf("alerta_umbrales", "invenpro-umbrales", { critico: 8, atencion: 15, preventivo: 30 }));
   // Qué tramos envían correo (el usuario decide cuáles). Por defecto todos.
-  const [tiersCorreo, setTiersCorreo] = useStateA(() => {
-    try { return JSON.parse(localStorage.getItem("invenpro-tiers-correo")) || { critico: true, atencion: true, preventivo: true }; }
-    catch { return { critico: true, atencion: true, preventivo: true }; }
-  });
+  const [tiersCorreo, setTiersCorreo] = useStateA(() => initConf("alerta_tiers_correo", "invenpro-tiers-correo", { critico: true, atencion: true, preventivo: true }));
   const [nuevoEmail, setNuevoEmail] = useStateA("");
   const [nuevoNombre, setNuevoNombre] = useStateA("");
   const [showPreview, setShowPreview] = useStateA(null);
@@ -24,6 +26,7 @@ const Vencimientos = () => {
   const [logs, setLogs] = useStateA([]);
   const [toast, setToast] = useStateA(null);
   const [enviando, setEnviando] = useStateA(false);
+  const [guardandoConfig, setGuardandoConfig] = useStateA(false);
 
   // Realtime: only re-render when config modal is closed
   const [, _rtTick] = React.useState(0);
@@ -44,6 +47,33 @@ const Vencimientos = () => {
   React.useEffect(() => {
     try { localStorage.setItem("invenpro-tiers-correo", JSON.stringify(tiersCorreo)); } catch {}
   }, [tiersCorreo]);
+
+  // Persistir la config de alertas en la BD (fuente de verdad para el cron).
+  const persistConfig = async () => {
+    try {
+      await DB.config.saveBatch({
+        alerta_destinatarios: JSON.stringify(destinatarios),
+        alerta_umbrales: JSON.stringify(umbrales),
+        alerta_tiers_correo: JSON.stringify(tiersCorreo),
+      });
+      return true;
+    } catch (e) {
+      setToast("No se pudo guardar la configuración: " + (e && e.message ? e.message : "error"));
+      return false;
+    }
+  };
+
+  // Botón "Guardar" del modal: sube la config a la BD con confirmación explícita.
+  const guardarConfig = async () => {
+    if (guardandoConfig) return;
+    setGuardandoConfig(true);
+    const ok = await persistConfig();
+    setGuardandoConfig(false);
+    if (ok) { setToast("Configuración guardada"); setShowConfig(false); }
+  };
+
+  // Cerrar con la X / fondo: guarda igual como red de seguridad (sin toast).
+  const cerrarConfig = () => { setShowConfig(false); persistConfig(); };
 
   const all = MOCK.productos.filter(p => p.vence);
   const buckets = {
@@ -236,7 +266,12 @@ const Vencimientos = () => {
       </div>
 
       {showConfig && (
-        <Modal title="Configurar alertas de vencimiento" lg bottomSheet onClose={() => setShowConfig(false)}>
+        <Modal title="Configurar alertas de vencimiento" lg bottomSheet onClose={cerrarConfig} footer={
+          <>
+            <button className="btn ghost" onClick={cerrarConfig} disabled={guardandoConfig}>Cerrar</button>
+            <button className="btn primary" onClick={guardarConfig} disabled={guardandoConfig}>{guardandoConfig ? "Guardando…" : "Guardar"}</button>
+          </>
+        }>
           <h4 className="tw-m-0 tw-mb-2 tw-text-[13px] tw-font-semibold">Umbrales de notificación</h4>
           <p className="muted tw-m-0 tw-mb-3 tw-text-xs">
             Días antes del vencimiento en que el sistema enviará una alerta. Los umbrales se ordenan automáticamente del más urgente al más preventivo.
