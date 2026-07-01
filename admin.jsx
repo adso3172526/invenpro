@@ -259,6 +259,24 @@ const Ajustes = () => {
   const [negSaving, setNegSaving] = useStateA(false);
   const [negSaved, setNegSaved] = useStateA(false);
 
+  // Servicio de correo (Gmail) para las alertas de vencimiento
+  const [correoUser, setCorreoUser] = useStateA(cfg.correo_gmail_user || "");
+  const [correoPass, setCorreoPass] = useStateA(cfg.correo_gmail_app_password || "");
+  const [showCorreoPass, setShowCorreoPass] = useStateA(false);
+  const [correoSaving, setCorreoSaving] = useStateA(false);
+  const [correoSaved, setCorreoSaved] = useStateA(false);
+
+  const guardarCorreo = async () => {
+    setCorreoSaving(true);
+    await DB.config.saveBatch({
+      correo_gmail_user: correoUser.trim(),
+      correo_gmail_app_password: correoPass.trim(),
+    });
+    setCorreoSaving(false);
+    setCorreoSaved(true);
+    setTimeout(() => setCorreoSaved(false), 2500);
+  };
+
   const guardarNegocio = async () => {
     setNegSaving(true);
     await DB.config.saveBatch({
@@ -470,6 +488,62 @@ const Ajustes = () => {
               Obtén tu key en <a href={provPreset.link} target="_blank" rel="noopener" style={{ color: "var(--accent)" }}>{provPreset.linkLabel}</a>.
             </p>
           )}
+        </div>
+      </div>
+
+      {/* ── Card: Servicio de correo (alertas de vencimiento) ── */}
+      <div className="card" style={{ marginTop: 16 }}>
+        <div className="card-h">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="bell" size={18}/>
+            <h3>Servicio de correo</h3>
+          </div>
+          <p className="sub">Cuenta Gmail desde la que se envían las alertas de vencimiento</p>
+        </div>
+        <div className="card-b">
+          <div className="field" style={{ margin: 0 }}>
+            <label>Correo (Gmail)</label>
+            <input
+              type="email"
+              className="mono"
+              value={correoUser}
+              onChange={e => { setCorreoUser(e.target.value); setCorreoSaved(false); }}
+              placeholder="tucuenta@gmail.com"
+            />
+          </div>
+
+          <div className="field" style={{ marginTop: 14, marginBottom: 0 }}>
+            <label>Contraseña de aplicación</label>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showCorreoPass ? "text" : "password"}
+                className="mono"
+                value={correoPass}
+                onChange={e => { setCorreoPass(e.target.value); setCorreoSaved(false); }}
+                placeholder="16 caracteres de Google"
+                style={{ width: "100%", paddingRight: 44 }}
+              />
+              <button
+                onClick={() => setShowCorreoPass(v => !v)}
+                className="touch-target"
+                style={{ position: "absolute", right: 2, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-3)" }}
+                title={showCorreoPass ? "Ocultar" : "Mostrar"}
+              >{showCorreoPass ? "🙈" : "👁"}</button>
+            </div>
+          </div>
+
+          <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2" style={{ marginTop: 16 }}>
+            <button className="btn primary" onClick={guardarCorreo} disabled={correoSaving}>{correoSaving ? "Guardando…" : "Guardar"}</button>
+            {correoSaved && (
+              <span style={{ color: "var(--good)", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                <Icon name="check" size={14}/> Guardado
+              </span>
+            )}
+          </div>
+
+          <p className="muted" style={{ fontSize: 11, marginTop: 12, marginBottom: 0, lineHeight: 1.5 }}>
+            No uses la contraseña normal de la cuenta: genera una <b>contraseña de aplicación</b> de Google (requiere verificación en 2 pasos activada) en <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" style={{ color: "var(--accent)" }}>myaccount.google.com/apppasswords</a>.
+          </p>
         </div>
       </div>
     </>
