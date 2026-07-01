@@ -370,14 +370,15 @@ const Ingreso = () => {
                     categoria: it.categoria || "General",
                     precio: it.precio || Math.round(it.costo * 1.3),
                     costo: it.costo,
-                    stock: 0,
+                    stock: it.qty,   // stock inicial = unidades ingresadas (no depende del RPC)
                     vence: it.vence || null,
                     codigoBarras: it.codigoBarras || null,
                   });
                   if (err) { setToast("Error creando producto: " + it.nombre); setGuardando(false); return; }
-                  MOCK.productos.push({ sku: it.sku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: 0, min: 0, vence: it.vence || null, unidad: "und", codigoBarras: it.codigoBarras || null });
+                  MOCK.productos.push({ sku: it.sku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: it.qty, min: 0, vence: it.vence || null, unidad: "und", codigoBarras: it.codigoBarras || null });
                 }
-                for (const it of items) {
+                // Solo los EXISTENTES suman al stock vía RPC (los nuevos ya nacieron con su stock)
+                for (const it of items.filter(x => !x.nuevo)) {
                   await DB.productos.incrementStock(it.sku, it.qty);
                 }
                 const ingreso = {
@@ -1173,24 +1174,39 @@ const CategoriasModal = ({ onClose }) => {
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCat(); } }} placeholder="Nueva categoría…"/>
         <button type="button" className="btn primary tw-shrink-0" onClick={addCat}><Icon name="plus" size={14}/> Agregar</button>
       </div>
-      <div className="tw-flex tw-flex-col tw-gap-1.5">
-        <div className="tw-flex tw-items-center tw-gap-2 tw-py-1 tw-px-1">
-          <span className="tw-flex-1 tw-text-sm tw-font-medium">General</span>
-          <span className="muted tw-text-[11px] tw-shrink-0">{countOf("General")} prod. · fija</span>
+      <div className="tw-flex tw-flex-col tw-gap-2">
+        {/* General (categoría fija) */}
+        <div className="tw-flex tw-items-center tw-gap-2.5 md:tw-gap-3 tw-py-2 md:tw-py-2.5 tw-px-2.5 md:tw-px-3 tw-rounded-xl tw-border tw-border-border" style={{ background: "var(--surface-2)" }}>
+          <span className="tw-w-2 tw-h-2 tw-rounded-full tw-shrink-0" style={{ background: "var(--accent)" }}/>
+          <div className="tw-flex-1 tw-min-w-0">
+            <span className="tw-text-sm tw-font-semibold tw-block tw-truncate">General</span>
+            <span className="muted tw-text-[10px] tw-block md:tw-hidden">{countOf("General")} prod. · fija</span>
+          </div>
+          <span className="chip tw-shrink-0 tw-hidden md:tw-inline-flex">{countOf("General")} prod.</span>
+          <span className="muted tw-text-[11px] tw-shrink-0 tw-uppercase tw-tracking-wide tw-hidden md:tw-inline">Fija</span>
         </div>
         {rows.map((r, i) => (
-          <div key={i} className="tw-flex tw-items-center tw-gap-1.5" style={{ opacity: r.activo ? 1 : 0.55 }}>
-            <input className="tw-flex-1" style={{ minWidth: 0 }} value={r.nombre}
-              onChange={e => setRows(rs => rs.map((x, idx) => idx === i ? { ...x, nombre: e.target.value } : x))}/>
-            <span className="muted tw-text-[11px] tw-shrink-0" style={{ width: 50, textAlign: "right" }}>{r.orig ? countOf(r.orig) + " prod." : "nueva"}</span>
-            <button type="button" className="btn sm tw-shrink-0" style={{ width: 84, justifyContent: "center", borderColor: r.activo ? "var(--good)" : "var(--border)", color: r.activo ? "var(--good)" : "var(--text-3)" }}
+          <div key={i} className="tw-flex tw-items-center tw-gap-2 md:tw-gap-2.5 tw-py-1.5 md:tw-py-2 tw-px-2.5 md:tw-px-3 tw-rounded-xl tw-border tw-border-border"
+            style={{ background: r.activo ? "var(--surface)" : "var(--surface-2)", opacity: r.activo ? 1 : 0.75, transition: "var(--transition)" }}>
+            <span className="tw-w-2 tw-h-2 tw-rounded-full tw-shrink-0" style={{ background: r.activo ? "var(--good)" : "var(--text-3)", transition: "var(--transition)" }}/>
+            <div className="tw-flex-1 tw-min-w-0">
+              <input className="tw-w-full tw-text-sm" style={{ minWidth: 0, border: "1px solid transparent", background: "transparent", color: "var(--text)", padding: "4px 6px", borderRadius: 6, fontWeight: 500 }}
+                value={r.nombre}
+                onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; }}
+                onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; }}
+                onChange={e => setRows(rs => rs.map((x, idx) => idx === i ? { ...x, nombre: e.target.value } : x))}/>
+              <span className="muted tw-text-[10px] tw-block md:tw-hidden tw-px-1.5">{r.orig ? countOf(r.orig) + " prod." : "nueva"}</span>
+            </div>
+            <span className="chip tw-shrink-0 tw-hidden md:tw-inline-flex">{r.orig ? countOf(r.orig) + " prod." : "nueva"}</span>
+            <button type="button" role="switch" aria-checked={r.activo} className="tw-relative tw-shrink-0 tw-rounded-full tw-tap"
+              style={{ width: 42, height: 24, padding: 0, border: "none", cursor: "pointer", background: r.activo ? "var(--good)" : "var(--border)", transition: "var(--transition)" }}
               onClick={() => setRows(rs => rs.map((x, idx) => idx === i ? { ...x, activo: !x.activo } : x))}
               title={r.activo ? "Desactivar categoría" : "Activar categoría"}>
-              {r.activo ? "Activa" : "Inactiva"}
+              <span className="tw-absolute tw-rounded-full" style={{ width: 18, height: 18, top: 3, left: r.activo ? 21 : 3, background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.25)", transition: "var(--transition)" }}/>
             </button>
           </div>
         ))}
-        {rows.length === 0 && <div className="muted tw-text-xs tw-px-1 tw-py-2">Sin categorías personalizadas. Agrega una arriba.</div>}
+        {rows.length === 0 && <div className="muted tw-text-xs tw-text-center tw-py-4 tw-rounded-xl tw-border tw-border-dashed tw-border-border">Sin categorías personalizadas. Agrega una arriba.</div>}
       </div>
       {error && <div className="tw-mt-3 tw-text-xs tw-font-medium" style={{ color: "var(--bad)" }}>{error}</div>}
     </Modal>
