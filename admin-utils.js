@@ -17,15 +17,15 @@ const exportXlsx = (filename, sheets) => {
 
 // =================== Sidebar NAV config ===================
 const NAV = [
-  { id: "dashboard",   label: "Dashboard",          icon: "home",     color: "#3B82F6" },
-  { id: "pos",         label: "Facturar",           icon: "cart",     color: "#0EA5E9" },
-  { id: "inventory",   label: "Inventario",         icon: "box",      color: "#22C55E" },
-  { id: "ingreso",     label: "Ingreso mercancía",  icon: "truck",    color: "#F59E0B" },
-  { id: "vence",       label: "Vencimientos",       icon: "calendar", color: "#EF4444", badge: "5" },
-  { id: "proveedores", label: "Proveedores",        icon: "store",    color: "#A16207" },
-  { id: "cajeros",     label: "Cajeros y turnos",   icon: "users",    color: "#9CA3AF" },
-  { id: "reportes",    label: "Reporte de ventas",  icon: "chart",    color: "#8B5CF6" },
-  { id: "ajustes",     label: "Ajustes",            icon: "settings", color: "#6B7280", rol: "Administrador" },
+  { id: "dashboard",   label: "Dashboard",            icon: "home",     color: "#3B82F6" },
+  { id: "pos",         label: "Facturar",             icon: "cart",     color: "#0EA5E9" },
+  { id: "inventory",   label: "Inventario",           icon: "box",      color: "#22C55E" },
+  { id: "ingreso",     label: "Ingreso de mercancia", icon: "truck",    color: "#F59E0B" },
+  { id: "vence",       label: "Vencimientos",         icon: "calendar", color: "#EF4444", badge: "5" },
+  { id: "proveedores", label: "Provedores",           icon: "store",    color: "#A16207" },
+  { id: "cajeros",     label: "Cajeros y turnos",     icon: "users",    color: "#9CA3AF" },
+  { id: "reportes",    label: "Reporte de ventas",    icon: "chart",    color: "#8B5CF6" },
+  { id: "ajustes",     label: "Configuración",        icon: "settings", color: "#374151", rol: "Administrador" },
 ];
 
 // =================== Hub tiles config ===================

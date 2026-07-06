@@ -15,7 +15,7 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
       </div>
 
       {/* Sidebar lateral (desktop) y menú overlay (mobile) */}
-      <aside className={"sidebar tw-w-[min(75vw,280px)] md:tw-w-auto" + (open ? " open" : "")}>
+      <aside className={"sidebar" + (open ? " open" : "")}>
         <div className="mobile-menu-h">
           <img src="logo.png" alt="InvenPro" style={{ height: 36, objectFit: "contain" }}/>
           <button className="btn sm ghost" onClick={() => setOpen(false)}><Icon name="x" size={16}/></button>
@@ -34,7 +34,12 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
                 <Icon name={n.icon} size={26}/>
                 {n.badge && <span className="nav-card-badge">{n.badge}</span>}
               </div>
-              <div className="nav-card-label-mobile">{n.label}</div>
+              <div className="nav-card-bottom">
+                <span className="nav-card-label">{n.label}</span>
+                <span className="nav-card-arrow-circle">
+                  <Icon name="arrowRight" size={12}/>
+                </span>
+              </div>
             </div>
           ))}
         </div>
