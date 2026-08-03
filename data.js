@@ -270,7 +270,7 @@
       if (hErr) console.error("createIngreso header:", hErr);
       const rows = detalle.map((d) => ({
         ingreso_id: ingreso.id, sku: d.sku, nombre: d.nombre,
-        qty: d.qty, costo: d.costo, vence: d.vence || null,
+        qty: d.qty, costo: d.costo, vence: d.vence || null, nota: d.nota || null,
       }));
       const { error: dErr } = await window.db.from("ingreso_detalle").insert(rows);
       if (dErr) console.error("createIngreso detalle:", dErr);
@@ -283,7 +283,7 @@
       if (delErr) { console.error("updateIngreso del:", delErr); return delErr; }
       const rows = detalle.map(d => ({
         ingreso_id: id, sku: d.sku, nombre: d.nombre,
-        qty: d.qty, costo: d.costo, vence: d.vence || null,
+        qty: d.qty, costo: d.costo, vence: d.vence || null, nota: d.nota || null,
       }));
       const { error: dErr } = await window.db.from("ingreso_detalle").insert(rows);
       if (dErr) { console.error("updateIngreso detalle:", dErr); return dErr; }

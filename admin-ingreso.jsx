@@ -177,7 +177,7 @@ const Ingreso = () => {
                 "N° ingreso": i.id, "Fecha": i.fecha, "Proveedor": i.proveedor,
                 "Factura": i.factura || "", "SKU": d.sku, "Producto": d.nombre,
                 "Cantidad": d.qty, "Costo unit.": d.costo, "Subtotal": d.qty * d.costo,
-                "Vence": d.vence || "",
+                "Vence": d.vence || "", "Nota": d.nota || "",
               })));
               exportXlsx(`ingresos_${desde}_a_${hasta}.xlsx`, [
                 { name: "Resumen", rows: resumen },
@@ -254,7 +254,7 @@ const Ingreso = () => {
             <button className="btn" onClick={() => {
               const rows = editDet.map(d => ({
                 SKU: d.sku, Producto: d.nombre, Cantidad: d.qty,
-                "Costo unit.": d.costo, Subtotal: d.qty * d.costo, Vence: d.vence || "",
+                "Costo unit.": d.costo, Subtotal: d.qty * d.costo, Vence: d.vence || "", Nota: d.nota || "",
               }));
               exportXlsx(`ingreso_${editIng.id}.xlsx`, [{ name: "Detalle", rows }]);
             }}><Icon name="download" size={14}/> Exportar</button>
@@ -293,7 +293,11 @@ const Ingreso = () => {
               <tbody>
                 {editDet.map((d, i) => (
                   <tr key={i}>
-                    <td><input value={d.nombre} onChange={e => updDet(i, "nombre", e.target.value)} style={{ fontWeight: 500, border: "1px solid transparent", background: "transparent", padding: "2px 4px", borderRadius: 4, fontSize: 13, width: "100%", minWidth: 100 }} onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; }} onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; }}/></td>
+                    <td>
+                      <input value={d.nombre} onChange={e => updDet(i, "nombre", e.target.value)} style={{ fontWeight: 500, border: "1px solid transparent", background: "transparent", padding: "2px 4px", borderRadius: 4, fontSize: 13, width: "100%", minWidth: 100 }} onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; }} onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; }}/>
+                      <input value={d.nota || ""} onChange={e => updDet(i, "nota", e.target.value)} placeholder="+ Nota…"
+                        style={{ marginTop: 3, width: "100%", fontSize: 11, padding: "3px 6px", border: "1px solid var(--border)", borderRadius: 4, background: d.nota ? "#FFFBEB" : "var(--bg)", color: "var(--text-2)" }}/>
+                    </td>
                     <td className="mono muted" style={{ fontSize: 12 }}>{d.sku}</td>
                     <td className="num"><input className="cell-input mono" value={d.qty} onChange={e => updDet(i, "qty", parseInt(e.target.value.replace(/\D/g, "")) || 0)}/></td>
                     <td className="num"><input className="cell-input mono" value={d.costo} onChange={e => updDet(i, "costo", parseInt(e.target.value.replace(/\D/g, "")) || 0)}/></td>
@@ -562,6 +566,12 @@ const Ingreso = () => {
                                 </div>
                               </div>
                             )}
+                            <input
+                              value={it.nota || ""}
+                              onChange={e => actualizarItem(i, "nota", e.target.value)}
+                              placeholder="+ Nota (opcional): cantidad incompleta, precio distinto…"
+                              style={{ marginTop: 4, width: "100%", fontSize: 11, padding: "3px 6px", border: "1px solid var(--border)", borderRadius: 4, background: it.nota ? "#FFFBEB" : "var(--bg)", color: "var(--text-2)" }}
+                            />
                           </td>
                           <td className="num">
                             {stockActual !== null ? <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>{stockActual}</span> : <span className="muted" style={{ fontSize: 11 }}>—</span>}
@@ -580,7 +590,7 @@ const Ingreso = () => {
               </div>
 
               {/* Mobile: tarjetas de items */}
-              <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2.5" style={{ padding: 10 }}>
+              <div className="tw-flex tw-flex-col tw-gap-2.5 md:tw-hidden" style={{ padding: 10 }}>
                 {items.map((it, i) => {
                   const stockActual = getStock(it.sku);
                   return (
@@ -641,6 +651,12 @@ const Ingreso = () => {
                         </div>
                       </div>
                     )}
+                    <div className="field tw-mt-2" style={{ margin: 0 }}>
+                      <label style={{ fontSize: 10 }}>Nota <span className="muted tw-font-normal">(opcional)</span></label>
+                      <input value={it.nota || ""} onChange={e => actualizarItem(i, "nota", e.target.value)}
+                        placeholder="Cantidad incompleta, precio distinto…"
+                        style={{ padding: "6px 8px", fontSize: 12, background: it.nota ? "#FFFBEB" : undefined }}/>
+                    </div>
                   </div>
                   );
                 })}
@@ -968,7 +984,7 @@ const ItemAdder = ({ onAdd, nextSku }) => {
   const autoSku = esNuevo && nextSku ? nextSku() : "";
 
   return (
-    <div className="tw-bg-surface-2 tw-border tw-border-border tw-rounded-lg tw-p-3 md:tw-p-4 tw-mt-3">
+    <div className="tw-bg-surface-2 tw-border tw-border-border tw-rounded-lg tw-p-3.5 md:tw-p-4 tw-mt-3">
       <div className="tw-text-xs tw-font-semibold tw-text-txt-2 tw-mb-2 tw-flex tw-items-center tw-gap-1.5">
         <Icon name="plus" size={13}/> Agregar producto
       </div>

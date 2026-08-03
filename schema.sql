@@ -96,7 +96,8 @@ CREATE TABLE ingreso_detalle (
   nombre      TEXT NOT NULL,
   qty         INTEGER NOT NULL DEFAULT 0,
   costo       INTEGER NOT NULL DEFAULT 0,
-  vence       DATE
+  vence       DATE,
+  nota        TEXT
 );
 
 -- ===================== TABLAS DASHBOARD =====================
