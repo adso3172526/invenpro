@@ -533,8 +533,11 @@ const Ingreso = () => {
                     <tbody>
                       {items.map((it, i) => {
                         const stockActual = getStock(it.sku);
+                        const lbl = { fontSize: 10, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".3px" };
+                        const cats = [...new Set(MOCK.productos.map(p => p.categoria))].sort();
                         return (
-                        <tr key={i} className={it.nuevo ? "row-nuevo" : ""}>
+                        <React.Fragment key={i}>
+                        <tr className={"item-main" + (it.nuevo ? " row-nuevo" : "")}>
                           <td>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <input
@@ -554,24 +557,6 @@ const Ingreso = () => {
                                 <span className="chip" style={{ fontSize: 9, background: "#FFF1D6", color: "#8C6A1E" }}>IA {Math.round(it.confianza*100)}%</span>
                               )}
                             </div>
-                            {it.nuevo && (
-                              <div className="nuevo-extras">
-                                <select value={it.categoria || "General"} onChange={e => actualizarItem(i, "categoria", e.target.value)} style={{ padding: "2px 4px", borderRadius: 4, border: "1px solid var(--border)", maxWidth: 110 }}>
-                                  {[...new Set(MOCK.productos.map(p => p.categoria))].sort().map(c => <option key={c} value={c}>{c}</option>)}
-                                  <option value="General">General</option>
-                                </select>
-                                <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                  <span style={{ fontSize: 10, color: "var(--text-3)" }}>Venta:</span>
-                                  <input className="mono" value={it.precio || ""} onChange={e => actualizarItem(i, "precio", parseInt(e.target.value.replace(/\D/g,"")) || 0)} placeholder="Precio" style={{ padding: "2px 4px", border: "1px solid var(--border)", borderRadius: 4, width: 70 }}/>
-                                </div>
-                              </div>
-                            )}
-                            <input
-                              value={it.nota || ""}
-                              onChange={e => actualizarItem(i, "nota", e.target.value)}
-                              placeholder="+ Nota (opcional): cantidad incompleta, precio distinto…"
-                              style={{ marginTop: 4, width: "100%", fontSize: 11, padding: "3px 6px", border: "1px solid var(--border)", borderRadius: 4, background: it.nota ? "#FFFBEB" : "var(--bg)", color: "var(--text-2)" }}
-                            />
                           </td>
                           <td className="num">
                             {stockActual !== null ? <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>{stockActual}</span> : <span className="muted" style={{ fontSize: 11 }}>—</span>}
@@ -582,6 +567,34 @@ const Ingreso = () => {
                           <td className="num mono" style={{ fontWeight: 600 }}>{window.fmtCOP(it.qty * it.costo)}</td>
                           <td><button className="btn sm ghost" onClick={() => setItems(items.filter((_,j) => j !== i))}><Icon name="x" size={13}/></button></td>
                         </tr>
+                        <tr className={"item-detail" + (it.nuevo ? " row-nuevo" : "")}>
+                          <td colSpan={7}>
+                            <div style={{ display: "flex", alignItems: "flex-end", gap: 14, flexWrap: "wrap", borderLeft: "2px solid var(--border)", paddingLeft: 10, marginLeft: 2 }}>
+                              {it.nuevo && (
+                                <>
+                                  <label style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                                    <span style={lbl}>Categoría</span>
+                                    <select value={it.categoria || "General"} onChange={e => actualizarItem(i, "categoria", e.target.value)} style={{ padding: "5px 8px", borderRadius: 6, border: "1px solid var(--border)", fontSize: 12, minWidth: 140 }}>
+                                      {cats.map(c => <option key={c} value={c}>{c}</option>)}
+                                      <option value="General">General</option>
+                                    </select>
+                                  </label>
+                                  <label style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                                    <span style={lbl}>Precio venta</span>
+                                    <input className="mono" value={it.precio || ""} onChange={e => actualizarItem(i, "precio", parseInt(e.target.value.replace(/\D/g,"")) || 0)} placeholder="0" style={{ padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 6, width: 110, fontSize: 12 }}/>
+                                  </label>
+                                </>
+                              )}
+                              <label style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minWidth: 240 }}>
+                                <span style={lbl}>Nota <span style={{ textTransform: "none", fontWeight: 400, color: "var(--text-3)" }}>· opcional</span></span>
+                                <input value={it.nota || ""} onChange={e => actualizarItem(i, "nota", e.target.value)}
+                                  placeholder="Novedad en la recepción: cantidad incompleta, precio distinto, avería…"
+                                  style={{ padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 12, width: "100%", background: it.nota ? "#FFFBEB" : "var(--bg)" }}/>
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                        </React.Fragment>
                         );
                       })}
                     </tbody>

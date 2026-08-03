@@ -1673,6 +1673,10 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 }
 .cell-input:hover:not(:focus) { background: var(--surface-2); }
 .row-nuevo td { background: linear-gradient(90deg, #FFF8E0, transparent) !important; }
+/* Fila principal + fila-detalle de un ítem de ingreso se leen como una sola unidad:
+   la fila principal no dibuja borde inferior; el separador queda tras la fila-detalle. */
+table.tbl tr.item-main td { border-bottom: 0; }
+table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-align: top; }
 /* Campos de producto nuevo en la tabla de ingreso */
 .row-nuevo .nuevo-extras { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
 .row-nuevo .nuevo-extras select,
