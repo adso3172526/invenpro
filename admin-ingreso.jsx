@@ -287,6 +287,8 @@ const Ingreso = () => {
               <input value={editIng.recibe || ""} onChange={e => updField("recibe", e.target.value)}/>
             </div>
           </div>
+          {/* Desktop: tabla */}
+          <div className="tw-hidden md:tw-block">
           <div className="tbl-wrap">
             <table className="tbl">
               <thead><tr><th>Producto</th><th>SKU</th><th className="num">Cant.</th><th className="num">Costo unit.</th><th>Vence</th><th className="num">Subtotal</th></tr></thead>
@@ -321,6 +323,45 @@ const Ingreso = () => {
               </tbody>
             </table>
           </div>
+          </div>
+
+          {/* Móvil: tarjetas */}
+          <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2.5" style={{ marginTop: 4 }}>
+            {editDet.map((d, i) => (
+              <div key={i} className="tw-border tw-border-border tw-rounded-lg tw-p-3 tw-bg-surface">
+                <input value={d.nombre} onChange={e => updDet(i, "nombre", e.target.value)}
+                  style={{ fontWeight: 600, fontSize: 14, border: "1px solid transparent", background: "transparent", color: "var(--text)", padding: "2px 4px", borderRadius: 4, width: "100%" }}
+                  onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; }}
+                  onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; }}/>
+                <div className="mono muted tw-px-1" style={{ fontSize: 11 }}>{d.sku}</div>
+                <div className="tw-grid tw-grid-cols-3 tw-gap-2 tw-mt-2">
+                  <div className="field" style={{ margin: 0 }}>
+                    <label style={{ fontSize: 10 }}>Cantidad</label>
+                    <input className="mono" value={d.qty} onChange={e => updDet(i, "qty", parseInt(e.target.value.replace(/\D/g, "")) || 0)} style={{ padding: "6px 8px", fontSize: 14 }}/>
+                  </div>
+                  <div className="field" style={{ margin: 0 }}>
+                    <label style={{ fontSize: 10 }}>Costo unit.</label>
+                    <input className="mono" value={d.costo} onChange={e => updDet(i, "costo", parseInt(e.target.value.replace(/\D/g, "")) || 0)} style={{ padding: "6px 8px", fontSize: 14 }}/>
+                  </div>
+                  <div className="field" style={{ margin: 0 }}>
+                    <label style={{ fontSize: 10 }}>Subtotal</label>
+                    <div className="mono" style={{ padding: "8px 4px", fontSize: 13, fontWeight: 600 }}>{window.fmtCOP(d.qty * d.costo)}</div>
+                  </div>
+                </div>
+                <div className="field" style={{ margin: 0, marginTop: 8 }}>
+                  <label style={{ fontSize: 10 }}>Vence</label>
+                  <input type="date" value={d.vence || ""} onChange={e => updDet(i, "vence", e.target.value)} style={{ padding: "6px 8px", fontSize: 13 }}/>
+                </div>
+                <div className="field" style={{ margin: 0, marginTop: 8 }}>
+                  <label style={{ fontSize: 10 }}>Nota <span className="muted tw-font-normal">(opcional)</span></label>
+                  <input value={d.nota || ""} onChange={e => updDet(i, "nota", e.target.value)}
+                    placeholder="Cantidad incompleta, precio distinto, avería…"
+                    style={{ padding: "6px 8px", fontSize: 12, background: d.nota ? "#FFFBEB" : undefined }}/>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", background: "var(--surface-2)", marginTop: 8, borderRadius: 8 }}>
             <span className="muted">{editDet.length} producto(s) · {editDet.reduce((s,d)=>s+d.qty,0)} unidades</span>
             <span className="mono" style={{ fontWeight: 600, fontSize: 18 }}>{window.fmtCOP(editTotal)}</span>
