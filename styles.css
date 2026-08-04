@@ -2191,8 +2191,8 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 10px;
     width: 100%;
     flex: 1 1 auto;
     margin-top: 0;
@@ -2203,7 +2203,8 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
     display: flex;
     flex-direction: column;
     width: 130px;
-    height: 50px;
+    flex: 1 1 0;
+    min-height: 48px;
     border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--surface);
@@ -2222,7 +2223,8 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
   /* Parte superior coloreada */
   .nav-card-top {
     background: var(--nav-c);
-    height: 28px;
+    flex: 1 1 auto;
+    min-height: 28px;
     width: 100%;
     padding: 4px 8px;
     display: flex;
@@ -2236,8 +2238,8 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
   .nav-card-top svg {
     color: #fff;
     stroke-width: 2.2;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
   }
 
   /* Parte inferior blanca con etiqueta y flecha */
