@@ -291,12 +291,13 @@ const Ingreso = () => {
             <table className="tbl">
               <thead><tr><th>Producto</th><th>SKU</th><th className="num">Cant.</th><th className="num">Costo unit.</th><th>Vence</th><th className="num">Subtotal</th></tr></thead>
               <tbody>
-                {editDet.map((d, i) => (
-                  <tr key={i}>
+                {editDet.map((d, i) => {
+                  const lbl = { fontSize: 10, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".3px" };
+                  return (
+                  <React.Fragment key={i}>
+                  <tr className="item-main">
                     <td>
                       <input value={d.nombre} onChange={e => updDet(i, "nombre", e.target.value)} style={{ fontWeight: 500, border: "1px solid transparent", background: "transparent", padding: "2px 4px", borderRadius: 4, fontSize: 13, width: "100%", minWidth: 100 }} onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; }} onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; }}/>
-                      <input value={d.nota || ""} onChange={e => updDet(i, "nota", e.target.value)} placeholder="+ Nota…"
-                        style={{ marginTop: 3, width: "100%", fontSize: 11, padding: "3px 6px", border: "1px solid var(--border)", borderRadius: 4, background: d.nota ? "#FFFBEB" : "var(--bg)", color: "var(--text-2)" }}/>
                     </td>
                     <td className="mono muted" style={{ fontSize: 12 }}>{d.sku}</td>
                     <td className="num"><input className="cell-input mono" value={d.qty} onChange={e => updDet(i, "qty", parseInt(e.target.value.replace(/\D/g, "")) || 0)}/></td>
@@ -304,7 +305,19 @@ const Ingreso = () => {
                     <td><input className="cell-input mono" type="date" value={d.vence || ""} onChange={e => updDet(i, "vence", e.target.value)}/></td>
                     <td className="num mono" style={{ fontWeight: 600 }}>{window.fmtCOP(d.qty * d.costo)}</td>
                   </tr>
-                ))}
+                  <tr className="item-detail">
+                    <td colSpan={6}>
+                      <label style={{ display: "flex", flexDirection: "column", gap: 3, borderLeft: "2px solid var(--border)", paddingLeft: 10, marginLeft: 2 }}>
+                        <span style={lbl}>Nota <span style={{ textTransform: "none", fontWeight: 400, color: "var(--text-3)" }}>· opcional</span></span>
+                        <input value={d.nota || ""} onChange={e => updDet(i, "nota", e.target.value)}
+                          placeholder="Novedad en la recepción: cantidad incompleta, precio distinto, avería…"
+                          style={{ padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 12, width: "100%", background: d.nota ? "#FFFBEB" : "var(--bg)" }}/>
+                      </label>
+                    </td>
+                  </tr>
+                  </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
