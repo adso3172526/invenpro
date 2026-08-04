@@ -2191,8 +2191,10 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
     width: 100%;
+    flex: 1 1 auto;
     margin-top: 0;
   }
 
