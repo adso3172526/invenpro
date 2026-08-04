@@ -401,7 +401,7 @@ input, select, textarea { font: inherit; color: inherit; }
 .nav-card-bottom {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 0 10px;
   height: 38px;
   background: var(--surface);
@@ -2224,7 +2224,7 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
   .nav-card-top {
     background: var(--nav-c);
     flex: 1 1 auto;
-    min-height: 28px;
+    min-height: 32px;
     width: 100%;
     padding: 4px 8px;
     display: flex;
@@ -2238,15 +2238,15 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
   .nav-card-top svg {
     color: #fff;
     stroke-width: 2.2;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
   }
 
   /* Parte inferior blanca con etiqueta y flecha */
   .nav-card-bottom {
     display: flex !important;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: 0 8px;
     height: 22px;
     background: var(--surface);

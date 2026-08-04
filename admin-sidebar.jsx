@@ -36,9 +36,6 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
               </div>
               <div className="nav-card-bottom">
                 <span className="nav-card-label">{n.label}</span>
-                <span className="nav-card-arrow-circle">
-                  <Icon name="arrowRight" size={12}/>
-                </span>
               </div>
             </div>
           ))}
@@ -52,9 +49,6 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
             </div>
             <div className="nav-card-bottom">
               <span className="nav-card-label">Cerrar sesión</span>
-              <span className="nav-card-arrow-circle">
-                <Icon name="logout" size={12}/>
-              </span>
             </div>
           </div>
         </div>
