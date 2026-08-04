@@ -193,9 +193,16 @@ const Ingreso = () => {
             <table className="tbl">
               <thead><tr><th>N° ingreso</th><th>Factura</th><th>Fecha</th><th>Proveedor</th><th className="num">Items</th><th className="num">Costo total</th><th>Recibido por</th><th></th></tr></thead>
               <tbody>
-                {pagIng.slice.map(i => (
-                  <tr key={i.id} className="row-hover" style={{ cursor: "pointer" }} onClick={() => setVerIngreso(i)}>
-                    <td className="mono">{i.id}</td>
+                {pagIng.slice.map(i => {
+                  const conNota = (i.detalle || []).some(d => d.nota && String(d.nota).trim());
+                  return (
+                  <tr key={i.id} className="row-hover" style={{ cursor: "pointer", background: conNota ? "#FFFBEB" : undefined }} onClick={() => setVerIngreso(i)}>
+                    <td className="mono" style={{ borderLeft: conNota ? "3px solid var(--warn)" : undefined }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {i.id}
+                        {conNota && <span className="chip warn" style={{ fontSize: 9 }} title="Tiene ítems con nota / novedad"><Icon name="alert" size={10}/> Novedad</span>}
+                      </div>
+                    </td>
                     <td className="mono">{i.factura || "—"}</td>
                     <td>{i.fecha}</td>
                     <td>{i.proveedor}</td>
@@ -204,7 +211,8 @@ const Ingreso = () => {
                     <td className="muted">{i.recibe}</td>
                     <td className="num"><button className="btn sm ghost" onClick={e => { e.stopPropagation(); setVerIngreso(i); }}><Icon name="eye" size={13}/></button></td>
                   </tr>
-                ))}
+                  );
+                })}
                 {ingresosFiltrados.length === 0 && (
                   <tr><td colSpan="8" className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ingresos en el rango seleccionado</td></tr>
                 )}
@@ -219,14 +227,19 @@ const Ingreso = () => {
 
       {/* Mobile: tarjetas separadas fuera de la card */}
       <div className="tw-flex tw-flex-col tw-gap-2.5 md:tw-hidden tw-mt-2.5">
-        {pagIng.slice.map(i => (
-          <div key={i.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm" style={{ cursor: "pointer" }} onClick={() => setVerIngreso(i)}>
+        {pagIng.slice.map(i => {
+          const conNota = (i.detalle || []).some(d => d.nota && String(d.nota).trim());
+          return (
+          <div key={i.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm" style={{ cursor: "pointer", background: conNota ? "#FFFBEB" : undefined, borderLeftColor: conNota ? "var(--warn)" : undefined, borderLeftWidth: conNota ? 3 : undefined }} onClick={() => setVerIngreso(i)}>
             <div className="tw-flex tw-justify-between tw-items-start tw-gap-2 tw-mb-1.5">
               <div className="tw-min-w-0">
                 <div className="mono tw-font-semibold tw-text-[13px] tw-truncate">{i.id}</div>
                 {i.factura && <div className="mono muted tw-text-[11px] tw-truncate">{i.factura}</div>}
               </div>
-              <span className="muted tw-text-[11px] tw-shrink-0">{i.fecha}</span>
+              <div className="tw-flex tw-flex-col tw-items-end tw-gap-1 tw-shrink-0">
+                <span className="muted tw-text-[11px]">{i.fecha}</span>
+                {conNota && <span className="chip warn" style={{ fontSize: 9 }}><Icon name="alert" size={10}/> Novedad</span>}
+              </div>
             </div>
             <div className="tw-font-medium tw-text-[13px] tw-mb-1 tw-truncate">{i.proveedor}</div>
             <div className="tw-flex tw-justify-between tw-items-center tw-pt-2" style={{ borderTop: "1px dashed var(--border)" }}>
@@ -234,7 +247,8 @@ const Ingreso = () => {
               <span className="mono tw-font-semibold tw-text-[14px]">{window.fmtCOP(i.costo)}</span>
             </div>
           </div>
-        ))}
+          );
+        })}
         {ingresosFiltrados.length === 0 && (
           <div className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ingresos en el rango seleccionado</div>
         )}
@@ -312,7 +326,7 @@ const Ingreso = () => {
                       <label style={{ display: "flex", flexDirection: "column", gap: 3, borderLeft: "2px solid var(--border)", paddingLeft: 10, marginLeft: 2 }}>
                         <span style={lbl}>Nota <span style={{ textTransform: "none", fontWeight: 400, color: "var(--text-3)" }}>· opcional</span></span>
                         <input value={d.nota || ""} onChange={e => updDet(i, "nota", e.target.value)}
-                          placeholder="Novedad en la recepción: cantidad incompleta, precio distinto, avería…"
+                          placeholder=""
                           style={{ padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 12, width: "100%", background: d.nota ? "#FFFBEB" : "var(--bg)" }}/>
                       </label>
                     </td>
@@ -355,7 +369,7 @@ const Ingreso = () => {
                 <div className="field" style={{ margin: 0, marginTop: 8 }}>
                   <label style={{ fontSize: 10 }}>Nota <span className="muted tw-font-normal">(opcional)</span></label>
                   <input value={d.nota || ""} onChange={e => updDet(i, "nota", e.target.value)}
-                    placeholder="Cantidad incompleta, precio distinto, avería…"
+                    placeholder=""
                     style={{ padding: "6px 8px", fontSize: 12, background: d.nota ? "#FFFBEB" : undefined }}/>
                 </div>
               </div>
@@ -653,7 +667,7 @@ const Ingreso = () => {
                               <label style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minWidth: 240 }}>
                                 <span style={lbl}>Nota <span style={{ textTransform: "none", fontWeight: 400, color: "var(--text-3)" }}>· opcional</span></span>
                                 <input value={it.nota || ""} onChange={e => actualizarItem(i, "nota", e.target.value)}
-                                  placeholder="Novedad en la recepción: cantidad incompleta, precio distinto, avería…"
+                                  placeholder=""
                                   style={{ padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 12, width: "100%", background: it.nota ? "#FFFBEB" : "var(--bg)" }}/>
                               </label>
                             </div>
@@ -732,7 +746,7 @@ const Ingreso = () => {
                     <div className="field tw-mt-2" style={{ margin: 0 }}>
                       <label style={{ fontSize: 10 }}>Nota <span className="muted tw-font-normal">(opcional)</span></label>
                       <input value={it.nota || ""} onChange={e => actualizarItem(i, "nota", e.target.value)}
-                        placeholder="Cantidad incompleta, precio distinto…"
+                        placeholder=""
                         style={{ padding: "6px 8px", fontSize: 12, background: it.nota ? "#FFFBEB" : undefined }}/>
                     </div>
                   </div>
