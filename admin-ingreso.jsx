@@ -410,7 +410,8 @@ const Ingreso = () => {
         <Modal title="Confirmar ingreso de mercancía" lg bottomSheet onClose={() => { setShowForm(false); setOrigen(null); }} footer={
           <>
             <button className="btn ghost" onClick={() => { setShowForm(false); setOrigen(null); }}>Cancelar</button>
-            <button className="btn accent" disabled={guardando || items.length === 0} onClick={async () => {
+            <button className="btn accent" disabled={guardando || items.length === 0 || !proveedor} onClick={async () => {
+              if (!proveedor) { setToast("Selecciona un proveedor"); return; }
               const yaExiste = MOCK.ingresos.find(i => i.factura === factura && i.proveedor === proveedor);
               if (yaExiste) {
                 setToast("Esta factura ya fue registrada para este proveedor");
@@ -493,8 +494,8 @@ const Ingreso = () => {
             </div>
             <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5">
               <div className="field" style={{ margin: 0 }}>
-                <label>Proveedor</label>
-                <select value={proveedor} onChange={e => setProveedor(e.target.value)}>
+                <label>Proveedor <span style={{ color: "var(--bad)" }}>*</span></label>
+                <select value={proveedor} onChange={e => setProveedor(e.target.value)} style={{ borderColor: !proveedor ? "var(--bad)" : undefined }}>
                   <option value="">Seleccionar…</option>
                   {proveedores.map(p => <option key={p.nit}>{p.nombre}</option>)}
                 </select>
