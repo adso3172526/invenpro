@@ -2156,7 +2156,7 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 24px 0;
+    padding: 12px 0;
     border-right: 1px solid var(--border);
     border-bottom: none;
     background: var(--surface);
@@ -2176,13 +2176,13 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
     align-items: center;
     justify-content: center;
     width: 100%;
-    margin-bottom: 24px;
+    margin-bottom: 10px;
     padding: 0;
     overflow: visible;
   }
 
   .sidebar .brand img {
-    height: 38px !important;
+    height: 30px !important;
     max-width: 100%;
   }
 
@@ -2191,7 +2191,7 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
+    gap: 8px;
     width: 100%;
     margin-top: 0;
   }
@@ -2201,7 +2201,7 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
     display: flex;
     flex-direction: column;
     width: 130px;
-    height: 80px;
+    height: 50px;
     border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--surface);
@@ -2220,9 +2220,9 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
   /* Parte superior coloreada */
   .nav-card-top {
     background: var(--nav-c);
-    height: 42px;
+    height: 28px;
     width: 100%;
-    padding: 8px 10px;
+    padding: 4px 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2234,8 +2234,8 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
   .nav-card-top svg {
     color: #fff;
     stroke-width: 2.2;
-    width: 22px;
-    height: 22px;
+    width: 16px;
+    height: 16px;
   }
 
   /* Parte inferior blanca con etiqueta y flecha */
@@ -2243,8 +2243,8 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
     display: flex !important;
     align-items: center;
     justify-content: space-between;
-    padding: 0 10px;
-    height: 38px;
+    padding: 0 8px;
+    height: 22px;
     background: var(--surface);
     border-top: 1px solid var(--border);
     box-sizing: border-box;
@@ -2253,7 +2253,7 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
 
   .nav-card-label {
     color: var(--nav-c);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
@@ -2265,8 +2265,8 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     background: var(--nav-c);
     color: #fff;
@@ -2283,14 +2283,14 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
   /* Estilización del badge de notificaciones */
   .nav-card-badge {
     position: absolute;
-    top: -5px;
-    right: -5px;
+    top: -4px;
+    right: -4px;
     background: #EF4444;
     color: #fff;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
-    min-width: 18px;
-    height: 18px;
+    min-width: 16px;
+    height: 16px;
     padding: 0 4px;
     border-radius: 999px;
     display: flex;
