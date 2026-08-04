@@ -42,18 +42,21 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
               </div>
             </div>
           ))}
-        </div>
-        <div className="user">
-          <div className="avatar">{(user && user.nombre) ? user.nombre[0] : "A"}</div>
-          <div className="user-info-mobile">
-            <div className="name-m">{user && user.nombre}</div>
-            <div className="role-m">{user && user.rol}</div>
+          {/* Tarjeta de usuario / Cerrar sesión */}
+          <div className="nav-card user-logout-card"
+               style={{ "--nav-c": "#475569" }}
+               onClick={onLogout}
+               title={`Cerrar sesión (${(user && user.nombre) || "Usuario"})`}>
+            <div className="nav-card-top">
+              <div className="avatar">{(user && user.nombre) ? user.nombre[0] : "A"}</div>
+            </div>
+            <div className="nav-card-bottom">
+              <span className="nav-card-label">Cerrar sesión</span>
+              <span className="nav-card-arrow-circle">
+                <Icon name="logout" size={12}/>
+              </span>
+            </div>
           </div>
-          <div className="flex-1">
-            <div className="name">{user && user.nombre}</div>
-            <div className="role">{user && user.rol}</div>
-          </div>
-          <button className="btn sm ghost" onClick={onLogout} title="Salir"><Icon name="logout" size={14}/> <span className="user-logout-label">Cerrar sesión</span></button>
         </div>
       </aside>
 

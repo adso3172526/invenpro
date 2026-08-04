@@ -356,6 +356,9 @@ input, select, textarea { font: inherit; color: inherit; }
             drop-shadow(0 0 12px #00e5ff);
 
     pointer-events: none; */ 
+
+
+
 }
 
 .nav-card:hover {
@@ -2119,3 +2122,218 @@ table.tbl tr.item-detail td { padding-top: 0; padding-bottom: 12px; vertical-ali
   /* Imágenes/medios nunca exceden el ancho del modal */
   .modal-b img, .modal-b video, .modal-b canvas, .modal-b svg { max-width: 100%; }
 }
+
+/* ============================================================
+   Ajuste de Sidebar Vertical y Efecto Hover Premium (Escritorio)
+   ============================================================ */
+@media (min-width: 901px) {
+  /* Alineación horizontal en escritorio */
+  .app {
+    display: flex;
+    flex-direction: row;
+    min-height: 100vh;
+    width: 100%;
+    background: var(--bg);
+  }
+
+  /* Contenido principal ocupa el resto del espacio */
+  .main {
+    flex: 1;
+    min-width: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  /* Sidebar vertical a la izquierda con ancho suficiente para tarjetas de 130px */
+  .sidebar {
+    width: 160px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+    border-right: 1px solid var(--border);
+    border-bottom: none;
+    background: var(--surface);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+    z-index: 100;
+    flex-shrink: 0;
+    overflow-y: auto;
+    scrollbar-width: none; /* Oculta scrollbar en Firefox */
+  }
+  .sidebar::-webkit-scrollbar {
+    display: none; /* Oculta scrollbar en Chrome/Safari/Opera */
+  }
+
+  /* Logo: centrado dentro del sidebar */
+  .sidebar .brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 24px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .sidebar .brand img {
+    height: 38px !important;
+    max-width: 100%;
+  }
+
+  /* Contenedor de botones alineado verticalmente */
+  .sidebar .nav-cards {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    margin-top: 0;
+  }
+
+  /* Tarjeta nav rectangular (según imagen) */
+  .nav-card {
+    display: flex;
+    flex-direction: column;
+    width: 130px;
+    height: 80px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    overflow: visible; /* para ver el badge y sombras que sobresalen */
+    cursor: pointer;
+    position: relative;
+    outline: none !important;
+    outline-offset: 0 !important;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Parte superior coloreada */
+  .nav-card-top {
+    background: var(--nav-c);
+    height: 42px;
+    width: 100%;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border-radius: 11px 11px 0 0;
+    position: relative;
+  }
+
+  .nav-card-top svg {
+    color: #fff;
+    stroke-width: 2.2;
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Parte inferior blanca con etiqueta y flecha */
+  .nav-card-bottom {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    height: 38px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-sizing: border-box;
+    border-radius: 0 0 11px 11px;
+  }
+
+  .nav-card-label {
+    color: var(--nav-c);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block !important;
+  }
+
+  .nav-card-arrow-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--nav-c);
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .nav-card-arrow-circle svg {
+    color: #fff;
+    width: 10px;
+    height: 10px;
+    stroke-width: 3;
+  }
+
+  /* Estilización del badge de notificaciones */
+  .nav-card-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #EF4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--surface);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    z-index: 10;
+  }
+
+  /* Efecto Hover Premium: Resaltar la tarjeta seleccionada y atenuar las demás */
+  .sidebar .nav-cards:hover .nav-card {
+    opacity: 0.65;
+  }
+
+  .sidebar .nav-cards .nav-card:hover {
+    opacity: 1 !important;
+    transform: scale(1.08);
+    box-shadow: 0 8px 24px color-mix(in oklab, var(--nav-c) 35%, transparent),
+                0 2px 8px color-mix(in oklab, var(--nav-c) 15%, transparent);
+    border-color: var(--nav-c);
+  }
+
+  /* Estado Activo: borde y resplandor permanente */
+  .nav-card.active {
+    border-color: var(--nav-c);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--nav-c) 25%, transparent),
+                0 6px 14px -4px color-mix(in oklab, var(--nav-c) 30%, transparent);
+  }
+
+  /* Estilo del avatar dentro de la tarjeta de cerrar sesión */
+  .user-logout-card .avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 600;
+    font-size: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+}
+
+
+
