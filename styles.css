@@ -1408,6 +1408,8 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 .product .price { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .product .stock-bad { color: var(--bad); }
 .product[disabled] { opacity: .5; cursor: not-allowed; }
+/* Botón deshabilitado: se ve claramente inactivo (antes solo quedaba sin efecto) */
+.btn:disabled, .btn[disabled] { opacity: .5; cursor: not-allowed; box-shadow: none; filter: saturate(.7); }
 
 /* Cart panel */
 /* Cart layout — structure only, visual styles handled by Tailwind in cashier.jsx */

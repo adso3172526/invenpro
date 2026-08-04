@@ -403,6 +403,14 @@ const Ingreso = () => {
 
       {showForm && (() => {
         const provActual = proveedores.find(x => x.nombre === proveedor);
+        // Campos obligatorios para habilitar "Confirmar ingreso"
+        const faltantes = [];
+        if (!proveedor) faltantes.push("proveedor");
+        if (!(provActual && (provActual.nit || "").trim())) faltantes.push("NIT del proveedor");
+        if (!(factura || "").trim()) faltantes.push("N° factura");
+        if (items.length === 0) faltantes.push("al menos un ítem");
+        else if (items.some(it => !it.qty || it.qty <= 0)) faltantes.push("cantidad en cada ítem");
+        const puedeGuardar = faltantes.length === 0;
         const existentes = items.filter(it => !it.nuevo);
         const nuevos = items.filter(it => it.nuevo);
         const getStock = (sku) => { const p = MOCK.productos.find(x => x.sku === sku); return p ? p.stock : null; };
@@ -410,8 +418,8 @@ const Ingreso = () => {
         <Modal title="Confirmar ingreso de mercancía" lg bottomSheet onClose={() => { setShowForm(false); setOrigen(null); }} footer={
           <>
             <button className="btn ghost" onClick={() => { setShowForm(false); setOrigen(null); }}>Cancelar</button>
-            <button className="btn accent" disabled={guardando || items.length === 0 || !proveedor} onClick={async () => {
-              if (!proveedor) { setToast("Selecciona un proveedor"); return; }
+            <button className="btn accent" disabled={guardando || !puedeGuardar} onClick={async () => {
+              if (!puedeGuardar) { setToast("Faltan campos obligatorios: " + faltantes.join(", ")); return; }
               const yaExiste = MOCK.ingresos.find(i => i.factura === factura && i.proveedor === proveedor);
               if (yaExiste) {
                 setToast("Esta factura ya fue registrada para este proveedor");
@@ -501,10 +509,11 @@ const Ingreso = () => {
                 </select>
               </div>
               <div className="field" style={{ margin: 0 }}>
-                <label>NIT / Identificación</label>
+                <label>NIT / Identificación <span style={{ color: "var(--bad)" }}>*</span></label>
                 <input className="mono" value={provActual ? provActual.nit : ""} onChange={e => {
                   if (provActual) setProveedores(ps => ps.map(p => p.nombre === proveedor ? { ...p, nit: e.target.value } : p));
-                }} placeholder="900.000.000-0"/>
+                }} placeholder="900.000.000-0"
+                  style={{ borderColor: !(provActual && (provActual.nit || "").trim()) ? "var(--bad)" : undefined }}/>
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>Teléfono</label>
@@ -529,8 +538,9 @@ const Ingreso = () => {
             </div>
             <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-2.5">
               <div className="field" style={{ margin: 0 }}>
-                <label>N° factura proveedor</label>
-                <input className="mono" value={factura} onChange={e => setFactura(e.target.value)}/>
+                <label>N° factura proveedor <span style={{ color: "var(--bad)" }}>*</span></label>
+                <input className="mono" value={factura} onChange={e => setFactura(e.target.value)}
+                  style={{ borderColor: !(factura || "").trim() ? "var(--bad)" : undefined }}/>
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>Fecha y hora de recibo</label>
@@ -616,7 +626,7 @@ const Ingreso = () => {
                           <td className="num">
                             {stockActual !== null ? <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>{stockActual}</span> : <span className="muted" style={{ fontSize: 11 }}>—</span>}
                           </td>
-                          <td className="num"><input className="cell-input mono" value={it.qty} onChange={e => actualizarItem(i, "qty", parseInt(e.target.value.replace(/\D/g,"")) || 0)}/></td>
+                          <td className="num"><input className="cell-input mono" value={it.qty} onChange={e => actualizarItem(i, "qty", parseInt(e.target.value.replace(/\D/g,"")) || 0)} style={{ borderColor: (!it.qty || it.qty <= 0) ? "var(--bad)" : undefined }}/></td>
                           <td className="num"><input className="cell-input mono" value={it.costo} onChange={e => actualizarItem(i, "costo", parseInt(e.target.value.replace(/\D/g,"")) || 0)}/></td>
                           <td><input className="cell-input mono" type="date" value={it.vence || ""} onChange={e => actualizarItem(i, "vence", e.target.value)}/></td>
                           <td className="num mono" style={{ fontWeight: 600 }}>{window.fmtCOP(it.qty * it.costo)}</td>
@@ -687,7 +697,7 @@ const Ingreso = () => {
                     <div className="tw-grid tw-grid-cols-3 tw-gap-2 tw-mb-2">
                       <div className="field" style={{ margin: 0 }}>
                         <label style={{ fontSize: 10 }}>Cantidad</label>
-                        <input className="mono" value={it.qty} onChange={e => actualizarItem(i, "qty", parseInt(e.target.value.replace(/\D/g,"")) || 0)} style={{ padding: "6px 8px", fontSize: 14 }}/>
+                        <input className="mono" value={it.qty} onChange={e => actualizarItem(i, "qty", parseInt(e.target.value.replace(/\D/g,"")) || 0)} style={{ padding: "6px 8px", fontSize: 14, borderColor: (!it.qty || it.qty <= 0) ? "var(--bad)" : undefined }}/>
                       </div>
                       <div className="field" style={{ margin: 0 }}>
                         <label style={{ fontSize: 10 }}>Costo unit.</label>
@@ -734,6 +744,12 @@ const Ingreso = () => {
                 <span className="muted">{items.length} producto(s) · {items.reduce((s,i)=>s+i.qty,0)} unidades</span>
                 <span className="mono" style={{ fontWeight: 600, fontSize: 18 }}>{window.fmtCOP(total)}</span>
               </div>
+            </div>
+          )}
+          {!puedeGuardar && (
+            <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: "var(--bad-soft)", color: "var(--bad)", fontSize: 12.5, display: "flex", alignItems: "center", gap: 8 }}>
+              <Icon name="alert" size={15}/>
+              <span>Para confirmar el ingreso, completa: <b>{faltantes.join(", ")}</b>.</span>
             </div>
           )}
         </Modal>
