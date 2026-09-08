@@ -330,7 +330,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     const ahora = new Date();
     const fechaActual = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
     const factura = {
-      id: "F-" + (10310 + shiftStats.trans),
+      id: DB.facturas.generarId(),
       fecha: fechaActual,
       hora: ahora.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }),
       cajero: cajero.nombre,

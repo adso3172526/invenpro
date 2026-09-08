@@ -197,6 +197,23 @@
       await this._repositorio.descontarStock(items);
       return emision;
     }
+
+    /**
+     * Genera el siguiente id de factura ÚNICO, tomando el consecutivo más
+     * alto ya existente y sumándole 1 (mismo criterio que generateSku para
+     * productos). Reemplaza al esquema viejo "F-"+(10310+trans), que se
+     * reiniciaba cada turno y provocaba ids duplicados (error 23505).
+     * @returns {string} p. ej. "F-10346"
+     */
+    generarId() {
+      const facturas = (window.MOCK && window.MOCK.facturas) || [];
+      let max = 10309; // base: sin facturas, el primer id es "F-10310"
+      for (const f of facturas) {
+        const m = String(f.id).match(/^F-(\d+)$/);
+        if (m) { const n = parseInt(m[1], 10); if (n > max) max = n; }
+      }
+      return "F-" + (max + 1);
+    }
   }
 
   // ── Exponer contratos e implementaciones en window (instanceof / UML) ──
