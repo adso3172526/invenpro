@@ -19,7 +19,11 @@ const Cajeros = () => {
     return () => offs.forEach(fn => fn());
   }, []);
   const pagCaj = usePagination(MOCK.cajeros, 2);
-  const pagTur = usePagination(MOCK.turnos, 10);
+  // Turnos ordenados del más reciente al más antiguo. El id es "T-"+Date.now()
+  // (timestamp en ms), monótono creciente, así que ordenar por id descendente
+  // pone primero el turno más nuevo. Se ordena una copia para no mutar MOCK.
+  const turnosOrdenados = [...MOCK.turnos].sort((a, b) => String(b.id).localeCompare(String(a.id)));
+  const pagTur = usePagination(turnosOrdenados, 10);
 
   const currentUser = useMemoA(() => {
     try { return JSON.parse(localStorage.getItem("invenpro-session"))?.user || {}; } catch { return {}; }
