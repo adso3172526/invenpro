@@ -232,6 +232,11 @@
       const { error } = await window.db.from("turnos").update(row).eq("id", id);
       if (error) console.error("closeTurno:", error);
     }
+    async getAll() {
+      const { data, error } = await window.db.from("turnos").select("*");
+      if (error) { console.error("TurnoService.getAll:", error); return []; }
+      return camelize(data || []).map(d => new Turno(d));
+    }
   }
 
   class CajeroService {

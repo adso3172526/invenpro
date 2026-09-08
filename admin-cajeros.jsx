@@ -18,6 +18,23 @@ const Cajeros = () => {
     }));
     return () => offs.forEach(fn => fn());
   }, []);
+
+  // Red de seguridad: al entrar al módulo, relee los turnos desde la BD.
+  // El realtime (websocket) puede perder el evento de cierre de turno, dejando
+  // MOCK.turnos con el estado viejo; entonces el estado no cambiaba sin recargar.
+  // Releer con DB.turnos.getAll() garantiza ver el estado correcto al entrar.
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const frescos = await DB.turnos.getAll();
+        if (frescos && frescos.length) {
+          MOCK.turnos = frescos;
+          if (!_modalRef.current) _rtTick(n => n + 1);
+        }
+      } catch (e) { console.error("refrescar turnos al entrar:", e); }
+    })();
+  }, []);
+
   const pagCaj = usePagination(MOCK.cajeros, 2);
   // Turnos ordenados del más reciente al más antiguo. Hay ids con dos formatos
   // ("T-"+Date.now() de la app y "T-2029" de datos viejos), así que se compara
