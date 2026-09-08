@@ -19,6 +19,22 @@ const Inventario = () => {
     });
   }, []);
 
+  // Red de seguridad: al entrar al módulo, relee el stock real desde la BD.
+  // El realtime puede perder eventos (websocket), dejando MOCK.productos con un
+  // stock desactualizado tras una venta; entonces había que recargar la página.
+  // Releer con DB.productos.getAll() garantiza ver el stock correcto al entrar.
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const frescos = await DB.productos.getAll();
+        if (frescos && frescos.length) {
+          MOCK.productos = frescos;
+          if (!_editingRef.current) setProductos(frescos.map(p => ({ ...p })));
+        }
+      } catch (e) { console.error("refrescar inventario al entrar:", e); }
+    })();
+  }, []);
+
   const sinCodigo = useMemoA(() => productos.filter(p => !p.codigoBarras).length, [productos]);
   const bajo = useMemoA(() => productos.filter(p => p.stock < p.min).length, [productos]);
   const totalValor = useMemoA(() => productos.reduce((s, p) => s + p.stock * p.costo, 0), [productos]);
