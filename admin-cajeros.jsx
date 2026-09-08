@@ -19,10 +19,13 @@ const Cajeros = () => {
     return () => offs.forEach(fn => fn());
   }, []);
   const pagCaj = usePagination(MOCK.cajeros, 2);
-  // Turnos ordenados del más reciente al más antiguo. El id es "T-"+Date.now()
-  // (timestamp en ms), monótono creciente, así que ordenar por id descendente
-  // pone primero el turno más nuevo. Se ordena una copia para no mutar MOCK.
-  const turnosOrdenados = [...MOCK.turnos].sort((a, b) => String(b.id).localeCompare(String(a.id)));
+  // Turnos ordenados del más reciente al más antiguo. Hay ids con dos formatos
+  // ("T-"+Date.now() de la app y "T-2029" de datos viejos), así que se compara
+  // el NÚMERO del id (no como texto, que pondría "T-2031" antes de "T-1788...").
+  // Los timestamps (grandes) quedan primero; los datos viejos, al final. Se
+  // ordena una copia para no mutar MOCK.
+  const numTurno = (t) => { const m = String(t.id).match(/(\d+)$/); return m ? Number(m[1]) : 0; };
+  const turnosOrdenados = [...MOCK.turnos].sort((a, b) => numTurno(b) - numTurno(a));
   const pagTur = usePagination(turnosOrdenados, 10);
 
   const currentUser = useMemoA(() => {
