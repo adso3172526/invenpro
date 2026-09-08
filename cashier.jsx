@@ -267,6 +267,22 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   // (red de seguridad por si el realtime estaba caído cuando el admin los cambió)
   useEffect(() => { if (window.refreshConfig) window.refreshConfig(); }, []);
 
+  // Red de seguridad de STOCK: al entrar al POS, relee los productos desde la BD.
+  // El realtime puede perder eventos (websocket), dejando MOCK.productos con un
+  // stock mayor al real; entonces, al reabrir turno, el stock "reaparecía".
+  // Releer el valor autoritativo de la BD garantiza que la grilla parta correcta.
+  useEffect(() => {
+    (async () => {
+      try {
+        const frescos = await DB.productos.getAll();
+        if (frescos && frescos.length) {
+          MOCK.productos = frescos;
+          rebuildFromServer();
+        }
+      } catch (e) { console.error("refrescar productos al abrir POS:", e); }
+    })();
+  }, []);
+
   // Realtime: los productos nuevos y los cambios de stock (ingresos de mercancía,
   // ventas de otros cajeros) se reflejan en la grilla, respetando los descuentos
   // locales que este cajero hizo y que el servidor aún no confirma.
