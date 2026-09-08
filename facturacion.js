@@ -199,19 +199,28 @@
     }
 
     /**
-     * Genera el siguiente id de factura ÚNICO, tomando el consecutivo más
-     * alto ya existente y sumándole 1 (mismo criterio que generateSku para
-     * productos). Reemplaza al esquema viejo "F-"+(10310+trans), que se
-     * reiniciaba cada turno y provocaba ids duplicados (error 23505).
-     * @returns {string} p. ej. "F-10346"
+     * Genera el siguiente id de factura ÚNICO. Consulta el consecutivo más
+     * alto DIRECTAMENTE en la base de datos (no en MOCK, que puede quedar
+     * desactualizado si el realtime pierde un INSERT) y le suma 1.
+     * Reemplaza al esquema viejo "F-"+(10310+trans), que se reiniciaba cada
+     * turno y provocaba ids duplicados (error 23505).
+     *
+     * Solo considera ids con formato "F-#####"; en el rango real (5 dígitos)
+     * el orden de texto coincide con el numérico, así que basta pedir el
+     * mayor con limit(1). Ante cualquier fallo, cae al valor base seguro.
+     * @returns {Promise<string>} p. ej. "F-10346"
      */
-    generarId() {
-      const facturas = (window.MOCK && window.MOCK.facturas) || [];
+    async generarId() {
       let max = 10309; // base: sin facturas, el primer id es "F-10310"
-      for (const f of facturas) {
-        const m = String(f.id).match(/^F-(\d+)$/);
-        if (m) { const n = parseInt(m[1], 10); if (n > max) max = n; }
-      }
+      try {
+        const { data } = await window.db.from("facturas")
+          .select("id").like("id", "F-%")
+          .order("id", { ascending: false }).limit(1).maybeSingle();
+        if (data && data.id) {
+          const m = String(data.id).match(/^F-(\d+)$/);
+          if (m) max = parseInt(m[1], 10);
+        }
+      } catch (e) { console.error("generarId:", e); }
       return "F-" + (max + 1);
     }
   }
