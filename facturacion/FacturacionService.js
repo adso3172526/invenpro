@@ -1,23 +1,15 @@
 // ════════════════════════════════════════════════════════════════════════
-//  MÓDULO FACTURACIÓN · CAPA DE SERVICIO + RAÍZ DE COMPOSICIÓN
+//  SERVICIO · FacturacionService   (capa de reglas de negocio)
+//  Módulo Facturación · Taller POO + SOLID · ADSO Ficha 3172526
 // ────────────────────────────────────────────────────────────────────────
-//  FacturacionService coordina el flujo de una venta (emitir → guardar →
-//  descontar stock). NO conoce Supabase ni la DIAN: solo los CONTRATOS.
-//  Recibe las implementaciones concretas por el constructor (inyección de
-//  dependencias).
-//
-//  Principios: DIP (depende de abstracciones; dependencias inyectadas, sin
-//  `new` propio) · SRP (solo reglas del flujo) · Encapsulamiento (guarda sus
-//  dependencias como estado interno this._repositorio / this._proveedor).
-//
-//  Se carga ÚLTIMO del módulo: necesita el repositorio y el proveedor, y
-//  data.js (para sobrescribir window.DB.facturas).
+//  Coordina el flujo de una venta (emitir → guardar → descontar). NO conoce
+//  Supabase ni la DIAN: solo los contratos. Recibe sus dependencias por el
+//  constructor (inyección de dependencias) y las guarda como estado interno.
+//  Principios: DIP (depende de abstracciones, sin `new` propio) · SRP · Encaps.
+//  La instancia se arma e inyecta en composition.js (raíz de composición).
 // ════════════════════════════════════════════════════════════════════════
 (function () {
   "use strict";
-
-  // Implementaciones concretas compartidas por window (ya cargadas).
-  const { SupabaseFacturaRepositorio, ProveedorInterno } = window;
 
   class FacturacionService {
     /**
@@ -58,17 +50,4 @@
   }
 
   window.FacturacionService = FacturacionService;
-
-  // ── RAÍZ DE COMPOSICIÓN ──────────────────────────────────────────────
-  // El ÚNICO lugar con `new`: arma las implementaciones concretas y las
-  // INYECTA en el servicio. Cambiar de proveedor/repositorio = una línea.
-  // Sobrescribe window.DB.facturas (creado en data.js) con esta versión.
-  if (window.DB) {
-    window.DB.facturas = new FacturacionService(
-      new SupabaseFacturaRepositorio(),
-      new ProveedorInterno()
-    );
-  } else {
-    console.error("[facturacion] window.DB no existe; ¿se cargó data.js antes?");
-  }
 })();

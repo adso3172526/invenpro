@@ -71,11 +71,14 @@
   <script src="supabase.lib.js"></script>
   <script src="supabase.js"></script>
   <script src="data.js"></script>
-  <!-- Módulo Facturación (POO+SOLID) — orden = dependencias entre capas -->
-  <script src="facturacion/contratos.js"></script>
-  <script src="facturacion/repositorio.js"></script>
-  <script src="facturacion/proveedores.js"></script>
-  <script src="facturacion/service.js"></script>
+  <!-- Módulo Facturación (POO+SOLID) — una clase por archivo; orden = dependencias -->
+  <script src="facturacion/IFacturaRepositorio.js"></script>
+  <script src="facturacion/IProveedorFactura.js"></script>
+  <script src="facturacion/SupabaseFacturaRepositorio.js"></script>
+  <script src="facturacion/ProveedorInterno.js"></script>
+  <script src="facturacion/ProveedorDIAN.js"></script>
+  <script src="facturacion/FacturacionService.js"></script>
+  <script src="facturacion/composition.js"></script>
 </head>
 
 <body>

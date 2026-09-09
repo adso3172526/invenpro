@@ -1,23 +1,18 @@
 // ════════════════════════════════════════════════════════════════════════
-//  MÓDULO FACTURACIÓN · CAPA DE REPOSITORIO (acceso a datos · Supabase)
+//  REPOSITORIO · SupabaseFacturaRepositorio   (capa de acceso a datos)
+//  Módulo Facturación · Taller POO + SOLID · ADSO Ficha 3172526
 // ────────────────────────────────────────────────────────────────────────
-//  El ÚNICO lugar del módulo que conoce Supabase (window.db). Aísla toda la
-//  "plomería" de acceso a datos: si se migra de base de datos, solo cambia
-//  esta clase; el servicio queda intacto.
-//
-//  Principios: Herencia (extends IFacturaRepositorio) · LSP (reemplaza a su
-//  contrato sin romper al servicio) · SRP (su única misión es la BD).
-//
-//  Se carga después de contratos.js (necesita IFacturaRepositorio).
+//  Única clase del módulo que conoce Supabase (window.db). Aísla toda la
+//  persistencia: guardar la factura + sus ítems y descontar el stock.
+//  Principios: Herencia (extends IFacturaRepositorio) · LSP · SRP (solo datos).
+//  Depende de IFacturaRepositorio (debe cargarse después de su contrato).
 // ════════════════════════════════════════════════════════════════════════
 (function () {
   "use strict";
 
-  // El contrato se comparte por window (cargado en contratos.js).
-  const { IFacturaRepositorio } = window;
+  const { IFacturaRepositorio } = window; // contrato compartido vía window
 
   class SupabaseFacturaRepositorio extends IFacturaRepositorio {
-    /** Persiste el encabezado en `facturas` y las líneas en `factura_items`. */
     async guardar(factura, items) {
       const { error: fErr } = await window.db.from("facturas").insert({
         id: factura.id, fecha: factura.fecha, hora: factura.hora,
@@ -32,7 +27,6 @@
       if (iErr) console.error("createFactura items:", iErr);
     }
 
-    /** Descuenta el stock vendido con el RPC `decrement_stock` por ítem. */
     async descontarStock(items) {
       for (const it of items) {
         await window.db.rpc("decrement_stock", { p_sku: it.sku, p_qty: it.q });
