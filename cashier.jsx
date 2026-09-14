@@ -283,6 +283,28 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     })();
   }, []);
 
+  // Red de seguridad del TURNO: al entrar/reanudar el POS, relee ventas y
+  // transacciones del turno DESDE LA BD (fuente autoritativa). onLogin toma el
+  // acumulado de MOCK.turnos, que puede quedar atrasado (hydrateData falló o el
+  // realtime perdió un evento) mostrando 0; releer de la BD garantiza que el
+  // total facturado del turno reaparezca correcto al reanudar sin cerrar turno.
+  useEffect(() => {
+    if (!shift.id) return;
+    (async () => {
+      try {
+        const { data } = await window.db.from("turnos")
+          .select("ventas,transacciones").eq("id", shift.id).maybeSingle();
+        if (data) {
+          setShiftStats(s => ({
+            ...s,
+            ventas: Math.max(s.ventas, data.ventas || 0),
+            trans: Math.max(s.trans, data.transacciones || 0),
+          }));
+        }
+      } catch (e) { console.error("refrescar turno al abrir POS:", e); }
+    })();
+  }, []);
+
   // Realtime: los productos nuevos y los cambios de stock (ingresos de mercancía,
   // ventas de otros cajeros) se reflejan en la grilla, respetando los descuentos
   // locales que este cajero hizo y que el servidor aún no confirma.
