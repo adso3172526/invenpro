@@ -203,24 +203,6 @@
     }
   }
 
-  class FacturaService {
-    async create(factura, cartItems) {
-      const { error: fErr } = await window.db.from("facturas").insert({
-        id: factura.id, fecha: factura.fecha, hora: factura.hora,
-        cajero: factura.cajero, metodo: factura.metodo, total: factura.total,
-      });
-      if (fErr) console.error("createFactura header:", fErr);
-      const rows = cartItems.map((it) => ({
-        factura_id: factura.id, sku: it.sku, nombre: it.nombre, q: it.q, precio: it.precio,
-      }));
-      const { error: iErr } = await window.db.from("factura_items").insert(rows);
-      if (iErr) console.error("createFactura items:", iErr);
-      for (const it of cartItems) {
-        await window.db.rpc("decrement_stock", { p_sku: it.sku, p_qty: it.q });
-      }
-    }
-  }
-
   class TurnoService {
     async create(turno) {
       const row = snakify(turno);
@@ -705,7 +687,7 @@
   window.DB = {
     auth: new AuthService(),
     productos: new ProductoService(),
-    facturas: new FacturaService(),
+    facturas: null, // la asigna facturacion/composition.js (módulo POO/SOLID)
     turnos: new TurnoService(),
     cajeros: new CajeroService(),
     proveedores: new ProveedorService(),
@@ -729,7 +711,7 @@
   // Exponer clases para instanceof y UML
   Object.assign(window, {
     Producto, Usuario, Cajero, Proveedor, Turno, Factura,
-    AuthService, ProductoService, FacturaService, TurnoService,
+    AuthService, ProductoService, TurnoService,
     CajeroService, ProveedorService, IngresoService, ConfigService, DataStore,
   });
 })();
