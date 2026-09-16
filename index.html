@@ -70,15 +70,75 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
   <script src="supabase.lib.js"></script>
   <script src="supabase.js"></script>
+
+  <!-- SOLID POO: Core (loads FIRST — data.js shim delegates to these) -->
+  <script src="src/invenpro/core/interfaces.js"></script>
+  <script src="src/invenpro/core/BaseEntity.js"></script>
+  <script src="src/invenpro/core/HelperUtils.js"></script>
+  <script src="src/invenpro/core/Sanitizer.js"></script>
+  <script src="src/invenpro/core/BaseService.js"></script>
+  <script src="src/invenpro/core/EventBus.js"></script>
+  <script src="src/invenpro/core/ServiceContainer.js"></script>
+  <script src="src/invenpro/core/BaseRepository.js"></script>
+  <!-- SOLID POO: Domain -->
+  <script src="src/invenpro/domain/Producto.js"></script>
+  <script src="src/invenpro/domain/Usuario.js"></script>
+  <script src="src/invenpro/domain/Cajero.js"></script>
+  <script src="src/invenpro/domain/Proveedor.js"></script>
+  <script src="src/invenpro/domain/Turno.js"></script>
+  <script src="src/invenpro/domain/Factura.js"></script>
+  <script src="src/invenpro/domain/Ingreso.js"></script>
+  <script src="src/invenpro/domain/index.js"></script>
+  <!-- SOLID POO: Repositories -->
+  <script src="src/invenpro/repositories/ProductoRepository.js"></script>
+  <script src="src/invenpro/repositories/UsuarioRepository.js"></script>
+  <script src="src/invenpro/repositories/CajeroRepository.js"></script>
+  <script src="src/invenpro/repositories/ProveedorRepository.js"></script>
+  <script src="src/invenpro/repositories/TurnoRepository.js"></script>
+  <script src="src/invenpro/repositories/FacturaRepository.js"></script>
+  <script src="src/invenpro/repositories/IngresoRepository.js"></script>
+  <script src="src/invenpro/repositories/ConfigRepository.js"></script>
+  <script src="src/invenpro/repositories/index.js"></script>
+  <!-- SOLID POO: Factory + Services -->
+  <script src="src/invenpro/factory/RepositoryFactory.js"></script>
+  <script src="src/invenpro/factory/index.js"></script>
+  <script src="src/invenpro/services/AuthService.js"></script>
+  <script src="src/invenpro/services/ProductoService.js"></script>
+  <script src="src/invenpro/services/FacturaService.js"></script>
+  <script src="src/invenpro/services/TurnoService.js"></script>
+  <script src="src/invenpro/services/CajeroService.js"></script>
+  <script src="src/invenpro/services/ProveedorService.js"></script>
+  <script src="src/invenpro/services/IngresoService.js"></script>
+  <script src="src/invenpro/services/ConfigService.js"></script>
+  <script src="src/invenpro/services/index.js"></script>
+  <!-- SOLID POO: Store -->
+  <script src="src/invenpro/store/handlers/IRealtimeHandler.js"></script>
+  <script src="src/invenpro/store/handlers/GenericHandler.js"></script>
+  <script src="src/invenpro/store/handlers/index.js"></script>
+  <script src="src/invenpro/store/BaseStore.js"></script>
+  <script src="src/invenpro/store/DataStore.js"></script>
+  <script src="src/invenpro/store/ViewRefresher.js"></script>
+  <script src="src/invenpro/store/DetalleRefetcher.js"></script>
+  <script src="src/invenpro/store/RealtimeManager.js"></script>
+  <script src="src/invenpro/store/index.js"></script>
+  <!-- SOLID POO: Application -->
+  <script src="src/invenpro/application/AuthUseCase.js"></script>
+  <script src="src/invenpro/application/InventoryController.js"></script>
+  <script src="src/invenpro/application/InventoryUseCase.js"></script>
+  <script src="src/invenpro/application/ProveedorController.js"></script>
+  <script src="src/invenpro/application/IngresoController.js"></script>
+  <script src="src/invenpro/application/DashboardController.js"></script>
+  <script src="src/invenpro/application/CajeroController.js"></script>
+  <script src="src/invenpro/application/ReportesController.js"></script>
+  <script src="src/invenpro/application/VencimientosController.js"></script>
+  <script src="src/invenpro/application/ShiftController.js"></script>
+  <script src="src/invenpro/application/AppController.js"></script>
+  <script src="src/invenpro/application/index.js"></script>
+  <!-- SOLID POO: Barrel -->
+  <script src="src/invenpro/index.js"></script>
+
+  <!-- Thin shim: creates window.DB, window.MOCK, hydrates + realtime (delegates to SOLID layer) -->
   <script src="data.js"></script>
-  <!-- Módulo Facturación (POO+SOLID) — una clase por archivo; orden = dependencias -->
-  <script src="facturacion/IFacturaRepositorio.js"></script>
-  <script src="facturacion/IProveedorFactura.js"></script>
-  <script src="facturacion/SupabaseFacturaRepositorio.js"></script>
-  <script src="facturacion/ProveedorInterno.js"></script>
-  <script src="facturacion/ProveedorDIAN.js"></script>
-  <script src="facturacion/FacturacionService.js"></script>
-  <script src="facturacion/composition.js"></script>
 </head>
 
 <body>
@@ -99,6 +159,13 @@
   <script type="text/babel" src="ui.jsx"></script>
   <script type="text/babel" src="login.jsx"></script>
   <script type="text/babel" src="cashier.jsx"></script>
+  <!-- UI modules (plain JS, loaded before babel-transpiled JSX) -->
+  <script src="src/invenpro/ui/ExportUtils.js"></script>
+  <script src="src/invenpro/ui/AdminNavConfig.js"></script>
+  <script src="src/invenpro/ui/ProductMatcher.js"></script>
+  <script src="src/invenpro/ui/AiProviderConfig.js"></script>
+  <script src="src/invenpro/ui/FiscalConstants.js"></script>
+  <script src="src/invenpro/ui/AiVisionService.js"></script>
   <script type="text/babel" src="admin-utils.js"></script>
   <script type="text/babel" src="admin-sidebar.jsx"></script>
   <script type="text/babel" src="admin-dashboard.jsx"></script>

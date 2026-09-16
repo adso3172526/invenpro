@@ -1346,8 +1346,24 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
   flex: 1; min-height: 0;
   background: var(--bg);
 }
+.pos-desktop-view { display: flex; }
+.pos-mobile-view { display: none; }
 @media (min-width: 768px) {
   .pos { display: grid; grid-template-columns: 1fr 420px; min-height: calc(100vh - 60px); }
+}
+
+/* Fallback for responsive utility classes when the Tailwind CDN is blocked. */
+@media (min-width: 768px) {
+  [class~="tw-hidden"][class~="md:tw-flex"] { display: flex !important; }
+  [class~="tw-hidden"][class~="md:tw-block"] { display: block !important; }
+  [class~="md:tw-hidden"] { display: none !important; }
+}
+@media (max-width: 767px) {
+  [class~="tw-hidden"][class~="md:tw-flex"],
+  [class~="tw-hidden"][class~="md:tw-block"] { display: none !important; }
+  [class~="md:tw-hidden"][class~="tw-flex"] { display: flex !important; }
+  [class~="md:tw-hidden"][class~="tw-block"] { display: block !important; }
+  [class~="md:tw-hidden"][class~="tw-grid"] { display: grid !important; }
 }
 .pos-left {
   display: flex; flex-direction: column;
@@ -1414,6 +1430,66 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 /* Cart panel */
 /* Cart layout — structure only, visual styles handled by Tailwind in cashier.jsx */
 .cart { min-height: 0; }
+
+/* The POS must keep one layout visible even when the Tailwind CDN is unavailable. */
+@media (max-width: 767px) {
+  .pos { min-height: calc(100vh - 52px); }
+  .pos-desktop-view { display: none !important; }
+  .pos-mobile-view {
+    display: flex !important;
+    flex: 1;
+    min-height: 0;
+    background: var(--bg);
+  }
+  .pos-mobile-search { padding: 12px 12px 8px; }
+  .pos-mobile-search > div {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    min-height: 48px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+  }
+  .pos-mobile-search input {
+    flex: 1; min-width: 0; border: 0; outline: 0;
+    background: transparent; font-size: 14px;
+  }
+  .pos-mobile-search button {
+    width: 40px; height: 40px; padding: 0;
+    display: grid; place-items: center;
+    border: 0; border-radius: var(--radius-sm);
+    background: var(--accent); color: #fff;
+  }
+  .pos-mobile-categories { padding: 0 12px 8px; overflow: hidden; }
+  .pos-mobile-categories > div {
+    display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .pos-mobile-categories > div::-webkit-scrollbar { display: none; }
+  .pos-mobile-categories button {
+    flex: 0 0 auto; padding: 6px 12px;
+    border: 1px solid var(--border); border-radius: 999px;
+    background: var(--surface); color: var(--text-2); font-size: 11px;
+  }
+  .pos-mobile-products { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 12px; }
+  .pos-mobile-product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .pos-mobile-product-grid > button {
+    min-width: 0; padding: 10px; text-align: left;
+    display: flex; flex-direction: column; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text);
+  }
+  .pos-mobile-product-grid > button > div:first-of-type {
+    min-height: 2.6em; font-size: 11px; font-weight: 600; line-height: 1.3;
+  }
+  .pos-mobile-product-grid > button .mono { color: var(--accent); font-size: 12px; font-weight: 700; }
+  .pos-mobile-cart { flex: 0 0 auto; background: var(--surface); border-top: 1px solid var(--border); box-shadow: var(--shadow-lg); }
+}
+
+@media (min-width: 400px) and (max-width: 767px) {
+  .pos-mobile-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 
 /* ============ Modal ============ */
 .modal-bg {

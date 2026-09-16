@@ -75,14 +75,16 @@ const Vencimientos = () => {
   // Cerrar con la X / fondo: guarda igual como red de seguridad (sin toast).
   const cerrarConfig = () => { setShowConfig(false); persistConfig(); };
 
-  const all = MOCK.productos.filter(p => p.vence);
-  const buckets = {
-    vencido: all.filter(p => window.daysFromNow(p.vence) < 0),
-    critico: all.filter(p => { const d = window.daysFromNow(p.vence); return d >= 0 && d <= umbrales.critico; }),
-    atencion: all.filter(p => { const d = window.daysFromNow(p.vence); return d > umbrales.critico && d <= umbrales.atencion; }),
-    preventivo: all.filter(p => { const d = window.daysFromNow(p.vence); return d > umbrales.atencion && d <= umbrales.preventivo; }),
-    ok: all.filter(p => window.daysFromNow(p.vence) > umbrales.preventivo),
-  };
+  const all = (MOCK?.productos || []).filter((p) => p.vence);
+  const buckets = (() => {
+    return {
+      vencido: all.filter((p) => window.daysFromNow(p.vence) < 0),
+      critico: all.filter((p) => { const d = window.daysFromNow(p.vence); return d >= 0 && d <= umbrales.critico; }),
+      atencion: all.filter((p) => { const d = window.daysFromNow(p.vence); return d > umbrales.critico && d <= umbrales.atencion; }),
+      preventivo: all.filter((p) => { const d = window.daysFromNow(p.vence); return d > umbrales.atencion && d <= umbrales.preventivo; }),
+      ok: all.filter((p) => window.daysFromNow(p.vence) > umbrales.preventivo),
+    };
+  })();
   const visible = (buckets[tab] || []).slice().sort((a,b) => window.daysFromNow(a.vence) - window.daysFromNow(b.vence));
   const pagVis = usePagination(visible, 10);
   const validEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);

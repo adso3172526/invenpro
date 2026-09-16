@@ -24,8 +24,25 @@ const Dashboard = ({ go }) => {
   const sparkData = MOCK.ventasHoy.map(h => h.v);
   const totalHoy = MOCK.ventasHoy.reduce((s, h) => s + h.v, 0);
   const ventasCajeroHoy = MOCK.ventasCajero.map(c => ({ ...c, hoy: Math.round(c.total / 30 * (0.6 + Math.random()*0.8)) }));
-  const maxHora = Math.max(...MOCK.ventasHoy.map(h => h.v));
-  const horaPico = MOCK.ventasHoy.find(h => h.v === maxHora);
+  const maxHora = MOCK.ventasHoy.length ? Math.max(...MOCK.ventasHoy.map(h => h.v)) : 0;
+  const horaPico = MOCK.ventasHoy.find(h => h.v === maxHora) || { h: "--", v: 0 };
+
+  const transacciones = MOCK.ventasHoy.reduce((s, h) => s + (h.n || h.transacciones || 0), 0);
+  const ticketPromedio = transacciones > 0 ? Math.round(totalHoy / transacciones) : 0;
+
+  const productos = MOCK.productos || [];
+  const umbralesCfg = (MOCK.configuracion && MOCK.configuracion.alerta_umbrales) || null;
+  let umbrales = { critico: 8, atencion: 15, preventivo: 30 };
+  try { if (umbralesCfg) umbrales = JSON.parse(umbralesCfg); } catch {}
+  let vencCount = 0;
+  for (let i = 0; i < productos.length; i++) {
+    const p = productos[i];
+    if (!p.vence) continue;
+    const dias = window.daysFromNow(p.vence);
+    if (dias != null && dias <= umbrales.preventivo) vencCount++;
+  }
+  const stockBajo = productos.filter(p => p.stock < p.min).length;
+  const alertasTotal = vencCount + stockBajo;
 
   return (
     <div className="dash tw-grid tw-gap-3 md:tw-gap-[12px]">
@@ -33,14 +50,14 @@ const Dashboard = ({ go }) => {
       <div className="page-h dash-h tw-flex tw-flex-col sm:tw-flex-row tw-items-start sm:tw-items-center tw-justify-between tw-gap-2 tw-p-3 md:tw-p-4 tw-rounded-lg">
         <div>
           <h2 className="tw-text-lg md:tw-text-[22px] tw-font-bold tw-m-0">Buen día, admin</h2>
-          <p className="sub tw-text-xs tw-mt-0.5">Resumen de hoy — viernes 8 de mayo, 2026</p>
+          <p className="sub tw-text-xs tw-mt-0.5">Resumen de hoy — {new Date().toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
         </div>
         <button className="btn tw-w-full sm:tw-w-auto tw-justify-center" onClick={() => exportXlsx("InvenPro_resumen_hoy.xlsx", [
           { name: "KPIs hoy", rows: [
             { Métrica: "Ventas hoy", Valor: totalHoy },
-            { Métrica: "Transacciones", Valor: 98 },
-            { Métrica: "Ticket promedio", Valor: 29200 },
-            { Métrica: "Alertas", Valor: 12 },
+            { Métrica: "Transacciones", Valor: transacciones },
+            { Métrica: "Ticket promedio", Valor: ticketPromedio },
+            { Métrica: "Alertas", Valor: alertasTotal },
           ]},
           { name: "Ventas por hora", rows: MOCK.ventasHoy.map(h => ({ Hora: h.h + ":00", Total: h.v })) },
           { name: "Ventas por cajero (hoy)", rows: ventasCajeroHoy.map(c => ({ Cajero: c.nombre, Total: c.hoy })) },
@@ -52,13 +69,11 @@ const Dashboard = ({ go }) => {
         <div className="kpi">
           <div className="label"><Icon name="cart" size={13}/> Ventas hoy</div>
           <div className="val">{window.fmtCOP(totalHoy)}</div>
-          <div className="delta up"><Icon name="arrowUp" size={11}/> +12.4% vs ayer</div>
           <div className="spark tw-hidden md:tw-block"><Spark data={sparkData} color="var(--accent)"/></div>
         </div>
         <div className="kpi">
           <div className="label"><Icon name="users" size={13}/> Transacciones</div>
-          <div className="val">98</div>
-          <div className="delta up"><Icon name="arrowUp" size={11}/> +6 vs ayer</div>
+          <div className="val">{transacciones}</div>
         </div>
         <div className="kpi">
           <div className="label"><Icon name="clock" size={13}/> Hora pico</div>
@@ -67,8 +82,8 @@ const Dashboard = ({ go }) => {
         </div>
         <div className="kpi">
           <div className="label"><Icon name="alert" size={13}/> Alertas activas</div>
-          <div className="val">12</div>
-          <div className="delta tw-truncate">5 por vencer · 7 stock bajo</div>
+          <div className="val">{alertasTotal}</div>
+          <div className="delta tw-truncate">{vencCount} por vencer · {stockBajo} stock bajo</div>
         </div>
       </div>
 

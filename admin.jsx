@@ -16,55 +16,61 @@ const Reportes = () => {
   const cajeros = ["Todos", ...new Set(MOCK.facturas.map(f => f.cajero))];
   const metodos = ["Todos", "Efectivo", "Transferencia", "Nequi", "Daviplata"];
   const productosOpts = ["Todos", ...MOCK.productos.map(p => p.nombre)];
-  const filtered = useMemoA(() => MOCK.facturas.filter(f => {
-    if (filtroMes !== "Todos" && !f.fecha.startsWith(filtroMes)) return false;
-    if (filtroCajero !== "Todos" && f.cajero !== filtroCajero) return false;
-    if (filtroMetodo !== "Todos" && f.metodo !== filtroMetodo) return false;
-    if (filtroProducto !== "Todos" && !f.items.some(i => i.nombre === filtroProducto)) return false;
-    return true;
-  }), [filtroMes, filtroCajero, filtroProducto, filtroMetodo]);
+  const filtered = useMemoA(() => {
+    const facturas = MOCK.facturas || [];
+    return facturas.filter((f) => {
+      if (filtroMes !== "Todos" && !f.fecha.startsWith(filtroMes)) return false;
+      if (filtroCajero !== "Todos" && f.cajero !== filtroCajero) return false;
+      if (filtroMetodo !== "Todos" && f.metodo !== filtroMetodo) return false;
+      if (filtroProducto !== "Todos" && !f.items.some((i) => i.nombre === filtroProducto)) return false;
+      return true;
+    });
+  }, [filtroMes, filtroCajero, filtroProducto, filtroMetodo]);
 
-  const totalFiltro = filtered.reduce((s,f) => s + f.total, 0);
-  const tickets = filtered.length;
-  const promedio = tickets ? totalFiltro/tickets : 0;
+  const summary = useMemoA(() => {
+    const totalFiltro = filtered.reduce((s, f) => s + f.total, 0);
+    const tickets = filtered.length;
+    const promedio = tickets ? totalFiltro / tickets : 0;
+    const unidades = filtered.reduce((s, f) => s + f.items.reduce((a, i) => a + i.q, 0), 0);
+    return { totalFiltro, tickets, promedio, unidades };
+  }, [filtered]);
+  const totalFiltro = summary.totalFiltro;
+  const tickets = summary.tickets;
+  const promedio = summary.promedio;
 
   // Para el chart por mes
   const byMonth = useMemoA(() => {
     const map = {};
-    filtered.forEach(f => {
-      const k = f.fecha.slice(0,7);
-      map[k] = (map[k] || 0) + f.total;
-    });
-    return Object.entries(map).sort().map(([m,v]) => ({ mes: m, total: v }));
+    filtered.forEach((f) => { const k = f.fecha.slice(0, 7); map[k] = (map[k] || 0) + f.total; });
+    return Object.entries(map).sort().map(([mes, total]) => ({ mes, total }));
   }, [filtered]);
 
   // Por cajero
   const byCajero = useMemoA(() => {
     const map = {};
-    filtered.forEach(f => { map[f.cajero] = (map[f.cajero] || 0) + f.total; });
-    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([n,v]) => ({ nombre: n, total: v }));
+    filtered.forEach((f) => { map[f.cajero] = (map[f.cajero] || 0) + f.total; });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).map(([nombre, total]) => ({ nombre, total }));
   }, [filtered]);
 
   // Por método de pago
   const byMetodo = useMemoA(() => {
     const map = {};
-    filtered.forEach(f => { map[f.metodo] = (map[f.metodo] || 0) + f.total; });
-    const sum = Object.values(map).reduce((a,b)=>a+b, 0) || 1;
-    // Ordenado de MENOR a MAYOR (ascendente)
-    return Object.entries(map).sort((a,b)=>a[1]-b[1]).map(([n,v]) => ({ nombre: n, total: v, pct: (v/sum)*100 }));
+    filtered.forEach((f) => { map[f.metodo] = (map[f.metodo] || 0) + f.total; });
+    const sum = Object.values(map).reduce((a, b) => a + b, 0) || 1;
+    return Object.entries(map).sort((a, b) => a[1] - b[1]).map(([nombre, total]) => ({ nombre, total, pct: (total / sum) * 100 }));
   }, [filtered]);
 
   // Top productos del filtro
   const topProductosFiltro = useMemoA(() => {
     const map = {};
-    filtered.forEach(f => {
-      f.items.forEach(it => {
+    filtered.forEach((f) => {
+      f.items.forEach((it) => {
         if (!map[it.nombre]) map[it.nombre] = { nombre: it.nombre, qty: 0, total: 0 };
         map[it.nombre].qty += it.q;
         map[it.nombre].total += it.q * it.precio;
       });
     });
-    return Object.values(map).sort((a,b) => b.qty - a.qty).slice(0, 5);
+    return Object.values(map).sort((a, b) => b.qty - a.qty).slice(0, 5);
   }, [filtered]);
 
   const metodoColors = { Efectivo: "#22C55E", Transferencia: "#3B82F6", Nequi: "#8B5CF6", Daviplata: "#EF4444" };

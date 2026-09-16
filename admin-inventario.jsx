@@ -5,64 +5,55 @@ const Inventario = () => {
   const [cat, setCat] = useStateA("Todos");
   const [estado, setEstado] = useStateA("Todos");
   const [toast, setToast] = useStateA(null);
-  const [productos, setProductos] = useStateA(() => MOCK.productos.map(p => ({ ...p })));
+  const [productos, setProductos] = useStateA(() => MOCK.productos || []);
   const [barcodeInputs, setBarcodeInputs] = useStateA({});
   const [editing, setEditing] = useStateA(null);
   const [saving, setSaving] = useStateA(false);
 
-  // Realtime: sync productos only when edit modal is closed
   const _editingRef = React.useRef(null);
   _editingRef.current = editing;
   React.useEffect(() => {
     return window.EventBus.on("realtime:productos", () => {
-      if (!_editingRef.current) setProductos(MOCK.productos.map(p => ({ ...p })));
+      if (!_editingRef.current) setProductos(MOCK.productos || []);
     });
   }, []);
 
-  // Red de seguridad: al entrar al módulo, relee el stock real desde la BD.
-  // El realtime puede perder eventos (websocket), dejando MOCK.productos con un
-  // stock desactualizado tras una venta; entonces había que recargar la página.
-  // Releer con DB.productos.getAll() garantiza ver el stock correcto al entrar.
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const frescos = await DB.productos.getAll();
-        if (frescos && frescos.length) {
-          MOCK.productos = frescos;
-          if (!_editingRef.current) setProductos(frescos.map(p => ({ ...p })));
-        }
-      } catch (e) { console.error("refrescar inventario al entrar:", e); }
-    })();
-  }, []);
-
-  const sinCodigo = useMemoA(() => productos.filter(p => !p.codigoBarras).length, [productos]);
-  const bajo = useMemoA(() => productos.filter(p => p.stock < p.min).length, [productos]);
-  const totalValor = useMemoA(() => productos.reduce((s, p) => s + p.stock * p.costo, 0), [productos]);
-  const totalStock = useMemoA(() => productos.reduce((s, p) => s + p.stock, 0), [productos]);
+  const stats = useMemoA(() => {
+    const productos = MOCK.productos || [];
+    return {
+      sinCodigo: productos.filter((p) => !p.codigoBarras).length,
+      bajo: productos.filter((p) => p.stock < p.min).length,
+      totalValor: productos.reduce((sum, p) => sum + p.stock * p.costo, 0),
+      totalStock: productos.reduce((sum, p) => sum + p.stock, 0),
+    };
+  }, [productos]);
+  const sinCodigo = stats.sinCodigo;
+  const bajo = stats.bajo;
+  const totalValor = stats.totalValor;
+  const totalStock = stats.totalStock;
 
   const rows = useMemoA(() => {
     let list = productos;
-    if (cat !== "Todos") list = list.filter(p => p.categoria === cat);
+    if (cat !== "Todos") list = list.filter((p) => p.categoria === cat);
     if (q) {
-      const qq = q.toLowerCase().trim();
-      list = list.filter(p => p.nombre.toLowerCase().includes(qq) || p.sku.toLowerCase().includes(qq) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(qq)));
+      const query = q.toLowerCase().trim();
+      list = list.filter((p) => p.nombre.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(query)));
     }
-    if (estado === "Bajo") list = list.filter(p => p.stock < p.min);
-    else if (estado === "Sin stock") list = list.filter(p => p.stock === 0);
-    else if (estado === "Sin código") list = list.filter(p => !p.codigoBarras);
-    else list = list.filter(p => !!p.codigoBarras);
+    if (estado === "Bajo") list = list.filter((p) => p.stock < p.min);
+    else if (estado === "Sin stock") list = list.filter((p) => p.stock === 0);
+    else if (estado === "Sin código") list = list.filter((p) => !p.codigoBarras);
+    else if (estado === "Con código") list = list.filter((p) => !!p.codigoBarras);
     return [...list].sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [productos, q, cat, estado]);
-
   const pag = usePagination(rows, 8);
 
   const asignarCodigo = async (sku) => {
     const codigo = (barcodeInputs[sku] || "").trim();
     if (!codigo) { setToast("Escanea o digita un código de barras"); return; }
-    const existente = productos.find(p => p.codigoBarras === codigo);
-    if (existente) { setToast(`Este código ya está asignado a "${existente.nombre}" (${existente.sku})`); return; }
-    const err = await DB.productos.updateBarcode(sku, codigo);
-    if (err) { setToast("Error al guardar: " + (err.message || "Intenta de nuevo")); return; }
+    const existente = productos.find((p) => p.codigoBarras === codigo && p.sku !== sku);
+    if (existente) { setToast(`Este código ya está asignado a "${existente.nombre}"`); return; }
+    const error = await DB.productos.updateBarcode(sku, codigo);
+    if (error) { setToast("Error al guardar: " + (error.message || "Intenta de nuevo")); return; }
     setProductos(ps => ps.map(p => p.sku === sku ? { ...p, codigoBarras: codigo } : p));
     const mp = MOCK.productos.find(p => p.sku === sku);
     if (mp) mp.codigoBarras = codigo;
@@ -73,21 +64,11 @@ const Inventario = () => {
   const guardarProducto = async (draft) => {
     setSaving(true);
     if (draft.codigoBarras) {
-      const dup = productos.find(p => p.codigoBarras === draft.codigoBarras && p.sku !== draft.sku);
+      const dup = productos.find((p) => p.codigoBarras === draft.codigoBarras && p.sku !== draft.sku);
       if (dup) { setToast(`Código de barras ya asignado a "${dup.nombre}"`); setSaving(false); return; }
     }
-    const err = await DB.productos.update(draft.sku, {
-      nombre: draft.nombre,
-      categoria: draft.categoria,
-      precio: draft.precio,
-      costo: draft.costo,
-      stock: draft.stock,
-      min: draft.min,
-      unidad: draft.unidad,
-      vence: draft.vence || null,
-      codigoBarras: draft.codigoBarras || null,
-    });
-    if (err) { setToast("Error al guardar: " + (err.message || "Intenta de nuevo")); setSaving(false); return; }
+    const error = await DB.productos.update(draft.sku, { nombre: draft.nombre, categoria: draft.categoria, precio: draft.precio, costo: draft.costo, stock: draft.stock, min: draft.min, unidad: draft.unidad, vence: draft.vence || null, codigoBarras: draft.codigoBarras || null });
+    if (error) { setToast("Error al guardar: " + (error.message || "Intenta de nuevo")); setSaving(false); return; }
     setProductos(ps => ps.map(p => p.sku === draft.sku ? { ...p, ...draft } : p));
     const mp = MOCK.productos.find(p => p.sku === draft.sku);
     if (mp) Object.assign(mp, draft);
@@ -96,11 +77,12 @@ const Inventario = () => {
     setToast("Producto actualizado");
   };
 
+  const isFilterActive = (key) => key === "stock" ? (estado === "Todos" && cat === "Todos" && !q) : estado === key;
+
   return (
     <>
       <div className="tw-flex tw-flex-col md:tw-h-[calc(100vh-48px)]" style={{ marginTop: -8 }}>
 
-      {/* ── Header ── */}
       <div className="page-h tw-flex tw-flex-col sm:tw-flex-row tw-gap-3 sm:tw-items-center sm:tw-justify-between">
         <div>
           <h2>Inventario</h2>
@@ -114,7 +96,6 @@ const Inventario = () => {
         ])}><Icon name="download" size={13}/> <span className="tw-hidden sm:tw-inline">Exportar</span></button>
       </div>
 
-      {/* ── KPI mini cards ── */}
       <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 tw-mb-1.5">
         {[
           { key: "Todos", lbl: "Productos", val: productos.length, icon: "box", c: "accent" },
@@ -122,9 +103,7 @@ const Inventario = () => {
           { key: "Bajo", lbl: "Stock bajo", val: bajo, icon: "alert", c: bajo > 0 ? "bad" : "good" },
           { key: "Sin código", lbl: "Sin código", val: sinCodigo, icon: "search", c: sinCodigo > 0 ? "warn" : "good" },
         ].map(k => {
-          const active = k.key === "stock"
-            ? (estado === "Todos" && cat === "Todos" && !q)
-            : estado === k.key;
+          const active = isFilterActive(k.key);
           return (
             <button key={k.key}
               className="kpi"
@@ -145,7 +124,6 @@ const Inventario = () => {
         })}
       </div>
 
-      {/* ── Toolbar: búsqueda + filtros ── */}
       <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-1.5 tw-mb-1.5">
         <div className="search tw-flex-1 tw-min-w-[140px]" style={{ height: 32 }}>
           <Icon name="search" size={14}/>
@@ -169,7 +147,6 @@ const Inventario = () => {
         </div>
       </div>
 
-      {/* ── Desktop: tabla que llena el espacio restante ── */}
       <div className="tw-hidden md:tw-flex tw-flex-col tw-flex-1 tw-min-h-0">
         <div className="card tw-flex tw-flex-col tw-flex-1 tw-min-h-0">
           <div className="tbl-wrap tw-flex-1 tw-overflow-y-auto tw-min-h-0">
@@ -237,7 +214,6 @@ const Inventario = () => {
         </div>
       </div>
 
-      {/* ── Mobile: tarjetas compactas ── */}
       <div className="tw-flex tw-flex-col tw-gap-2 md:tw-hidden">
         {pag.slice.map(p => {
           const stockPct = Math.min(100, (p.stock / (Math.max(p.min, 1) * 3)) * 100);
@@ -292,7 +268,7 @@ const Inventario = () => {
         <Pagination {...pag} label="productos"/>
       </div>
 
-      </div>{/* fin flex container */}
+      </div>
 
       {editing && <ProductoEditModal
         producto={editing}

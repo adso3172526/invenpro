@@ -1,18 +1,26 @@
 // Componente raíz: gestiona autenticación, rol, estado de turno
 const { useState: useStateApp, useEffect: useEffectApp } = React;
 
-// Helpers para persistir sesión en localStorage
-const _ssKey = "invenpro-session";
-const _ssRead = () => { try { return JSON.parse(localStorage.getItem(_ssKey)) || {}; } catch { return {}; } };
-const _ssWrite = (patch) => { const cur = _ssRead(); Object.assign(cur, patch); localStorage.setItem(_ssKey, JSON.stringify(cur)); };
-const _ssClear = () => localStorage.removeItem(_ssKey);
+const _ssRead = () => {
+  try { return JSON.parse(localStorage.getItem("invenpro-session")) || {}; } catch { return {}; }
+};
+const _ssWrite = (patch) => {
+  const current = _ssRead();
+  Object.assign(current, patch);
+  localStorage.setItem("invenpro-session", JSON.stringify(current));
+};
+const _ssClear = () => localStorage.removeItem("invenpro-session");
+const _hasAdminAccess = (user) => {
+  const permisos = user?.permisos || [];
+  return user?.rol === "Administrador" || user?.rol === "Supervisor" || permisos.includes("USUARIO_GESTIONAR") || permisos.includes("REPORTE_VER");
+};
 
 const App = () => {
   const _ss = _ssRead();
   const [theme, setTheme] = useStateApp(() => localStorage.getItem("invenpro-theme") || "light");
-  const [stage, setStage] = useStateApp(_ss.stage || "login");
-  const [user, setUser] = useStateApp(_ss.user || null);
-  const [shift, setShift] = useStateApp(_ss.shift || null);
+  const [stage, setStage] = useStateApp("login");
+  const [user, setUser] = useStateApp(null);
+  const [shift, setShift] = useStateApp(null);
   const [shiftSummary, setShiftSummary] = useStateApp(null);
   const [adminPage, setAdminPage] = useStateApp(_ss.adminPage || "dashboard");
 
@@ -37,10 +45,7 @@ const App = () => {
       permisos: u.permisos || [],
     });
     // El rol y los permisos determinan la vista, no una selección manual
-    const tieneAdmin = u.rol === "Administrador"
-                     || u.rol === "Supervisor"
-                     || (u.permisos || []).includes("USUARIO_GESTIONAR")
-                     || (u.permisos || []).includes("REPORTE_VER");
+    const tieneAdmin = _hasAdminAccess(u);
     if (tieneAdmin) { setStage("admin"); return; }
 
     // Buscar turno abierto del cajero para reanudarlo
@@ -115,12 +120,21 @@ const App = () => {
 };
 
 (async () => {
+  const renderApp = () => {
+    const el = document.getElementById("loading");
+    if (el) el.remove();
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  };
+
   try {
-    await window.hydrateData();
+    const hydration = window.hydrateData ? window.hydrateData() : Promise.resolve();
+    await Promise.race([
+      hydration,
+      new Promise((resolve) => setTimeout(resolve, 2500))
+    ]);
   } catch (e) {
     console.error("Error al hidratar datos:", e);
+  } finally {
+    renderApp();
   }
-  const el = document.getElementById("loading");
-  if (el) el.remove();
-  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 })();
