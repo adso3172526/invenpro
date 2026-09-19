@@ -21,11 +21,14 @@ const Hub = ({ go, user }) => (
 
 const Dashboard = ({ go }) => {
   useRealtimeSync("views");
-  const sparkData = MOCK.ventasHoy.map(h => h.v);
-  const totalHoy = MOCK.ventasHoy.reduce((s, h) => s + h.v, 0);
-  const ventasCajeroHoy = MOCK.ventasCajero.map(c => ({ ...c, hoy: Math.round(c.total / 30 * (0.6 + Math.random()*0.8)) }));
-  const maxHora = Math.max(...MOCK.ventasHoy.map(h => h.v));
-  const horaPico = MOCK.ventasHoy.find(h => h.v === maxHora);
+  // ventasHoy puede venir vacío o con huecos (la vista ventas_hoy no tiene filas
+  // en la fecha actual); se blinda para no romper el Dashboard al leer .h/.v.
+  const ventasHoy = Array.isArray(MOCK.ventasHoy) ? MOCK.ventasHoy.filter(Boolean) : [];
+  const sparkData = ventasHoy.map(h => h.v);
+  const totalHoy = ventasHoy.reduce((s, h) => s + h.v, 0);
+  const ventasCajeroHoy = (MOCK.ventasCajero || []).map(c => ({ ...c, hoy: Math.round(c.total / 30 * (0.6 + Math.random()*0.8)) }));
+  const maxHora = ventasHoy.length ? Math.max(...ventasHoy.map(h => h.v)) : 0;
+  const horaPico = ventasHoy.find(h => h.v === maxHora) || { h: "--", v: 0 };
 
   return (
     <div className="dash tw-grid tw-gap-3 md:tw-gap-[12px]">
@@ -42,7 +45,7 @@ const Dashboard = ({ go }) => {
             { Métrica: "Ticket promedio", Valor: 29200 },
             { Métrica: "Alertas", Valor: 12 },
           ]},
-          { name: "Ventas por hora", rows: MOCK.ventasHoy.map(h => ({ Hora: h.h + ":00", Total: h.v })) },
+          { name: "Ventas por hora", rows: ventasHoy.map(h => ({ Hora: h.h + ":00", Total: h.v })) },
           { name: "Ventas por cajero (hoy)", rows: ventasCajeroHoy.map(c => ({ Cajero: c.nombre, Total: c.hoy })) },
         ])}><Icon name="download" size={14}/> Exportar</button>
       </div>
@@ -85,10 +88,10 @@ const Dashboard = ({ go }) => {
             <div className="tw-relative tw-h-[200px] md:tw-h-full md:tw-min-h-[240px] tw-p-1">
               <ChartCanvas type="bar"
                 data={{
-                  labels: MOCK.ventasHoy.map(h => h.h + "h"),
+                  labels: ventasHoy.map(h => h.h + "h"),
                   datasets: [{
-                    data: MOCK.ventasHoy.map(h => h.v),
-                    backgroundColor: MOCK.ventasHoy.map(h => h.v === maxHora ? "--accent" : "--accent/45"),
+                    data: ventasHoy.map(h => h.v),
+                    backgroundColor: ventasHoy.map(h => h.v === maxHora ? "--accent" : "--accent/45"),
                     hoverBackgroundColor: "--accent",
                     borderRadius: 5,
                     maxBarThickness: 26,
