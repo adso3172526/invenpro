@@ -75,7 +75,7 @@
       }
       return {
         ok: true,
-        message: proveedor.estado === "activo" ? "Proveedor dado de baja" : "Proveedor reactivado",
+        message: nuevoEstado === "activo" ? "Proveedor reactivado" : "Proveedor dado de baja",
         value: nuevoEstado,
       };
     }

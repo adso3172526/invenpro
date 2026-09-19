@@ -1,6 +1,6 @@
 ﻿(function () {
   var root = (window.InvenPro = window.InvenPro || {});
-  var Sanitizer = root.SQLInjection || {};
+  var Sanitizer = root.Sanitizer || root.SQLInjection || window.Sanitizer || {};
 
   class BaseRepository {
     constructor(tableName, primaryKey, mapper, db) {

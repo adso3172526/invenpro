@@ -6,7 +6,7 @@
     { id: "inventory",   label: "Inventario",           icon: "box",      color: "#22C55E" },
     { id: "ingreso",     label: "Ingreso de mercancia", icon: "truck",    color: "#F59E0B" },
     { id: "vence",       label: "Vencimientos",         icon: "calendar", color: "#EF4444" },
-    { id: "proveedores", label: "Provedores",           icon: "store",    color: "#A16207" },
+    { id: "proveedores", label: "Proveedores",           icon: "store",    color: "#A16207" },
     { id: "cajeros",     label: "Cajeros y turnos",     icon: "users",    color: "#9CA3AF" },
     { id: "reportes",    label: "Reporte de ventas",    icon: "chart",    color: "#8B5CF6" },
     { id: "ajustes",     label: "Configuracion",        icon: "settings", color: "#374151", rol: "Administrador" },

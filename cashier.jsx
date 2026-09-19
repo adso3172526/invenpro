@@ -224,7 +224,7 @@ const BarcodeScanner = ({ onScan, onClose, closeOnScan }) => {
 const CATEGORIAS = ["Todos", "Lácteos", "Panadería", "Granos", "Despensa", "Enlatados", "Bebidas", "Frescos", "Aseo"];
 
 const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
-  const [productos, setProductos] = useState(() => MOCK.productos.map(p => ({ ...p })));
+  const [productos, setProductos] = useState(() => MOCK.productos.map(p => p));
   const [cart, setCart] = useState([]);
   const [cat, setCat] = useState("Todos");
   const [q, setQ] = useState("");
@@ -257,7 +257,18 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
         if (drop > 0) p = Math.max(0, p - drop);
       }
       pend[mp.sku] = p;
-      return { ...mp, stock: Math.max(0, serverStock - p) };
+      return new Producto({
+        sku: mp.sku,
+        nombre: mp.nombre,
+        categoria: mp.categoria,
+        precio: mp.precio,
+        costo: mp.costo,
+        stock: Math.max(0, serverStock - p),
+        min: mp.min,
+        vence: mp.vence,
+        unidad: mp.unidad,
+        codigoBarras: mp.codigoBarras,
+      });
     });
     prevServer.current = nextPrev;
     setProductos(out);

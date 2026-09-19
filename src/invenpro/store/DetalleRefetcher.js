@@ -31,7 +31,7 @@
           if (result.error || !result.data) return;
           var store = self._store;
           if (!store) return;
-          var ingresos = store.getIngresos ? store.getIngresos() : (store.ingresos || []);
+          var ingresos = store.ingresos || [];
           var ing = ingresos.find(function (x) { return x.id === ingresoId; });
           if (ing) {
             ing.detalle = self._camelize(result.data);

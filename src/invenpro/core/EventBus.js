@@ -38,4 +38,5 @@
   }
 
   root.EventBus = EventBus;
+  window.EventBus = EventBus;
 })();

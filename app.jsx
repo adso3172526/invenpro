@@ -23,6 +23,14 @@ const App = () => {
   const [shift, setShift] = useStateApp(null);
   const [shiftSummary, setShiftSummary] = useStateApp(null);
   const [adminPage, setAdminPage] = useStateApp(_ss.adminPage || "dashboard");
+  const [, forceRender] = useStateApp(0);
+
+  // Re-render when Supabase hydration completes (if it was slow)
+  useEffectApp(() => {
+    const handler = () => forceRender(n => n + 1);
+    window.addEventListener("invenpro:hydrated", handler);
+    return () => window.removeEventListener("invenpro:hydrated", handler);
+  }, []);
 
   useEffectApp(() => {
     document.documentElement.dataset.theme = theme;

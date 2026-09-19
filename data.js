@@ -40,6 +40,7 @@
   // ---- DataStore (with DI) ----
   var DS = root.DataStore || window.DataStore;
   window._dataStore = new DS({
+    db: db,
     entityClasses: { Producto: Proto, Usuario: Usua, Cajero: Caj, Proveedor: Prov, Turno: Tur, Factura: Fac },
     camelize: Helpers.camelize,
   });
@@ -149,17 +150,68 @@
       var oldRow = cam(payload.old || {});
       if (payload.eventType === "INSERT") {
         if (!M.ingresos.find(function(x){return x.id===row.id;}))
-          M.ingresos.unshift(Object.assign({}, row, {detalle:[]}));
+          M.ingresos.unshift(new Ing(Object.assign({}, row, {detalle:[]})));
       } else if (payload.eventType === "UPDATE") {
         var idx = M.ingresos.findIndex(function(x){return x.id===row.id;});
         if (idx !== -1) {
           var ex = M.ingresos[idx];
-          M.ingresos[idx] = Object.assign({}, ex, row, {detalle:ex.detalle});
+          M.ingresos[idx] = new Ing(Object.assign({}, ex, row, {detalle:ex.detalle}));
         }
       } else if (payload.eventType === "DELETE") {
         var did = oldRow.id || row.id;
         var di = M.ingresos.findIndex(function(x){return x.id===did;});
         if (di !== -1) M.ingresos.splice(di, 1);
+      }
+      _bus.emit("realtime:ingresos", {type:payload.eventType, row:row});
+    }
+  });
+
+  // Factura items handler (realtime for factura_items table)
+  _rtm.registerHandler("factura_items", {
+    dispatch: function (payload) {
+      var M = window.MOCK; if (!M || !M.facturas) return;
+      var cam = Helpers.camelize;
+      var row = cam(payload.new || {});
+      var oldRow = cam(payload.old || {});
+      var fid = row.facturaId || row.factura_id;
+      var fact = M.facturas.find(function(f){return f.id===fid;});
+      if (!fact) return;
+      var items = fact.items ? fact.items.slice() : [];
+      if (payload.eventType === "INSERT") {
+        if (!items.find(function(it){return it.sku===row.sku;}))
+          items.push(row);
+      } else if (payload.eventType === "UPDATE") {
+        var ii = items.findIndex(function(it){return it.sku===row.sku;});
+        if (ii !== -1) items[ii] = Object.assign(items[ii], row);
+      } else if (payload.eventType === "DELETE") {
+        var dsku = oldRow.sku || row.sku;
+        items = items.filter(function(it){return it.sku!==dsku;});
+      }
+      fact.items = items;
+      _bus.emit("realtime:facturas", {type:payload.eventType, row:row});
+    }
+  });
+
+  // Ingreso detalle handler (realtime for ingreso_detalle table)
+  _rtm.registerHandler("ingreso_detalle", {
+    dispatch: function (payload) {
+      var M = window.MOCK; if (!M || !M.ingresos) return;
+      var cam = Helpers.camelize;
+      var row = cam(payload.new || {});
+      var oldRow = cam(payload.old || {});
+      var iid = row.ingresoId || row.ingreso_id;
+      var ing = M.ingresos.find(function(x){return x.id===iid;});
+      if (!ing) return;
+      if (!ing.detalle) ing.detalle = [];
+      if (payload.eventType === "INSERT") {
+        if (!ing.detalle.find(function(d){return d.sku===row.sku;}))
+          ing.detalle.push(row);
+      } else if (payload.eventType === "UPDATE") {
+        var di = ing.detalle.findIndex(function(d){return d.sku===row.sku;});
+        if (di !== -1) ing.detalle[di] = Object.assign(ing.detalle[di], row);
+      } else if (payload.eventType === "DELETE") {
+        var dsku = oldRow.sku || row.sku;
+        ing.detalle = ing.detalle.filter(function(d){return d.sku!==dsku;});
       }
       _bus.emit("realtime:ingresos", {type:payload.eventType, row:row});
     }
@@ -191,6 +243,8 @@
       });
     }
     _rtm.start();
+    // Notify App that hydration is done (re-render if it was waiting)
+    window.dispatchEvent(new CustomEvent("invenpro:hydrated"));
   };
 
   window.stopRealtime = function () { _rtm.stop(); };

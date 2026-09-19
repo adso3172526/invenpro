@@ -61,4 +61,6 @@
   };
 
   root.SQLInjection = SQLInjection;
+  root.Sanitizer = SQLInjection;
+  window.Sanitizer = SQLInjection;
 })();

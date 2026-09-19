@@ -108,4 +108,5 @@
 
   var Helpers = { camelize: camelize, snakify: snakify, hashPass: hashPass, md5Hex: md5Hex, fmtCOP: fmtCOP, daysFromNow: daysFromNow, todayStr: todayStr };
   root.Helpers = Helpers;
+  window.Helpers = Helpers;
 })();

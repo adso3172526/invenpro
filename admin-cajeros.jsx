@@ -6,6 +6,14 @@ const Cajeros = () => {
   const [cfgCajero, setCfgCajero] = useStateA(null);
   const [cfgUsuario, setCfgUsuario] = useStateA(null);
   const [toast, setToast] = useStateA(null);
+  const [newNombre, setNewNombre] = useStateA("");
+  const [newApellido, setNewApellido] = useStateA("");
+  const [newDoc, setNewDoc] = useStateA("");
+  const [newTel, setNewTel] = useStateA("");
+  const [newRol, setNewRol] = useStateA("Cajero");
+  const [newUsuario, setNewUsuario] = useStateA("");
+  const [newPass, setNewPass] = useStateA("");
+  const [savingNew, setSavingNew] = useStateA(false);
 
   // Realtime: only re-render when no modal is open
   const [, _rtTick] = React.useState(0);
@@ -220,16 +228,36 @@ const Cajeros = () => {
         <Modal title="Nuevo cajero" bottomSheet onClose={() => setShowAdd(false)} footer={
           <>
             <button className="btn ghost" onClick={() => setShowAdd(false)}>Cancelar</button>
-            <button className="btn primary" onClick={() => { setShowAdd(false); setToast("Cajero creado correctamente"); }}><Icon name="check"/> Crear cajero</button>
+            <button className="btn primary" disabled={savingNew} onClick={async () => {
+              if (!newNombre.trim() || !newUsuario.trim()) { setToast("Nombre y usuario son obligatorios"); return; }
+              setSavingNew(true);
+              try {
+                const fullName = (newNombre.trim() + " " + newApellido.trim()).trim();
+                const cajeroId = "CAJ-" + Date.now();
+                const cajeroRow = { id: cajeroId, nombre: fullName, doc: newDoc, rol: newRol, estado: "activo", turnoActivo: false, ingreso: 0, ventas30d: 0 };
+                const err1 = await DB.cajeros.update(cajeroId, cajeroRow);
+                if (err1) { setToast("Error al crear cajero: " + (err1.message || "Intenta de nuevo")); setSavingNew(false); return; }
+                const hashed = newPass ? await window.hashPass(newPass) : await window.hashPass("123456");
+                const usuarioRow = { usuario: newUsuario.trim(), nombre: fullName, rol: newRol, pass: hashed, permisos: [] };
+                await DB.cajeros.updateUsuario(newUsuario.trim(), usuarioRow);
+                setShowAdd(false);
+                setToast("Cajero creado correctamente");
+                setNewNombre(""); setNewApellido(""); setNewDoc(""); setNewTel(""); setNewRol("Cajero"); setNewUsuario(""); setNewPass("");
+              } catch (e) {
+                setToast("Error: " + (e.message || "Intenta de nuevo"));
+              }
+              setSavingNew(false);
+            }}><Icon name="check"/> {savingNew ? "Creando…" : "Crear cajero"}</button>
           </>
         }>
           <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
-            <div className="field"><label>Nombres</label><input placeholder="Ej: Carolina"/></div>
-            <div className="field"><label>Apellidos</label><input placeholder="Ej: Mendoza"/></div>
-            <div className="field"><label>Documento</label><input className="mono" placeholder="C.C."/></div>
-            <div className="field"><label>Teléfono</label><input className="mono" placeholder="+57"/></div>
-            <div className="field"><label>Rol</label><select><option>Cajero</option>{!esSupervisor && <option>Supervisor</option>}</select></div>
-            <div className="field"><label>Usuario POS</label><input className="mono" placeholder="nombre.apellido"/></div>
+            <div className="field"><label>Nombres</label><input value={newNombre} onChange={e => setNewNombre(e.target.value)} placeholder="Ej: Carolina"/></div>
+            <div className="field"><label>Apellidos</label><input value={newApellido} onChange={e => setNewApellido(e.target.value)} placeholder="Ej: Mendoza"/></div>
+            <div className="field"><label>Documento</label><input className="mono" value={newDoc} onChange={e => setNewDoc(e.target.value)} placeholder="C.C."/></div>
+            <div className="field"><label>Teléfono</label><input className="mono" value={newTel} onChange={e => setNewTel(e.target.value)} placeholder="+57"/></div>
+            <div className="field"><label>Rol</label><select value={newRol} onChange={e => setNewRol(e.target.value)}><option>Cajero</option>{!esSupervisor && <option>Supervisor</option>}</select></div>
+            <div className="field"><label>Usuario POS</label><input className="mono" value={newUsuario} onChange={e => setNewUsuario(e.target.value)} placeholder="nombre.apellido"/></div>
+            <div className="field sm:tw-col-span-2"><label>Contraseña inicial</label><input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Vacío = 123456 por defecto"/></div>
           </div>
         </Modal>
       )}
