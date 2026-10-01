@@ -237,6 +237,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     ventas: shift.ventas || 0,
     trans: shift.transacciones || 0,
     items: 0,
+    porMetodo: { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 },
   });
   // Descuentos locales optimistas aún no confirmados por el servidor (sku -> unidades)
   const pendingStock = React.useRef({});
@@ -380,7 +381,13 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
       recibido,
       cambio: recibido - totals.total,
     };
-    const newStats = { ventas: shiftStats.ventas + totals.total, trans: shiftStats.trans + 1, items: shiftStats.items + totals.items };
+    const pm = shiftStats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
+    const newStats = {
+      ventas: shiftStats.ventas + totals.total,
+      trans: shiftStats.trans + 1,
+      items: shiftStats.items + totals.items,
+      porMetodo: { ...pm, [metodo]: (pm[metodo] || 0) + totals.total },
+    };
     setShiftStats(newStats);
     setDone(factura);
     setPay(null);
@@ -394,9 +401,12 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     }
   };
 
-  const closeShift = () => {
+  const closeShift = (datos) => {
     const now = new Date();
-    const summary = { ...shift, ...shiftStats, cierre: now };
+    const pm = shiftStats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
+    const esperado = (shift.base || 0) + (pm.Efectivo || 0);
+    const contado = (datos && datos.efectivoContado != null) ? datos.efectivoContado : esperado;
+    const summary = { ...shift, ...shiftStats, cierre: now, esperado, contado, diferencia: contado - esperado };
     // Persistir cierre en Supabase
     if (shift.id) {
       DB.turnos.close(shift.id, {
@@ -405,6 +415,21 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
         ventas: shiftStats.ventas,
         transacciones: shiftStats.trans,
       }).catch(err => console.error("closeTurno:", err));
+      // Registro del cierre de caja (arqueo + desglose por medio de pago)
+      DB.cierres.create({
+        turnoId: shift.id,
+        baseInicial: shift.base || 0,
+        ventasEfectivo: pm.Efectivo || 0,
+        ventasTransferencia: pm.Transferencia || 0,
+        ventasNequi: pm.Nequi || 0,
+        ventasDaviplata: pm.Daviplata || 0,
+        totalVentas: shiftStats.ventas,
+        transacciones: shiftStats.trans,
+        esperadoEfectivo: esperado,
+        efectivoContado: contado,
+        diferencia: contado - esperado,
+        observaciones: (datos && datos.observaciones) || null,
+      }).catch(err => console.error("crearCierre:", err));
     }
     onCloseShift(summary);
   };
@@ -1023,8 +1048,10 @@ const ReceiptModal = ({ factura, onClose }) => {
 
 // =================== Cierre de turno ===================
 const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
-  const [contado, setContado] = useState(shift.base + stats.ventas);
-  const esperado = shift.base + stats.ventas;
+  const pm = stats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
+  const esperado = (shift.base || 0) + (pm.Efectivo || 0);   // efectivo esperado = base + ventas en efectivo
+  const [contado, setContado] = useState(esperado);
+  const [observaciones, setObservaciones] = useState("");
   const diff = contado - esperado;
 
   const diffBg = diff === 0 ? "var(--good-soft)" : (diff > 0 ? "var(--warn-soft)" : "var(--bad-soft)");
@@ -1046,11 +1073,13 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
               <div className="card tw-bg-surface-2">
                 <div className="card-b">
                   <div className="row spaced"><span className="muted">Base inicial</span><span className="mono">{window.fmtCOP(shift.base)}</span></div>
-                  <div className="row spaced"><span className="muted">Ventas en efectivo</span><span className="mono">{window.fmtCOP(stats.ventas)}</span></div>
+                  <div className="row spaced"><span className="muted">Efectivo</span><span className="mono">{window.fmtCOP(pm.Efectivo)}</span></div>
+                  <div className="row spaced"><span className="muted">Transferencia</span><span className="mono">{window.fmtCOP(pm.Transferencia)}</span></div>
+                  <div className="row spaced"><span className="muted">Nequi</span><span className="mono">{window.fmtCOP(pm.Nequi)}</span></div>
+                  <div className="row spaced"><span className="muted">Daviplata</span><span className="mono">{window.fmtCOP(pm.Daviplata)}</span></div>
                   <div className="row spaced"><span className="muted">Transacciones</span><span className="mono">{stats.trans}</span></div>
-                  <div className="row spaced"><span className="muted">Productos vendidos</span><span className="mono">{stats.items}</span></div>
                   <hr className="tw-border-0 tw-border-t tw-border-border tw-my-2.5"/>
-                  <div className="row spaced"><span className="tw-font-semibold">Esperado en caja</span><span className="mono tw-font-semibold tw-text-[17px]">{window.fmtCOP(esperado)}</span></div>
+                  <div className="row spaced"><span className="tw-font-semibold">Esperado en caja (efectivo)</span><span className="mono tw-font-semibold tw-text-[17px]">{window.fmtCOP(esperado)}</span></div>
                 </div>
               </div>
             </div>
@@ -1068,14 +1097,14 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
               </div>
               <div className="field tw-mt-2">
                 <label>Observaciones (opcional)</label>
-                <textarea rows="3" placeholder="Ej: cliente recibió mal el cambio…"/>
+                <textarea rows="3" placeholder="Ej: cliente recibió mal el cambio…" value={observaciones} onChange={e => setObservaciones(e.target.value)}/>
               </div>
             </div>
           </div>
         </div>
         <div className="modal-f">
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn primary" onClick={onConfirm}><Icon name="check"/> Confirmar cierre</button>
+          <button className="btn primary" onClick={() => onConfirm({ efectivoContado: contado, observaciones })}><Icon name="check"/> Confirmar cierre</button>
         </div>
       </div>
 
@@ -1098,8 +1127,20 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
                 <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(shift.base)}</span>
               </div>
               <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-text-txt-3">Ventas</span>
-                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(stats.ventas)}</span>
+                <span className="tw-text-xs tw-text-txt-3">Efectivo</span>
+                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Efectivo)}</span>
+              </div>
+              <div className="tw-flex tw-justify-between tw-items-center">
+                <span className="tw-text-xs tw-text-txt-3">Transferencia</span>
+                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Transferencia)}</span>
+              </div>
+              <div className="tw-flex tw-justify-between tw-items-center">
+                <span className="tw-text-xs tw-text-txt-3">Nequi</span>
+                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Nequi)}</span>
+              </div>
+              <div className="tw-flex tw-justify-between tw-items-center">
+                <span className="tw-text-xs tw-text-txt-3">Daviplata</span>
+                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Daviplata)}</span>
               </div>
               <div className="tw-flex tw-justify-between tw-items-center">
                 <span className="tw-text-xs tw-text-txt-3">Transacciones</span>
@@ -1111,7 +1152,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
               </div>
               <div className="tw-border-t tw-border-border tw-pt-1.5 tw-mt-0.5">
                 <div className="tw-flex tw-justify-between tw-items-center">
-                  <span className="tw-text-sm tw-font-semibold">Esperado en caja</span>
+                  <span className="tw-text-sm tw-font-semibold">Esperado (efectivo)</span>
                   <span className="mono tw-text-base tw-font-bold">{window.fmtCOP(esperado)}</span>
                 </div>
               </div>
@@ -1142,7 +1183,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
           <div className="tw-px-4 tw-pb-3">
             <div className="field tw-mb-0">
               <label className="tw-text-xs">Observaciones (opcional)</label>
-              <textarea rows="2" placeholder="Ej: cliente recibió mal el cambio…" className="tw-text-sm"/>
+              <textarea rows="2" placeholder="Ej: cliente recibió mal el cambio…" className="tw-text-sm" value={observaciones} onChange={e => setObservaciones(e.target.value)}/>
             </div>
           </div>
         </div>
@@ -1150,7 +1191,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
         {/* Footer fijo */}
         <div className="tw-px-4 tw-py-3 tw-border-t tw-border-border tw-bg-surface-2 tw-shrink-0 tw-flex tw-gap-2">
           <button className="tw-flex-1 tw-py-2.5 tw-rounded-xl tw-border tw-border-border tw-bg-surface tw-text-sm tw-font-medium tw-cursor-pointer" onClick={onClose}>Cancelar</button>
-          <button className="tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-bg-accent tw-text-white tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5" onClick={onConfirm}>
+          <button className="tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-bg-accent tw-text-white tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5" onClick={() => onConfirm({ efectivoContado: contado, observaciones })}>
             <Icon name="check" size={15}/> Confirmar cierre
           </button>
         </div>

@@ -235,6 +235,15 @@
     }
   }
 
+  class CierreService {
+    async create(cierre) {
+      const row = snakify(cierre);
+      const { error } = await window.db.from("cierres_caja").insert(row);
+      if (error) console.error("createCierre:", error);
+      return error;
+    }
+  }
+
   class ProveedorService {
     async create(p) {
       const row = snakify(p);
@@ -690,6 +699,7 @@
     facturas: null, // la asigna facturacion/composition.js (módulo POO/SOLID)
     turnos: new TurnoService(),
     cajeros: new CajeroService(),
+    cierres: new CierreService(),
     proveedores: new ProveedorService(),
     ingresos: new IngresoService(),
     config: new ConfigService(),
