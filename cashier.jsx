@@ -800,7 +800,12 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
           {/* Atajos: cargan al medio seleccionado (el que tocaste de último) */}
           <div className="muted tw-text-[11px] tw-mt-2.5 tw-mb-1.5">Atajos para <span className="tw-font-semibold tw-text-accent">{activo === "Efectivo" ? "Efectivo" : activo}</span></div>
           <div className="cash-suggestions tw-flex tw-flex-wrap tw-gap-1.5">
-            <button type="button" onClick={() => set1(activo, montos[activo] + restante)}>Completar</button>
+            <button type="button" onClick={() => {
+              // Fija el medio activo al faltante exacto (total - lo aportado por los demás).
+              // Si el campo excedía el total, lo baja al valor correcto.
+              const otros = ["Efectivo", "Transferencia", "Nequi", "Daviplata"].reduce((s, k) => k === activo ? s : s + montos[k], 0);
+              set1(activo, Math.max(0, total - otros));
+            }}>Completar</button>
             {[20000, 50000, 100000].map((v, i) => (
               <button key={i} type="button" onClick={() => set1(activo, v)}>${v.toLocaleString("es-CO")}</button>
             ))}
