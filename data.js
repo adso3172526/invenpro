@@ -131,6 +131,7 @@
       this.metodo = data.metodo;
       this.total = data.total;
       this.items = data.items || [];
+      this.pagos = data.pagos || []; // desglose por medio (pago mixto); vacío = pago simple
     }
     get cantidadItems() { return this.items.reduce((sum, it) => sum + (it.q || 0), 0); }
   }
@@ -349,7 +350,7 @@
         d.from("ventas_hoy").select("*"),
         d.from("proveedores").select("*"),
         d.from("turnos").select("*"),
-        d.from("facturas").select("*, factura_items(*)"),
+        d.from("facturas").select("*, factura_items(*), factura_pagos(*)"),
         d.from("ingresos").select("*, ingreso_detalle(*)"),
         d.from("configuracion").select("*"),
         d.from("cierres_caja").select("*"),
@@ -357,7 +358,9 @@
       const facturasConItems = (facturas || []).map((f) => {
         const raw = camelize(f);
         raw.items = raw.facturaItems || [];
+        raw.pagos = raw.facturaPagos || [];
         delete raw.facturaItems;
+        delete raw.facturaPagos;
         return new Factura(raw);
       });
       facturasConItems.sort((a, b) => (b.fecha + b.hora).localeCompare(a.fecha + a.hora));
@@ -409,7 +412,7 @@
 
   const REALTIME_TABLES = [
     "productos", "cajeros", "usuarios_sistema", "proveedores",
-    "turnos", "facturas", "factura_items", "ingresos", "ingreso_detalle", "configuracion",
+    "turnos", "facturas", "factura_items", "factura_pagos", "ingresos", "ingreso_detalle", "configuracion",
   ];
 
   class RealtimeManager {
@@ -494,6 +497,7 @@
         case "turnos":          this._handleSimple(M, "turnos", Turno, "id", payload); break;
         case "facturas":        this._handleFacturas(M, payload); break;
         case "factura_items":   this._handleFacturaItems(M, payload); break;
+        case "factura_pagos":   this._handleFacturaPagos(M, payload); break;
         case "ingresos":        this._handleIngresos(M, payload); break;
         case "ingreso_detalle": this._handleIngresoDetalle(M, payload); break;
         case "configuracion":   this._handleConfiguracion(M, payload); break;
@@ -558,6 +562,20 @@
             if (!f.items.find(it => it.sku === row.sku && it.facturaId === row.facturaId)) {
               f.items.push(row);
             }
+          }
+          window.EventBus.emit("realtime:facturas", { type: "UPDATE", row: f });
+        }
+      }
+    }
+
+    _handleFacturaPagos(M, payload) {
+      const row = camelize(payload.new || {});
+      if (row.facturaId) {
+        const f = M.facturas.find(x => x.id === row.facturaId);
+        if (f) {
+          if (!f.pagos) f.pagos = [];
+          if (payload.eventType === "INSERT") {
+            if (!f.pagos.find(p => p.id === row.id)) f.pagos.push(row);
           }
           window.EventBus.emit("realtime:facturas", { type: "UPDATE", row: f });
         }

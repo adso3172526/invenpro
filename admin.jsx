@@ -46,10 +46,20 @@ const Reportes = () => {
     return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([n,v]) => ({ nombre: n, total: v }));
   }, [filtered]);
 
-  // Por método de pago
+  // Por método de pago. Si la factura tiene desglose (pago mixto), cada monto
+  // se carga a SU medio (ej: 5.000 Nequi + 5.000 Daviplata), nunca como "Mixto".
+  // Facturas antiguas sin desglose usan el método simple de la factura.
   const byMetodo = useMemoA(() => {
     const map = {};
-    filtered.forEach(f => { map[f.metodo] = (map[f.metodo] || 0) + f.total; });
+    filtered.forEach(f => {
+      const pagos = Array.isArray(f.pagos) ? f.pagos.filter(p => p && p.monto > 0) : [];
+      if (pagos.length) {
+        pagos.forEach(p => { map[p.metodo] = (map[p.metodo] || 0) + p.monto; });
+      } else if (f.metodo && f.metodo !== "Mixto") {
+        map[f.metodo] = (map[f.metodo] || 0) + f.total;
+      }
+      // "Mixto" sin pagos cargados aún (realtime en vuelo): se omite hasta que lleguen
+    });
     const sum = Object.values(map).reduce((a,b)=>a+b, 0) || 1;
     // Ordenado de MENOR a MAYOR (ascendente)
     return Object.entries(map).sort((a,b)=>a[1]-b[1]).map(([n,v]) => ({ nombre: n, total: v, pct: (v/sum)*100 }));
