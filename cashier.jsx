@@ -294,13 +294,21 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     (async () => {
       try {
         const { data } = await window.db.from("turnos")
-          .select("ventas,transacciones").eq("id", shift.id).maybeSingle();
+          .select("ventas,transacciones,por_metodo").eq("id", shift.id).maybeSingle();
         if (data) {
-          setShiftStats(s => ({
-            ...s,
-            ventas: Math.max(s.ventas, data.ventas || 0),
-            trans: Math.max(s.trans, data.transacciones || 0),
-          }));
+          setShiftStats(s => {
+            // Solo restaura el desglose si aún está vacío (no pisar ventas de esta sesión)
+            const vacia = !s.porMetodo || Object.values(s.porMetodo).every(v => !v);
+            const pmBD = (data.por_metodo && typeof data.por_metodo === "object")
+              ? { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0, ...data.por_metodo }
+              : s.porMetodo;
+            return {
+              ...s,
+              ventas: Math.max(s.ventas, data.ventas || 0),
+              trans: Math.max(s.trans, data.transacciones || 0),
+              porMetodo: vacia ? pmBD : s.porMetodo,
+            };
+          });
         }
       } catch (e) { console.error("refrescar turno al abrir POS:", e); }
     })();
@@ -400,7 +408,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     DB.facturas.create(factura, factura.items).catch(err => console.error("POS persist:", err));
     // Actualizar turno con totales acumulados (así no se pierden si el cajero sale sin cerrar)
     if (shift.id) {
-      DB.turnos.close(shift.id, { ventas: newStats.ventas, transacciones: newStats.trans })
+      DB.turnos.close(shift.id, { ventas: newStats.ventas, transacciones: newStats.trans, porMetodo: nuevoPorMetodo })
         .catch(err => console.error("updateTurno stats:", err));
     }
   };
