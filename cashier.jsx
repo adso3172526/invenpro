@@ -767,7 +767,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
 
   return (
     <div className="modal-bg" onClick={onClose}>
-      <div className="modal lg" onClick={e => e.stopPropagation()}>
+      <div className="modal lg bottom-sheet" onClick={e => e.stopPropagation()}>
         <div className="modal-h">
           <h3>Cobrar venta</h3>
           <button className="x" onClick={onClose}><Icon name="x"/></button>
