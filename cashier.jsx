@@ -744,6 +744,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
 // =================== Modal de pago (soporta pago mixto) ===================
 const PaymentModal = ({ total, items, onClose, onPay }) => {
   const [montos, setMontos] = useState({ Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 });
+  const [activo, setActivo] = useState("Efectivo"); // medio al que apuntan los atajos
   const set1 = (m, v) => setMontos(x => ({ ...x, [m]: v }));
 
   const noEfectivo = montos.Transferencia + montos.Nequi + montos.Daviplata; // medios exactos
@@ -788,16 +789,20 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 <span className="tw-text-sm tw-flex-1">{m === "Efectivo" ? "Efectivo recibido" : m}</span>
                 <input className="mono tw-border tw-border-border tw-rounded-lg tw-px-2.5 tw-py-1.5 tw-text-right tw-bg-surface tw-w-[44%]"
                   inputMode="numeric" placeholder="0"
+                  style={activo === m ? { borderColor: "var(--accent)", boxShadow: "0 0 0 2px color-mix(in oklab, var(--accent) 35%, transparent)" } : undefined}
                   value={montos[m] ? montos[m].toLocaleString("es-CO") : ""}
+                  onFocus={() => setActivo(m)}
                   onChange={e => set1(m, parseInt(e.target.value.replace(/\D/g, "")) || 0)}/>
               </div>
             ))}
           </div>
 
-          {/* Atajos de efectivo */}
-          <div className="cash-suggestions tw-flex tw-flex-wrap tw-gap-1.5 tw-mt-2.5">
-            {[restoEfectivo || total, 20000, 50000, 100000].map((v, i) => (
-              <button key={i} type="button" onClick={() => set1("Efectivo", v)}>${v.toLocaleString("es-CO")}</button>
+          {/* Atajos: cargan al medio seleccionado (el que tocaste de último) */}
+          <div className="muted tw-text-[11px] tw-mt-2.5 tw-mb-1.5">Atajos para <span className="tw-font-semibold tw-text-accent">{activo === "Efectivo" ? "Efectivo" : activo}</span></div>
+          <div className="cash-suggestions tw-flex tw-flex-wrap tw-gap-1.5">
+            <button type="button" onClick={() => set1(activo, montos[activo] + restante)}>Completar</button>
+            {[20000, 50000, 100000].map((v, i) => (
+              <button key={i} type="button" onClick={() => set1(activo, v)}>${v.toLocaleString("es-CO")}</button>
             ))}
           </div>
 
