@@ -242,6 +242,11 @@
       if (error) console.error("createCierre:", error);
       return error;
     }
+    async getAll() {
+      const { data, error } = await window.db.from("cierres_caja").select("*");
+      if (error) { console.error("CierreService.getAll:", error); return []; }
+      return camelize(data || []);
+    }
   }
 
   class ProveedorService {
@@ -322,6 +327,7 @@
       this.ventasCajero = [];
       this.topProductos = [];
       this.ventasHoy = [];
+      this.cierres = [];
       this.configuracion = {};
     }
     async hydrate() {
@@ -332,6 +338,7 @@
         { data: ventasMes }, { data: ventasCajero }, { data: topProductos },
         { data: ventasHoy }, { data: proveedores }, { data: turnos },
         { data: facturas }, { data: ingresos }, { data: configuracion },
+        { data: cierres },
       ] = await Promise.all([
         d.from("productos").select("*"),
         d.from("cajeros").select("*"),
@@ -345,6 +352,7 @@
         d.from("facturas").select("*, factura_items(*)"),
         d.from("ingresos").select("*, ingreso_detalle(*)"),
         d.from("configuracion").select("*"),
+        d.from("cierres_caja").select("*"),
       ]);
       const facturasConItems = (facturas || []).map((f) => {
         const raw = camelize(f);
@@ -373,6 +381,7 @@
       this.turnos = camelize(turnos || []).map(d => new Turno(d));
       this.facturas = facturasConItems;
       this.ingresos = ingresosConDetalle;
+      this.cierres = camelize(cierres || []);
       this.configuracion = configMap;
     }
   }
