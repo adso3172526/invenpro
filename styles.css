@@ -752,10 +752,7 @@ input, select, textarea { font: inherit; color: inherit; }
     display: none !important;
   }
 
-  /* Ajustes / Configuración ocupa todo el ancho */
-  .sidebar .nav-card:last-child {
-    grid-column: span 2 !important;
-  }
+  /* El botón de cerrar sesión se alinea en la cuadrícula normalmente junto a configuración */
 
   /* User box móvil en la base del overlay */
   .sidebar .user {
