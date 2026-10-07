@@ -3,7 +3,7 @@
 
   var REALTIME_TABLES = [
     "productos", "cajeros", "usuarios_sistema", "proveedores",
-    "turnos", "facturas", "factura_items", "ingresos", "ingreso_detalle", "configuracion",
+    "turnos", "facturas", "factura_items", "factura_pagos", "ingresos", "ingreso_detalle", "configuracion",
   ];
 
   class RealtimeManager {

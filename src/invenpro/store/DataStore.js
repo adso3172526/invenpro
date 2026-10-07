@@ -10,6 +10,7 @@
     #proveedores = [];
     #turnos = [];
     #facturas = [];
+    #cierres = [];
     #ingresos = [];
     #ventasMes = [];
     #ventasCajero = [];
@@ -29,6 +30,7 @@
     get proveedores() { return this.#proveedores; }
     get turnos() { return this.#turnos; }
     get facturas() { return this.#facturas; }
+    get cierres() { return this.#cierres; }
     get ingresos() { return this.#ingresos; }
     get ventasMes() { return this.#ventasMes; }
     get ventasCajero() { return this.#ventasCajero; }
@@ -42,6 +44,7 @@
     setProveedores(items) { this.#proveedores = items; }
     setTurnos(items) { this.#turnos = items; }
     setFacturas(items) { this.#facturas = items; }
+    setCierres(items) { this.#cierres = items; }
     setIngresos(items) { this.#ingresos = items; }
     setVentasMes(items) { this.#ventasMes = items; }
     setVentasCajero(items) { this.#ventasCajero = items; }
@@ -79,6 +82,8 @@
     updateFactura(id, data) { var i=this.#facturas.findIndex(function(x){return x.id===id;}); if(i!==-1) this.#facturas[i]=data; }
     sortFacturas() { this.#facturas.sort(function(a,b){return (b.fecha+b.hora).localeCompare(a.fecha+a.hora);}); }
 
+    addCierre(c) { if (!this.#cierres.find(function(x){return x.id===c.id;})) this.#cierres.unshift(c); }
+
     addIngreso(i) { if (!this.#ingresos.find(function(x){return x.id===i.id;})) this.#ingresos.unshift(i); }
     removeIngreso(id) { this.#ingresos = this.#ingresos.filter(function(x){return x.id!==id;}); }
     updateIngreso(id, data) { var i=this.#ingresos.findIndex(function(x){return x.id===id;}); if(i!==-1) this.#ingresos[i]=data; }
@@ -112,16 +117,19 @@
         q(db.from("ventas_hoy").select("*"), "ventas_hoy"),
         q(db.from("proveedores").select("*"), "proveedores"),
         q(db.from("turnos").select("*"), "turnos"),
-        q(db.from("facturas").select("*, factura_items(*)"), "facturas"),
+        q(db.from("facturas").select("*, factura_items(*), factura_pagos(*)"), "facturas"),
         q(db.from("ingresos").select("*, ingreso_detalle(*)"), "ingresos"),
         q(db.from("configuracion").select("*"), "configuracion"),
+        q(db.from("cierres_caja").select("*"), "cierres_caja"),
       ]);
 
       var facturas = results[9] && results[9].data || [];
       var facturasConItems = facturas.map(function (f) {
         var raw = camelize(f);
         raw.items = raw.facturaItems || [];
+        raw.pagos = raw.facturaPagos || [];
         delete raw.facturaItems;
+        delete raw.facturaPagos;
         return new Factura(raw);
       });
       facturasConItems.sort(function (a, b) {
@@ -148,6 +156,7 @@
       this.#facturas = facturasConItems;
       this.#ingresos = ingresosConDetalle;
       this.#configuracion = this._buildConfigMap(results[11] && results[11].data);
+      this.#cierres = camelize(results[12] && results[12].data || []);
     }
   }
 

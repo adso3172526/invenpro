@@ -9,14 +9,16 @@
       super("facturas", "id", function (row) {
         var raw = Helpers.camelize(row);
         raw.items = raw.facturaItems || [];
+        raw.pagos = raw.facturaPagos || [];
         delete raw.facturaItems;
+        delete raw.facturaPagos;
         return new Factura(raw);
       }, db);
     }
 
     async findAllWithItems() {
       var result = await this.getDb()
-        .from(this.tableName).select("*, factura_items(*)");
+        .from(this.tableName).select("*, factura_items(*), factura_pagos(*)");
       if (result.error) throw result.error;
       return (result.data || []).map(this.mapper)
         .sort(function (a, b) {

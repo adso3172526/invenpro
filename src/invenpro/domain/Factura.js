@@ -10,6 +10,7 @@
     #metodo;
     #total;
     #items;
+    #pagos;
 
     constructor(data = {}) {
       super(data);
@@ -20,6 +21,7 @@
       this.#metodo = data.metodo || "efectivo";
       this.#total = Number(data.total || 0);
       this.#items = Array.isArray(data.items) ? data.items : [];
+      this.#pagos = Array.isArray(data.pagos) ? data.pagos : [];
     }
 
     get id() { return this.#id; }
@@ -42,6 +44,9 @@
 
     get items() { return [...this.#items]; }
     set items(v) { this.#items = Array.isArray(v) ? v : []; }
+
+    get pagos() { return [...this.#pagos]; }
+    set pagos(v) { this.#pagos = Array.isArray(v) ? v : []; }
 
     get cantidadItems() {
       return this.#items.reduce((sum, item) => sum + Number(item.q || item.qty || 0), 0);

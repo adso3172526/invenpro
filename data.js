@@ -65,6 +65,7 @@
   var proveedorService = new (root.ProveedorService || window.ProveedorService)(db, { helpers: Helpers, repo: proveedorRepo });
   var ingresoService = new (root.IngresoService || window.IngresoService)(db, { repo: ingresoRepo });
   var configService = new (root.ConfigService || window.ConfigService)(db, { store: window.MOCK, eventBus: _bus, repo: configRepo });
+  var cierreService = new (root.CierreService || window.CierreService)(db, { helpers: Helpers });
 
   // ---- window.DB service layer (with DI) ----
   window.DB = {
@@ -76,6 +77,7 @@
     proveedores: proveedorService,
     ingresos: ingresoService,
     config: configService,
+    cierres: cierreService,
   };
 
   // ---- Use Cases + Controllers (with DI — no window.DB fallback) ----
@@ -188,6 +190,31 @@
         items = items.filter(function(it){return it.sku!==dsku;});
       }
       fact.items = items;
+      _bus.emit("realtime:facturas", {type:payload.eventType, row:row});
+    }
+  });
+
+  // Factura pagos handler (realtime for factura_pagos table — desglose del pago mixto)
+  _rtm.registerHandler("factura_pagos", {
+    dispatch: function (payload) {
+      var M = window.MOCK; if (!M || !M.facturas) return;
+      var cam = Helpers.camelize;
+      var row = cam(payload.new || {});
+      var oldRow = cam(payload.old || {});
+      var fid = row.facturaId || row.factura_id;
+      var fact = M.facturas.find(function(f){return f.id===fid;});
+      if (!fact) return;
+      var pagos = fact.pagos ? fact.pagos.slice() : [];
+      if (payload.eventType === "INSERT") {
+        if (!pagos.find(function(p){return p.id===row.id;})) pagos.push(row);
+      } else if (payload.eventType === "UPDATE") {
+        var pi = pagos.findIndex(function(p){return p.id===row.id;});
+        if (pi !== -1) pagos[pi] = Object.assign(pagos[pi], row);
+      } else if (payload.eventType === "DELETE") {
+        var did = oldRow.id || row.id;
+        pagos = pagos.filter(function(p){return p.id!==did;});
+      }
+      fact.pagos = pagos;
       _bus.emit("realtime:facturas", {type:payload.eventType, row:row});
     }
   });

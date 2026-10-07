@@ -21,6 +21,15 @@
       });
       await this._insert("factura_items", rows);
 
+      // Desglose por medio (pago mixto): 1 fila por medio con monto > 0
+      var pagos = Array.isArray(factura.pagos) ? factura.pagos.filter(function (p) { return p && p.monto > 0; }) : [];
+      if (pagos.length) {
+        var pagoRows = pagos.map(function (p) {
+          return { factura_id: factura.id, metodo: p.metodo, monto: p.monto };
+        });
+        await this._insert("factura_pagos", pagoRows);
+      }
+
       if (this._productoService) {
         for (var i = 0; i < (cartItems || []).length; i++) {
           await this._productoService.decrementStock(cartItems[i].sku, cartItems[i].q);
