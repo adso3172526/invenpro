@@ -11,12 +11,12 @@
 (function () {
   "use strict";
 
-  const { ResumenDiarioService, PorCajeroStrategy } = window;
+  const { ResumenDiarioService, PorCajeroStrategy, PorHoraStrategy } = window;
 
   window.Resumenes = {
     porCajero: new ResumenDiarioService(new PorCajeroStrategy()),
+    porHora:   new ResumenDiarioService(new PorHoraStrategy()),
     // Extensión futura (OCP): agregar sin tocar lo anterior, p.ej.
-    // porHora:   new ResumenDiarioService(new PorHoraStrategy()),
     // porMetodo: new ResumenDiarioService(new PorMetodoStrategy()),
   };
 })();

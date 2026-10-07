@@ -21,10 +21,14 @@ const Hub = ({ go, user }) => (
 
 const Dashboard = ({ go }) => {
   useRealtimeSync("views");
-  const ventasHoy = Array.isArray(MOCK.ventasHoy) ? MOCK.ventasHoy.filter(Boolean) : [];
-  const sparkData = ventasHoy.map(h => h.v);
-  const maxHora = ventasHoy.length ? Math.max(...ventasHoy.map(h => h.v)) : 0;
-  const horaPico = ventasHoy.find(h => h.v === maxHora) || { h: "--", v: 0 };
+  // Ventas por hora REALES: agrupadas por franja horaria desde las facturas del día
+  // (módulo resumen/ · PorHoraStrategy). Antes usaba la vista ventas_hoy, que agrupaba
+  // por el texto de hora completo ("04:31 p. m.") y rotulaba mal el gráfico.
+  const PH = window.Resumenes && window.Resumenes.porHora;
+  const ventasHora = PH ? PH.resumen(MOCK.facturas).grupos : [];
+  const sparkData = ventasHora.map(h => h.total);
+  const maxHora = ventasHora.length ? Math.max(...ventasHora.map(h => h.total)) : 0;
+  const horaPico = ventasHora.find(h => h.total === maxHora) || { label: "--", total: 0 };
 
   // Resumen REAL del día desde las facturas (módulo resumen/, patrón Estrategia).
   // Reemplaza el cálculo anterior de "ventas por cajero" que usaba Math.random,
@@ -66,7 +70,7 @@ const Dashboard = ({ go }) => {
             { Métrica: "Ticket promedio", Valor: ticketPromedio },
             { Métrica: "Alertas", Valor: alertasTotal },
           ]},
-          { name: "Ventas por hora", rows: ventasHoy.map(h => ({ Hora: h.h + ":00", Total: h.v })) },
+          { name: "Ventas por hora", rows: ventasHora.map(h => ({ Hora: h.label + ":00", Total: h.total })) },
           { name: "Ventas por cajero (hoy)", rows: ventasCajeroHoy.map(c => ({ Cajero: c.nombre, Total: c.hoy })) },
         ])}><Icon name="download" size={14}/> Exportar</button>
       </div>
@@ -84,8 +88,8 @@ const Dashboard = ({ go }) => {
         </div>
         <div className="kpi">
           <div className="label"><Icon name="clock" size={13}/> Hora pico</div>
-          <div className="val">{horaPico.h}:00</div>
-          <div className="delta">{window.fmtCOP(horaPico.v)} facturados</div>
+          <div className="val">{horaPico.label}:00</div>
+          <div className="delta">{window.fmtCOP(horaPico.total)} facturados</div>
         </div>
         <div className="kpi">
           <div className="label"><Icon name="alert" size={13}/> Alertas activas</div>
@@ -107,10 +111,10 @@ const Dashboard = ({ go }) => {
             <div className="tw-relative tw-h-[200px] md:tw-h-full md:tw-min-h-[240px] tw-p-1">
               <ChartCanvas type="bar"
                 data={{
-                  labels: ventasHoy.map(h => h.h + "h"),
+                  labels: ventasHora.map(h => h.label + "h"),
                   datasets: [{
-                    data: ventasHoy.map(h => h.v),
-                    backgroundColor: ventasHoy.map(h => h.v === maxHora ? "--accent" : "--accent/45"),
+                    data: ventasHora.map(h => h.total),
+                    backgroundColor: ventasHora.map(h => h.total === maxHora ? "--accent" : "--accent/45"),
                     hoverBackgroundColor: "--accent",
                     borderRadius: 5,
                     maxBarThickness: 26,
