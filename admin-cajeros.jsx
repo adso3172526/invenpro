@@ -75,7 +75,12 @@ const Cajeros = () => {
     })();
   }, []);
   const pagCaj = usePagination(MOCK.cajeros, 2);
-  const pagTur = usePagination(MOCK.turnos, 10);
+  // Turnos del más reciente al más antiguo (por el número del id). Los turnos con
+  // cierre son los recientes (ids tipo "T-<timestamp>"), así salen primero y se ve
+  // su botón "Detalle"; los viejos "T-20xx" (sin cierre) quedan al final.
+  const numTurno = (t) => { const m = String(t.id).match(/(\d+)$/); return m ? Number(m[1]) : 0; };
+  const turnosOrdenados = [...MOCK.turnos].sort((a, b) => numTurno(b) - numTurno(a));
+  const pagTur = usePagination(turnosOrdenados, 10);
   const cierreDe = (turnoId) => (MOCK.cierres || []).find(c => c.turnoId === turnoId);
 
   const currentUser = useMemoA(() => {
