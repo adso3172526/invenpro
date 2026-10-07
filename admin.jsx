@@ -55,7 +55,17 @@ const Reportes = () => {
   // Por método de pago
   const byMetodo = useMemoA(() => {
     const map = {};
-    filtered.forEach((f) => { map[f.metodo] = (map[f.metodo] || 0) + f.total; });
+    filtered.forEach((f) => {
+      // Pago mixto: cada monto se carga a su medio REAL (desde factura_pagos)
+      const pagos = Array.isArray(f.pagos) ? f.pagos.filter((p) => p && p.monto > 0) : [];
+      if (pagos.length) {
+        pagos.forEach((p) => { map[p.metodo] = (map[p.metodo] || 0) + p.monto; });
+      } else if (f.metodo && f.metodo !== "Mixto") {
+        // Factura simple (sin desglose): usa el método de la factura
+        map[f.metodo] = (map[f.metodo] || 0) + f.total;
+      }
+      // "Mixto" sin pagos cargados se omite (llegan por realtime/hidratación)
+    });
     const sum = Object.values(map).reduce((a, b) => a + b, 0) || 1;
     return Object.entries(map).sort((a, b) => a[1] - b[1]).map(([nombre, total]) => ({ nombre, total, pct: (total / sum) * 100 }));
   }, [filtered]);

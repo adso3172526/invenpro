@@ -237,6 +237,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     ventas: shift.ventas || 0,
     trans: shift.transacciones || 0,
     items: 0,
+    porMetodo: { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 },
   });
   // Descuentos locales optimistas aún no confirmados por el servidor (sku -> unidades)
   const pendingStock = React.useRef({});
@@ -333,9 +334,34 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     return { ok: true, msg: p.nombre };
   };
 
-  const completePay = async (metodo, recibido) => {
+  // Restaura el desglose por medio (por_metodo) al reanudar un turno abierto
+  React.useEffect(() => {
+    if (!shift.id) return;
+    (async () => {
+      try {
+        const { data } = await window.db.from("turnos")
+          .select("ventas,transacciones,por_metodo").eq("id", shift.id).maybeSingle();
+        if (data) {
+          setShiftStats(s => {
+            const vacia = !s.porMetodo || Object.values(s.porMetodo).every(v => !v);
+            const pmBD = (data.por_metodo && typeof data.por_metodo === "object")
+              ? { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0, ...data.por_metodo }
+              : s.porMetodo;
+            return {
+              ...s,
+              ventas: Math.max(s.ventas, data.ventas || 0),
+              trans: Math.max(s.trans, data.transacciones || 0),
+              porMetodo: vacia ? pmBD : s.porMetodo,
+            };
+          });
+        }
+      } catch (e) { console.error("refrescar turno al abrir POS:", e); }
+    })();
+  }, []);
+
+  const completePay = async (pago) => {
+    // pago = { metodo, pagos:[{metodo,monto}], recibido, cambio }
     // Reservar el descuento localmente (UI inmediata) y refrescar la grilla.
-    // El pendiente se libera cuando el servidor confirme la baja vía realtime.
     cart.forEach(l => { pendingStock.current[l.sku] = (pendingStock.current[l.sku] || 0) + l.q; });
     rebuildFromServer();
     const ahora = new Date();
@@ -346,29 +372,36 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
       hora: ahora.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }),
       cajero: cajero.nombre,
       caja: shift.caja,
-      metodo,
+      metodo: pago.metodo,
       items: [...cart],
+      pagos: pago.pagos || [],
       total: totals.total,
-      recibido,
-      cambio: recibido - totals.total,
+      recibido: pago.recibido,
+      cambio: pago.cambio,
     };
-    const newStats = { ventas: shiftStats.ventas + totals.total, trans: shiftStats.trans + 1, items: shiftStats.items + totals.items };
+    const pm = shiftStats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
+    const nuevoPorMetodo = { ...pm };
+    (pago.pagos || []).forEach(p => { nuevoPorMetodo[p.metodo] = (nuevoPorMetodo[p.metodo] || 0) + p.monto; });
+    const newStats = { ventas: shiftStats.ventas + totals.total, trans: shiftStats.trans + 1, items: shiftStats.items + totals.items, porMetodo: nuevoPorMetodo };
     setShiftStats(newStats);
     setDone(factura);
     setPay(null);
     setCart([]);
-    // Persistir factura en Supabase
+    // Persistir factura (con su desglose de pagos) en Supabase
     DB.facturas.create(factura, factura.items).catch(err => console.error("POS persist:", err));
-    // Actualizar turno con totales acumulados (así no se pierden si el cajero sale sin cerrar)
+    // Actualizar turno con totales + desglose por medio (sobreviven si el cajero sale sin cerrar)
     if (shift.id) {
-      DB.turnos.close(shift.id, { ventas: newStats.ventas, transacciones: newStats.trans })
+      DB.turnos.close(shift.id, { ventas: newStats.ventas, transacciones: newStats.trans, porMetodo: nuevoPorMetodo })
         .catch(err => console.error("updateTurno stats:", err));
     }
   };
 
-  const closeShift = () => {
+  const closeShift = (datos) => {
     const now = new Date();
-    const summary = { ...shift, ...shiftStats, cierre: now };
+    const pm = shiftStats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
+    const esperado = (shift.base || 0) + (pm.Efectivo || 0);   // efectivo esperado = base + ventas en efectivo
+    const contado = (datos && datos.efectivoContado != null) ? datos.efectivoContado : esperado;
+    const summary = { ...shift, ...shiftStats, cierre: now, esperado, contado, diferencia: contado - esperado };
     // Persistir cierre en Supabase
     if (shift.id) {
       DB.turnos.close(shift.id, {
@@ -377,6 +410,21 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
         ventas: shiftStats.ventas,
         transacciones: shiftStats.trans,
       }).catch(err => console.error("closeTurno:", err));
+      // Arqueo + desglose por medio de pago (tabla cierres_caja)
+      DB.cierres.create({
+        turnoId: shift.id,
+        baseInicial: shift.base || 0,
+        ventasEfectivo: pm.Efectivo || 0,
+        ventasTransferencia: pm.Transferencia || 0,
+        ventasNequi: pm.Nequi || 0,
+        ventasDaviplata: pm.Daviplata || 0,
+        totalVentas: shiftStats.ventas,
+        transacciones: shiftStats.trans,
+        esperadoEfectivo: esperado,
+        efectivoContado: contado,
+        diferencia: contado - esperado,
+        observaciones: (datos && datos.observaciones) || null,
+      }).catch(err => console.error("crearCierre:", err));
     }
     onCloseShift(summary);
   };
@@ -678,185 +726,89 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
 
 // =================== Modal de pago ===================
 const PaymentModal = ({ total, items, onClose, onPay }) => {
-  const [metodo, setMetodo] = useState("Efectivo");
-  const [recibido, setRecibido] = useState(0);
-  const cambio = Math.max(0, recibido - total);
+  const [montos, setMontos] = useState({ Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 });
+  const [activo, setActivo] = useState("Efectivo"); // medio al que apuntan los atajos
+  const set1 = (m, v) => setMontos(x => ({ ...x, [m]: v }));
 
-  const onKey = (k) => {
-    if (k === "C") return setRecibido(0);
-    if (k === "←") return setRecibido(r => Math.floor(r / 10));
-    setRecibido(r => Math.min(r * 10 + parseInt(k), 99999999));
+  const noEfectivo = montos.Transferencia + montos.Nequi + montos.Daviplata; // medios exactos
+  const restoEfectivo = Math.max(0, total - noEfectivo);        // lo que falta cubrir en efectivo
+  const efectivoAplicado = Math.min(montos.Efectivo, restoEfectivo);
+  const restante = Math.max(0, total - noEfectivo - efectivoAplicado);
+  const cambio = Math.max(0, montos.Efectivo - restoEfectivo);
+  const excede = noEfectivo > total;                            // no se puede sobrepagar con no-efectivo
+  const cubierto = restante === 0 && !excede;
+
+  const iconMetodo = (m) => m === "Efectivo" ? "cart" : m === "Transferencia" ? "settings" : "pkg";
+
+  const confirmar = () => {
+    if (!cubierto) return;
+    const pagos = [];
+    ["Transferencia", "Nequi", "Daviplata"].forEach(m => { if (montos[m] > 0) pagos.push({ metodo: m, monto: montos[m] }); });
+    if (efectivoAplicado > 0) pagos.push({ metodo: "Efectivo", monto: efectivoAplicado });
+    const metodo = pagos.length === 1 ? pagos[0].metodo : (pagos.length === 0 ? "Efectivo" : "Mixto");
+    onPay({ metodo, pagos, recibido: noEfectivo + montos.Efectivo, cambio });
   };
-
-  const canPay = metodo !== "Efectivo" || recibido >= total;
 
   return (
     <div className="modal-bg" onClick={onClose}>
-      {/* Desktop: modal clásico */}
-      <div className="modal lg tw-hidden sm:tw-flex" onClick={e => e.stopPropagation()}>
+      <div className="modal lg bottom-sheet" onClick={e => e.stopPropagation()}>
         <div className="modal-h">
           <h3>Cobrar venta</h3>
           <button className="x" onClick={onClose}><Icon name="x"/></button>
         </div>
         <div className="modal-b">
-          <div className="tw-grid tw-grid-cols-2 tw-gap-5">
-            <div>
-              <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-1.5">Método de pago</div>
-              <div className="tw-flex tw-flex-col tw-gap-1.5">
-                {["Efectivo", "Transferencia", "Nequi", "Daviplata"].map(m => (
-                  <button key={m} className={"btn" + (metodo === m ? " primary" : "")} onClick={() => setMetodo(m)} style={{ justifyContent: "flex-start" }}>
-                    <span className="tw-w-2 tw-h-2 tw-rounded-full" style={{ background: metodo === m ? "currentColor" : "var(--text-3)" }}/>
-                    {m}
-                  </button>
-                ))}
-              </div>
-              <div className="card tw-mt-3 tw-bg-surface-2">
-                <div className="card-b">
-                  <div className="row spaced"><span className="muted">Items</span><span className="mono">{items}</span></div>
-                  <div className="row spaced"><span className="muted">Total</span><span className="mono tw-text-[22px] tw-font-semibold">{window.fmtCOP(total)}</span></div>
-                  {metodo === "Efectivo" && (
-                    <>
-                      <div className="row spaced tw-mt-2"><span className="muted">Recibido</span><span className="mono">{window.fmtCOP(recibido)}</span></div>
-                      <div className="row spaced"><span className="muted">Cambio</span><span className="mono tw-font-semibold" style={{ color: cambio > 0 ? "var(--good)" : "var(--text-2)" }}>{window.fmtCOP(cambio)}</span></div>
-                    </>
-                  )}
-                </div>
-              </div>
+          <div className="card tw-bg-surface-2 tw-mb-3"><div className="card-b">
+            <div className="row spaced">
+              <span className="muted">{items} ítem{items !== 1 ? "s" : ""}</span>
+              <span className="mono tw-text-[22px] tw-font-semibold">{window.fmtCOP(total)}</span>
             </div>
-            <div>
-              {metodo === "Efectivo" ? (
-                <>
-                  <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-1.5">Efectivo recibido</div>
-                  <div className="cash-suggestions tw-flex tw-flex-wrap tw-gap-1.5">
-                    {[total, 50000, 100000, 200000].map((v, i) => (
-                      <button key={i} onClick={() => setRecibido(v)}>${v.toLocaleString("es-CO")}</button>
-                    ))}
-                  </div>
-                  <div className="keypad tw-mt-2">
-                    {["1","2","3","4","5","6","7","8","9","C","0","←"].map(k => (
-                      <button key={k} onClick={() => onKey(k)}>{k}</button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="card tw-bg-surface-2">
-                  <div className="card-b tw-text-center tw-p-8">
-                    <div className="tw-w-20 tw-h-20 tw-rounded-xl tw-bg-surface tw-mx-auto tw-mb-3.5 tw-grid tw-place-items-center tw-border tw-border-border">
-                      <Icon name={metodo === "Transferencia" ? "settings" : "pkg"} size={32}/>
-                    </div>
-                    <div className="tw-font-semibold tw-mb-1">Esperando pago por {metodo}…</div>
-                    <div className="muted tw-text-xs">El cliente debe confirmar la transacción en el datafono o aplicación.</div>
-                  </div>
-                </div>
-              )}
-            </div>
+          </div></div>
+
+          <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-2">Reparte el pago entre los medios</div>
+          <div className="tw-flex tw-flex-col tw-gap-2">
+            {["Efectivo", "Transferencia", "Nequi", "Daviplata"].map(m => (
+              <div key={m} className="tw-flex tw-items-center tw-gap-2.5">
+                <span className="tw-w-7 tw-h-7 tw-rounded-lg tw-bg-surface-2 tw-text-accent tw-grid tw-place-items-center tw-shrink-0"><Icon name={iconMetodo(m)} size={14}/></span>
+                <span className="tw-text-sm tw-flex-1">{m === "Efectivo" ? "Efectivo recibido" : m}</span>
+                <input className="mono tw-border tw-border-border tw-rounded-lg tw-px-2.5 tw-py-1.5 tw-text-right tw-bg-surface tw-w-[44%]"
+                  inputMode="numeric" placeholder="0"
+                  style={activo === m ? { borderColor: "var(--accent)", boxShadow: "0 0 0 2px color-mix(in oklab, var(--accent) 35%, transparent)" } : undefined}
+                  value={montos[m] ? montos[m].toLocaleString("es-CO") : ""}
+                  onFocus={() => setActivo(m)}
+                  onChange={e => set1(m, parseInt(e.target.value.replace(/\D/g, "")) || 0)}/>
+              </div>
+            ))}
           </div>
+
+          {/* Atajos: cargan al medio seleccionado (el que tocaste de último) */}
+          <div className="muted tw-text-[11px] tw-mt-2.5 tw-mb-1.5">Atajos para <span className="tw-font-semibold tw-text-accent">{activo === "Efectivo" ? "Efectivo" : activo}</span></div>
+          <div className="cash-suggestions tw-flex tw-flex-wrap tw-gap-1.5">
+            <button type="button" onClick={() => {
+              // Fija el medio activo al faltante exacto (total - lo aportado por los demás).
+              // Si el campo excedía el total, lo baja al valor correcto.
+              const otros = ["Efectivo", "Transferencia", "Nequi", "Daviplata"].reduce((s, k) => k === activo ? s : s + montos[k], 0);
+              set1(activo, Math.max(0, total - otros));
+            }}>Completar</button>
+            {[20000, 50000, 100000].map((v, i) => (
+              <button key={i} type="button" onClick={() => set1(activo, v)}>${v.toLocaleString("es-CO")}</button>
+            ))}
+          </div>
+
+          <div className="card tw-mt-3" style={{ background: cubierto ? "var(--good-soft)" : "var(--surface-2)" }}><div className="card-b">
+            <div className="row spaced">
+              <span className="muted">Restante</span>
+              <span className="mono tw-font-semibold" style={{ color: restante > 0 || excede ? "var(--bad)" : "var(--good)" }}>{window.fmtCOP(restante)}</span>
+            </div>
+            {cambio > 0 && (
+              <div className="row spaced"><span className="muted">Cambio</span><span className="mono tw-font-semibold tw-text-good">{window.fmtCOP(cambio)}</span></div>
+            )}
+            {excede && <div className="tw-text-xs tw-text-bad tw-mt-1">Los medios distintos de efectivo superan el total.</div>}
+          </div></div>
         </div>
         <div className="modal-f">
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn accent" disabled={!canPay}
-            onClick={() => onPay(metodo, metodo === "Efectivo" ? recibido : total)}>
+          <button className="btn accent" disabled={!cubierto} onClick={confirmar}>
             <Icon name="check"/> Confirmar pago
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile: fullscreen bottom sheet optimizado */}
-      <div className="sm:tw-hidden tw-fixed tw-inset-0 tw-flex tw-flex-col tw-bg-surface tw-z-[101]" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-3 tw-border-b tw-border-border tw-shrink-0">
-          <div>
-            <div className="tw-text-base tw-font-bold">Cobrar venta</div>
-            <div className="tw-text-[11px] tw-text-txt-3">{items} producto{items !== 1 ? "s" : ""}</div>
-          </div>
-          <button className="tw-w-8 tw-h-8 tw-rounded-lg tw-border tw-border-border tw-bg-surface-2 tw-grid tw-place-items-center tw-cursor-pointer" onClick={onClose}><Icon name="x" size={16}/></button>
-        </div>
-
-        {/* Total prominente */}
-        <div className="tw-text-center tw-py-3 tw-border-b tw-border-border tw-bg-surface-2 tw-shrink-0">
-          <div className="tw-text-[10px] tw-text-txt-3 tw-uppercase tw-tracking-wider">Total a cobrar</div>
-          <div className="mono tw-text-2xl tw-font-bold tw-tracking-tight">{window.fmtCOP(total)}</div>
-        </div>
-
-        {/* Contenido scrolleable */}
-        <div className="tw-flex-1 tw-overflow-y-auto tw-min-h-0" style={{ WebkitOverflowScrolling: "touch" }}>
-          {/* Métodos de pago — horizontal */}
-          <div className="tw-px-4 tw-pt-3 tw-pb-2">
-            <div className="tw-text-[10px] tw-text-txt-3 tw-uppercase tw-tracking-wider tw-mb-2">Método de pago</div>
-            <div className="tw-grid tw-grid-cols-2 min-[360px]:tw-grid-cols-4 tw-gap-1.5">
-              {["Efectivo", "Transfer.", "Nequi", "Daviplata"].map((label, idx) => {
-                const val = ["Efectivo", "Transferencia", "Nequi", "Daviplata"][idx];
-                return (
-                  <button key={val}
-                    className={"tw-flex tw-flex-col tw-items-center tw-gap-1 tw-py-2 tw-px-1 tw-rounded-xl tw-border tw-text-[10px] tw-font-medium tw-cursor-pointer tw-transition-all "
-                      + (metodo === val
-                        ? "tw-bg-accent tw-text-white tw-border-accent tw-shadow-sm"
-                        : "tw-bg-surface-2 tw-text-txt-2 tw-border-border")}
-                    onClick={() => setMetodo(val)}>
-                    <Icon name={val === "Efectivo" ? "cart" : val === "Transferencia" ? "settings" : "pkg"} size={16}/>
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {metodo === "Efectivo" ? (
-            <div className="tw-px-4 tw-pb-3">
-              {/* Recibido display */}
-              <div className="tw-bg-surface-2 tw-rounded-xl tw-p-3 tw-mb-2">
-                <div className="tw-flex tw-justify-between tw-items-center">
-                  <span className="tw-text-xs tw-text-txt-3">Recibido</span>
-                  <span className="mono tw-text-lg tw-font-bold">{window.fmtCOP(recibido)}</span>
-                </div>
-                {recibido >= total && (
-                  <div className="tw-flex tw-justify-between tw-items-center tw-mt-1 tw-pt-1 tw-border-t tw-border-border">
-                    <span className="tw-text-xs tw-text-txt-3">Cambio</span>
-                    <span className="mono tw-font-bold tw-text-good">{window.fmtCOP(cambio)}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Sugerencias rápidas */}
-              <div className="tw-grid tw-grid-cols-2 min-[400px]:tw-grid-cols-4 tw-gap-1.5 tw-mb-2">
-                {[total, 50000, 100000, 200000].map((v, i) => (
-                  <button key={i}
-                    className={"tw-py-1.5 tw-rounded-lg tw-border tw-text-[11px] tw-font-medium tw-cursor-pointer tw-transition-all mono "
-                      + (recibido === v ? "tw-bg-accent tw-text-white tw-border-accent" : "tw-bg-surface-2 tw-border-border")}
-                    onClick={() => setRecibido(v)}>${v >= 1000 ? Math.round(v/1000) + "k" : v.toLocaleString("es-CO")}</button>
-                ))}
-              </div>
-
-              {/* Keypad compacto */}
-              <div className="tw-grid tw-grid-cols-3 tw-gap-1.5">
-                {["1","2","3","4","5","6","7","8","9","C","0","←"].map(k => (
-                  <button key={k}
-                    className={"tw-py-3 tw-rounded-xl tw-border tw-border-border tw-text-base tw-font-medium tw-cursor-pointer tw-transition-all active:tw-scale-[0.95] "
-                      + (k === "C" ? "tw-bg-bad-soft tw-text-bad" : k === "←" ? "tw-bg-surface-2 tw-text-txt-2" : "tw-bg-surface tw-text-txt")}
-                    onClick={() => onKey(k)}>{k}</button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="tw-px-4 tw-py-6 tw-text-center">
-              <div className="tw-w-16 tw-h-16 tw-rounded-2xl tw-bg-accent-soft tw-text-accent tw-mx-auto tw-mb-3 tw-grid tw-place-items-center">
-                <Icon name={metodo === "Transferencia" ? "settings" : "pkg"} size={28}/>
-              </div>
-              <div className="tw-font-semibold tw-mb-1">Pago por {metodo}</div>
-              <div className="tw-text-xs tw-text-txt-3">El cliente debe confirmar la transacción.</div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer fijo */}
-        <div className="tw-px-4 tw-py-3 tw-border-t tw-border-border tw-bg-surface-2 tw-shrink-0 tw-flex tw-gap-2">
-          <button className="tw-flex-1 tw-py-2.5 tw-rounded-xl tw-border tw-border-border tw-bg-surface tw-text-sm tw-font-medium tw-cursor-pointer" onClick={onClose}>Cancelar</button>
-          <button
-            className={"tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5 tw-transition-opacity "
-              + (canPay ? "tw-bg-accent tw-text-white" : "tw-bg-surface-3 tw-text-txt-3 tw-opacity-50 tw-cursor-not-allowed")}
-            disabled={!canPay}
-            onClick={() => onPay(metodo, metodo === "Efectivo" ? recibido : total)}>
-            <Icon name="check" size={15}/> Confirmar pago
           </button>
         </div>
       </div>
@@ -865,11 +817,6 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
 };
 
 // =================== Imprimir recibo 80mm ===================
-const _escHtml = (s) => {
-  if (s == null) return "";
-  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-};
-
 const printReceipt = (factura) => {
   const cfg = (window.MOCK && window.MOCK.configuracion) || {};
   const nombre = _escHtml(cfg.tienda_nombre || "Mi Tienda");
@@ -1000,8 +947,10 @@ const ReceiptModal = ({ factura, onClose }) => {
 
 // =================== Cierre de turno ===================
 const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
-  const [contado, setContado] = useState(shift.base + stats.ventas);
-  const esperado = shift.base + stats.ventas;
+  const pm = stats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
+  const esperado = (shift.base || 0) + (pm.Efectivo || 0);   // efectivo esperado = base + ventas en efectivo
+  const [contado, setContado] = useState(esperado);
+  const [observaciones, setObservaciones] = useState("");
   const diff = contado - esperado;
 
   const diffBg = diff === 0 ? "var(--good-soft)" : (diff > 0 ? "var(--warn-soft)" : "var(--bad-soft)");
@@ -1023,11 +972,13 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
               <div className="card tw-bg-surface-2">
                 <div className="card-b">
                   <div className="row spaced"><span className="muted">Base inicial</span><span className="mono">{window.fmtCOP(shift.base)}</span></div>
-                  <div className="row spaced"><span className="muted">Ventas en efectivo</span><span className="mono">{window.fmtCOP(stats.ventas)}</span></div>
+                  <div className="row spaced"><span className="muted">Efectivo</span><span className="mono">{window.fmtCOP(pm.Efectivo)}</span></div>
+                  <div className="row spaced"><span className="muted">Transferencia</span><span className="mono">{window.fmtCOP(pm.Transferencia)}</span></div>
+                  <div className="row spaced"><span className="muted">Nequi</span><span className="mono">{window.fmtCOP(pm.Nequi)}</span></div>
+                  <div className="row spaced"><span className="muted">Daviplata</span><span className="mono">{window.fmtCOP(pm.Daviplata)}</span></div>
                   <div className="row spaced"><span className="muted">Transacciones</span><span className="mono">{stats.trans}</span></div>
-                  <div className="row spaced"><span className="muted">Productos vendidos</span><span className="mono">{stats.items}</span></div>
                   <hr className="tw-border-0 tw-border-t tw-border-border tw-my-2.5"/>
-                  <div className="row spaced"><span className="tw-font-semibold">Esperado en caja</span><span className="mono tw-font-semibold tw-text-[17px]">{window.fmtCOP(esperado)}</span></div>
+                  <div className="row spaced"><span className="tw-font-semibold">Esperado en caja (efectivo)</span><span className="mono tw-font-semibold tw-text-[17px]">{window.fmtCOP(esperado)}</span></div>
                 </div>
               </div>
             </div>
@@ -1045,14 +996,14 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
               </div>
               <div className="field tw-mt-2">
                 <label>Observaciones (opcional)</label>
-                <textarea rows="3" placeholder="Ej: cliente recibió mal el cambio…"/>
+                <textarea rows="3" placeholder="Ej: cliente recibió mal el cambio…" value={observaciones} onChange={e => setObservaciones(e.target.value)}/>
               </div>
             </div>
           </div>
         </div>
         <div className="modal-f">
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn primary" onClick={onConfirm}><Icon name="check"/> Confirmar cierre</button>
+          <button className="btn primary" onClick={() => onConfirm({ efectivoContado: contado, observaciones })}><Icon name="check"/> Confirmar cierre</button>
         </div>
       </div>
 
@@ -1075,8 +1026,20 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
                 <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(shift.base)}</span>
               </div>
               <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-text-txt-3">Ventas</span>
-                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(stats.ventas)}</span>
+                <span className="tw-text-xs tw-text-txt-3">Efectivo</span>
+                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Efectivo)}</span>
+              </div>
+              <div className="tw-flex tw-justify-between tw-items-center">
+                <span className="tw-text-xs tw-text-txt-3">Transferencia</span>
+                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Transferencia)}</span>
+              </div>
+              <div className="tw-flex tw-justify-between tw-items-center">
+                <span className="tw-text-xs tw-text-txt-3">Nequi</span>
+                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Nequi)}</span>
+              </div>
+              <div className="tw-flex tw-justify-between tw-items-center">
+                <span className="tw-text-xs tw-text-txt-3">Daviplata</span>
+                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Daviplata)}</span>
               </div>
               <div className="tw-flex tw-justify-between tw-items-center">
                 <span className="tw-text-xs tw-text-txt-3">Transacciones</span>
@@ -1088,7 +1051,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
               </div>
               <div className="tw-border-t tw-border-border tw-pt-1.5 tw-mt-0.5">
                 <div className="tw-flex tw-justify-between tw-items-center">
-                  <span className="tw-text-sm tw-font-semibold">Esperado en caja</span>
+                  <span className="tw-text-sm tw-font-semibold">Esperado (efectivo)</span>
                   <span className="mono tw-text-base tw-font-bold">{window.fmtCOP(esperado)}</span>
                 </div>
               </div>
@@ -1119,7 +1082,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
           <div className="tw-px-4 tw-pb-3">
             <div className="field tw-mb-0">
               <label className="tw-text-xs">Observaciones (opcional)</label>
-              <textarea rows="2" placeholder="Ej: cliente recibió mal el cambio…" className="tw-text-sm"/>
+              <textarea rows="2" placeholder="Ej: cliente recibió mal el cambio…" className="tw-text-sm" value={observaciones} onChange={e => setObservaciones(e.target.value)}/>
             </div>
           </div>
         </div>
@@ -1127,7 +1090,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
         {/* Footer fijo */}
         <div className="tw-px-4 tw-py-3 tw-border-t tw-border-border tw-bg-surface-2 tw-shrink-0 tw-flex tw-gap-2">
           <button className="tw-flex-1 tw-py-2.5 tw-rounded-xl tw-border tw-border-border tw-bg-surface tw-text-sm tw-font-medium tw-cursor-pointer" onClick={onClose}>Cancelar</button>
-          <button className="tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-bg-accent tw-text-white tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5" onClick={onConfirm}>
+          <button className="tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-bg-accent tw-text-white tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5" onClick={() => onConfirm({ efectivoContado: contado, observaciones })}>
             <Icon name="check" size={15}/> Confirmar cierre
           </button>
         </div>
