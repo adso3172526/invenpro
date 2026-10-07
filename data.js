@@ -193,6 +193,14 @@
       if (error) console.error("incrementStock:", error);
       return error;
     }
+    // Llama a la FUNCTION fn_ajustar_precios_categoria (que la lógica vive en la BD).
+    // Devuelve { afectados, error }: afectados = nº de productos actualizados.
+    async ajustarPreciosCategoria(categoria, porcentaje) {
+      const { data, error } = await window.db.rpc("fn_ajustar_precios_categoria",
+        { p_categoria: categoria, p_porcentaje: porcentaje });
+      if (error) console.error("ajustarPreciosCategoria:", error);
+      return { afectados: data, error };
+    }
     generateSku() {
       const productos = (window.MOCK && window.MOCK.productos) || [];
       let max = 0;
@@ -223,6 +231,17 @@
   }
 
   class CajeroService {
+    // Crea cajero + usuario de login de forma atómica, vía la FUNCTION fn_crear_cajero.
+    // Devuelve { id, error }: id = 'C-NN' del cajero creado; error.message trae el
+    // mensaje de validación (documento/usuario duplicado, etc.) para mostrar en el modal.
+    async create({ nombres, apellidos, doc, rol, usuario, pass }) {
+      const { data, error } = await window.db.rpc("fn_crear_cajero", {
+        p_nombres: nombres, p_apellidos: apellidos, p_doc: doc,
+        p_rol: rol, p_usuario: usuario, p_pass: pass,
+      });
+      if (error) console.error("crearCajero:", error);
+      return { id: data, error };
+    }
     async update(id, updates) {
       const row = snakify(updates);
       const { error } = await window.db.from("cajeros").update(row).eq("id", id);

@@ -42,6 +42,13 @@ const Cajeros = () => {
   const [toast, setToast] = useStateA(null);
   const [verCierre, setVerCierre] = useStateA(null);  // turno cuyo cierre se muestra
 
+  // Formulario "Nuevo cajero" (crea cajero + usuario de login vía fn_crear_cajero)
+  const [nuevo, setNuevo] = useStateA({ nombres: "", apellidos: "", doc: "", rol: "Cajero", usuario: "", pass: "" });
+  const [creando, setCreando] = useStateA(false);
+  const [errCrear, setErrCrear] = useStateA("");
+  const setN = (k, v) => setNuevo(p => ({ ...p, [k]: v }));
+  const resetNuevo = () => { setNuevo({ nombres: "", apellidos: "", doc: "", rol: "Cajero", usuario: "", pass: "" }); setErrCrear(""); };
+
   // Realtime: only re-render when no modal is open
   const [, _rtTick] = React.useState(0);
   const _modalRef = React.useRef(false);
@@ -95,6 +102,20 @@ const Cajeros = () => {
     [MOCK.usuarios_sistema, MOCK.cajeros, esSupervisor]
   );
   const pagUsr = usePagination(usuarios, 10);
+
+  const handleCrearCajero = async () => {
+    setErrCrear("");
+    if (!nuevo.nombres.trim() || !nuevo.apellidos.trim() || !nuevo.doc.trim() || !nuevo.usuario.trim() || !nuevo.pass.trim()) {
+      setErrCrear("Completa todos los campos."); return;
+    }
+    setCreando(true);
+    const { id, error } = await DB.cajeros.create(nuevo);
+    setCreando(false);
+    if (error) { setErrCrear(error.message || "No se pudo crear el cajero."); return; }
+    setShowAdd(false);
+    resetNuevo();
+    setToast(`Cajero ${id} creado correctamente`);
+  };
 
   return (
     <>
@@ -292,19 +313,32 @@ const Cajeros = () => {
       )}
 
       {showAdd && (
-        <Modal title="Nuevo cajero" bottomSheet onClose={() => setShowAdd(false)} footer={
+        <Modal title="Nuevo cajero" bottomSheet onClose={() => { setShowAdd(false); resetNuevo(); }} footer={
           <>
-            <button className="btn ghost" onClick={() => setShowAdd(false)}>Cancelar</button>
-            <button className="btn primary" onClick={() => { setShowAdd(false); setToast("Cajero creado correctamente"); }}><Icon name="check"/> Crear cajero</button>
+            <button className="btn ghost" onClick={() => { setShowAdd(false); resetNuevo(); }}>Cancelar</button>
+            <button className="btn primary" disabled={creando} onClick={handleCrearCajero}>
+              <Icon name="check"/> {creando ? "Creando…" : "Crear cajero"}
+            </button>
           </>
         }>
+          {errCrear && (
+            <div className="tw-bg-bad-soft tw-text-bad tw-py-2 tw-px-3 tw-rounded-md tw-text-xs tw-mb-3 tw-font-medium">
+              {errCrear}
+            </div>
+          )}
           <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
-            <div className="field"><label>Nombres</label><input placeholder="Ej: Carolina"/></div>
-            <div className="field"><label>Apellidos</label><input placeholder="Ej: Mendoza"/></div>
-            <div className="field"><label>Documento</label><input className="mono" placeholder="C.C."/></div>
-            <div className="field"><label>Teléfono</label><input className="mono" placeholder="+57"/></div>
-            <div className="field"><label>Rol</label><select><option>Cajero</option>{!esSupervisor && <option>Supervisor</option>}</select></div>
-            <div className="field"><label>Usuario POS</label><input className="mono" placeholder="nombre.apellido"/></div>
+            <div className="field"><label>Nombres</label>
+              <input value={nuevo.nombres} onChange={e => setN("nombres", e.target.value)} placeholder="Ej: Carolina"/></div>
+            <div className="field"><label>Apellidos</label>
+              <input value={nuevo.apellidos} onChange={e => setN("apellidos", e.target.value)} placeholder="Ej: Mendoza"/></div>
+            <div className="field"><label>Documento</label>
+              <input className="mono" value={nuevo.doc} onChange={e => setN("doc", e.target.value)} placeholder="C.C."/></div>
+            <div className="field"><label>Rol</label>
+              <select value={nuevo.rol} onChange={e => setN("rol", e.target.value)}><option>Cajero</option>{!esSupervisor && <option>Supervisor</option>}</select></div>
+            <div className="field"><label>Usuario POS</label>
+              <input className="mono" value={nuevo.usuario} onChange={e => setN("usuario", e.target.value)} placeholder="nombre.apellido"/></div>
+            <div className="field"><label>Contraseña</label>
+              <input className="mono" type="password" value={nuevo.pass} onChange={e => setN("pass", e.target.value)} placeholder="mín. 4 caracteres"/></div>
           </div>
         </Modal>
       )}
