@@ -52,6 +52,16 @@
       return this._rpc("decrement_stock", { p_sku: sku, p_qty: qty });
     }
 
+    // Ajuste de precios por categoría vía la FUNCTION fn_ajustar_precios_categoria.
+    // Devuelve { afectados, error } (afectados = nº de productos actualizados).
+    // Se llama a getDb().rpc directo porque _rpc descarta el data (solo retorna error).
+    async ajustarPreciosCategoria(categoria, porcentaje) {
+      var result = await this.getDb().rpc("fn_ajustar_precios_categoria",
+        { p_categoria: categoria, p_porcentaje: porcentaje });
+      if (result.error) console.error("[ajustarPreciosCategoria]", result.error);
+      return { afectados: result.data, error: result.error };
+    }
+
     generateSku(productos) {
       var list = productos || [];
       var max = 0;

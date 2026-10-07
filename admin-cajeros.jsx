@@ -229,24 +229,20 @@ const Cajeros = () => {
           <>
             <button className="btn ghost" onClick={() => setShowAdd(false)}>Cancelar</button>
             <button className="btn primary" disabled={savingNew} onClick={async () => {
-              if (!newNombre.trim() || !newUsuario.trim()) { setToast("Nombre y usuario son obligatorios"); return; }
-              setSavingNew(true);
-              try {
-                const fullName = (newNombre.trim() + " " + newApellido.trim()).trim();
-                const cajeroId = "CAJ-" + Date.now();
-                const cajeroRow = { id: cajeroId, nombre: fullName, doc: newDoc, rol: newRol, estado: "activo", turnoActivo: false, ingreso: 0, ventas30d: 0 };
-                const err1 = await DB.cajeros.update(cajeroId, cajeroRow);
-                if (err1) { setToast("Error al crear cajero: " + (err1.message || "Intenta de nuevo")); setSavingNew(false); return; }
-                const hashed = newPass ? await window.hashPass(newPass) : await window.hashPass("123456");
-                const usuarioRow = { usuario: newUsuario.trim(), nombre: fullName, rol: newRol, pass: hashed, permisos: [] };
-                await DB.cajeros.updateUsuario(newUsuario.trim(), usuarioRow);
-                setShowAdd(false);
-                setToast("Cajero creado correctamente");
-                setNewNombre(""); setNewApellido(""); setNewDoc(""); setNewTel(""); setNewRol("Cajero"); setNewUsuario(""); setNewPass("");
-              } catch (e) {
-                setToast("Error: " + (e.message || "Intenta de nuevo"));
+              if (!newNombre.trim() || !newApellido.trim() || !newDoc.trim() || !newUsuario.trim()) {
+                setToast("Nombres, apellidos, documento y usuario son obligatorios"); return;
               }
+              setSavingNew(true);
+              // Crea cajero + usuario de login de forma atómica (fn_crear_cajero en la BD).
+              const { id, error } = await DB.cajeros.create({
+                nombres: newNombre, apellidos: newApellido, doc: newDoc,
+                rol: newRol, usuario: newUsuario, pass: newPass.trim() || "123456",
+              });
               setSavingNew(false);
+              if (error) { setToast(error.message || "No se pudo crear el cajero"); return; }
+              setShowAdd(false);
+              setToast(`Cajero ${id} creado correctamente`);
+              setNewNombre(""); setNewApellido(""); setNewDoc(""); setNewTel(""); setNewRol("Cajero"); setNewUsuario(""); setNewPass("");
             }}><Icon name="check"/> {savingNew ? "Creando…" : "Crear cajero"}</button>
           </>
         }>

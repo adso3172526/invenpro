@@ -9,6 +9,7 @@ const Inventario = () => {
   const [barcodeInputs, setBarcodeInputs] = useStateA({});
   const [editing, setEditing] = useStateA(null);
   const [saving, setSaving] = useStateA(false);
+  const [showAjuste, setShowAjuste] = useStateA(false);
 
   const _editingRef = React.useRef(null);
   _editingRef.current = editing;
@@ -88,12 +89,17 @@ const Inventario = () => {
           <h2>Inventario</h2>
           <p className="sub">Gestiona productos, stock y códigos de barras.</p>
         </div>
-        <button className="btn sm tw-shrink-0" onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
-          { name: "Inventario", rows: rows.map(p => ({
-            SKU: p.sku, "Código de barras": p.codigoBarras || "", Producto: p.nombre, Categoría: p.categoria,
-            Precio: p.precio, Costo: p.costo, Stock: p.stock, Mínimo: p.min, Unidad: p.unidad, Vence: p.vence || ""
-          })) },
-        ])}><Icon name="download" size={13}/> <span className="tw-hidden sm:tw-inline">Exportar</span></button>
+        <div className="tw-flex tw-gap-2 tw-shrink-0">
+          <button className="btn sm" onClick={() => setShowAjuste(true)}>
+            <Icon name="settings" size={13}/> <span className="tw-hidden sm:tw-inline">Ajustar precios</span>
+          </button>
+          <button className="btn sm" onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
+            { name: "Inventario", rows: rows.map(p => ({
+              SKU: p.sku, "Código de barras": p.codigoBarras || "", Producto: p.nombre, Categoría: p.categoria,
+              Precio: p.precio, Costo: p.costo, Stock: p.stock, Mínimo: p.min, Unidad: p.unidad, Vence: p.vence || ""
+            })) },
+          ])}><Icon name="download" size={13}/> <span className="tw-hidden sm:tw-inline">Exportar</span></button>
+        </div>
       </div>
 
       <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 tw-mb-1.5">
@@ -277,6 +283,12 @@ const Inventario = () => {
         onSave={guardarProducto}
       />}
 
+      {showAjuste && <AjustarPreciosModal
+        productos={productos}
+        onClose={() => setShowAjuste(false)}
+        onDone={(msg) => { setShowAjuste(false); setToast(msg); }}
+      />}
+
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
     </>
   );
@@ -363,4 +375,73 @@ const ProductoEditModal = ({ producto, saving, onClose, onSave }) => {
   );
 };
 
-Object.assign(window, { Inventario, ProductoEditModal });
+// Modal de ajuste de precios por categoría. Llama a DB.productos.ajustarPreciosCategoria
+// (FUNCTION fn_ajustar_precios_categoria en la BD). Vista previa con el mismo redondeo a 50.
+const AjustarPreciosModal = ({ productos, onClose, onDone }) => {
+  const cats = CATEGORIAS.slice(1);
+  const [categoria, setCategoria] = useStateA(cats[0] || "General");
+  const [pct, setPct] = useStateA("");
+  const [saving, setSaving] = useStateA(false);
+  const [err, setErr] = useStateA("");
+
+  const pctNum = parseFloat(pct);
+  const pctValido = pct !== "" && !isNaN(pctNum);
+  const afectados = productos.filter(p => p.categoria === categoria);
+  const nuevoPrecio = (precio) => Math.max(0, Math.round(precio * (1 + (pctNum || 0) / 100) / 50) * 50);
+
+  const aplicar = async () => {
+    setErr("");
+    if (!pctValido) { setErr("Ingresa un porcentaje válido."); return; }
+    setSaving(true);
+    const { afectados: n, error } = await DB.productos.ajustarPreciosCategoria(categoria, pctNum);
+    setSaving(false);
+    if (error) { setErr(error.message || "No se pudo ajustar los precios."); return; }
+    onDone(`${n} producto(s) actualizados en ${categoria}`);
+  };
+
+  return (
+    <Modal title="Ajustar precios por categoría" bottomSheet onClose={onClose} footer={
+      <>
+        <button className="btn ghost" onClick={onClose}>Cancelar</button>
+        <button className="btn primary" disabled={saving || !pctValido} onClick={aplicar}>
+          <Icon name="check" size={14}/> {saving ? "Aplicando…" : "Aplicar"}
+        </button>
+      </>
+    }>
+      {err && (
+        <div className="tw-bg-bad-soft tw-text-bad tw-py-2 tw-px-3 tw-rounded-md tw-text-xs tw-mb-3 tw-font-medium">
+          {err}
+        </div>
+      )}
+      <div className="grid-2">
+        <div className="field"><label>Categoría</label>
+          <select value={categoria} onChange={e => setCategoria(e.target.value)}>
+            {cats.map(c => <option key={c} value={c}>{c}</option>)}
+          </select></div>
+        <div className="field"><label>Ajuste (%)</label>
+          <input className="mono" type="number" value={pct} onChange={e => setPct(e.target.value)} placeholder="+ sube · − baja"/></div>
+      </div>
+      <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
+        {afectados.length} producto(s) en "{categoria}". Redondeo a la decena de 50.
+      </div>
+      {pctValido && afectados.length > 0 && (
+        <div className="tbl-wrap" style={{ maxHeight: 220, overflowY: "auto" }}>
+          <table className="tbl">
+            <thead><tr><th>Producto</th><th className="num">Actual</th><th className="num">Nuevo</th></tr></thead>
+            <tbody>
+              {afectados.map(p => (
+                <tr key={p.sku}>
+                  <td>{p.nombre}</td>
+                  <td className="num mono">{window.fmtCOP(p.precio)}</td>
+                  <td className="num mono" style={{ fontWeight: 600 }}>{window.fmtCOP(nuevoPrecio(p.precio))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Modal>
+  );
+};
+
+Object.assign(window, { Inventario, ProductoEditModal, AjustarPreciosModal });

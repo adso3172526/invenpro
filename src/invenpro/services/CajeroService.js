@@ -14,6 +14,18 @@
       return this._helpers.snakify(obj);
     }
 
+    // Alta de cajero + usuario de login (atómica) vía la FUNCTION fn_crear_cajero.
+    // Devuelve { id, error }: id = 'C-NN'; error.message trae el mensaje de validación.
+    // getDb().rpc directo porque _rpc descarta el data (necesitamos el id creado).
+    async create(datos) {
+      var result = await this.getDb().rpc("fn_crear_cajero", {
+        p_nombres: datos.nombres, p_apellidos: datos.apellidos, p_doc: datos.doc,
+        p_rol: datos.rol, p_usuario: datos.usuario, p_pass: datos.pass,
+      });
+      if (result.error) console.error("[crearCajero]", result.error);
+      return { id: result.data, error: result.error };
+    }
+
     async update(id, updates) {
       return this._update("cajeros", "id", id, this._snakify(updates));
     }
