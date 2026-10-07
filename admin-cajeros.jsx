@@ -1,11 +1,47 @@
 // Cajeros y turnos
 
+// Detalle del cierre de caja de un turno (arqueo + desglose por medio de pago)
+const CierreDetalleModal = ({ turno, cierre, onClose }) => {
+  const c = cierre || {};
+  const difColor = c.diferencia === 0 ? "var(--good)" : c.diferencia > 0 ? "var(--warn)" : "var(--bad)";
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-h">
+          <h3>Cierre de caja · {turno.cajero}</h3>
+          <button className="x" onClick={onClose}><Icon name="x"/></button>
+        </div>
+        <div className="modal-b">
+          <div className="muted tw-text-xs tw-mb-2">Turno {turno.id}{turno.fechaFin ? " · " + turno.fechaFin : ""}</div>
+          <div className="card tw-bg-surface-2"><div className="card-b">
+            <div className="row spaced"><span className="muted">Base inicial</span><span className="mono">{window.fmtCOP(c.baseInicial)}</span></div>
+            <div className="row spaced"><span className="muted">Efectivo</span><span className="mono">{window.fmtCOP(c.ventasEfectivo)}</span></div>
+            <div className="row spaced"><span className="muted">Transferencia</span><span className="mono">{window.fmtCOP(c.ventasTransferencia)}</span></div>
+            <div className="row spaced"><span className="muted">Nequi</span><span className="mono">{window.fmtCOP(c.ventasNequi)}</span></div>
+            <div className="row spaced"><span className="muted">Daviplata</span><span className="mono">{window.fmtCOP(c.ventasDaviplata)}</span></div>
+            <div className="row spaced"><span className="muted">Total ventas</span><span className="mono">{window.fmtCOP(c.totalVentas)}</span></div>
+            <hr className="tw-border-0 tw-border-t tw-border-border tw-my-2"/>
+            <div className="row spaced"><span className="muted">Esperado (efectivo)</span><span className="mono">{window.fmtCOP(c.esperadoEfectivo)}</span></div>
+            <div className="row spaced"><span className="muted">Efectivo contado</span><span className="mono">{window.fmtCOP(c.efectivoContado)}</span></div>
+            <div className="row spaced"><span className="tw-font-semibold">Diferencia</span><span className="mono tw-font-semibold" style={{ color: difColor }}>{(c.diferencia > 0 ? "+" : "") + window.fmtCOP(c.diferencia)}</span></div>
+          </div></div>
+          {c.observaciones ? <div className="tw-mt-3"><div className="muted tw-text-xs tw-mb-1">Observaciones</div><div className="tw-text-sm">{c.observaciones}</div></div> : null}
+        </div>
+        <div className="modal-f">
+          <button className="btn" onClick={onClose}>Cerrar</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Cajeros = () => {
   const [tab, setTab] = useStateA("equipo");
   const [showAdd, setShowAdd] = useStateA(false);
   const [cfgCajero, setCfgCajero] = useStateA(null);
   const [cfgUsuario, setCfgUsuario] = useStateA(null);
   const [toast, setToast] = useStateA(null);
+  const [verCierre, setVerCierre] = useStateA(null);  // turno cuyo cierre se muestra
   const [newNombre, setNewNombre] = useStateA("");
   const [newApellido, setNewApellido] = useStateA("");
   const [newDoc, setNewDoc] = useStateA("");
@@ -26,8 +62,21 @@ const Cajeros = () => {
     }));
     return () => offs.forEach(fn => fn());
   }, []);
+  // Red de seguridad: relee los cierres de caja al entrar (el realtime puede no
+  // traerlos), así un turno recién cerrado muestra su "Detalle" sin recargar.
+  React.useEffect(() => {
+    (async () => {
+      try {
+        if (DB.cierres && DB.cierres.getAll) {
+          const cs = await DB.cierres.getAll();
+          if (cs && MOCK.setCierres) { MOCK.setCierres(cs); _rtTick(n => n + 1); }
+        }
+      } catch (e) { console.error("refrescar cierres al entrar:", e); }
+    })();
+  }, []);
   const pagCaj = usePagination(MOCK.cajeros, 2);
   const pagTur = usePagination(MOCK.turnos, 10);
+  const cierreDe = (turnoId) => (MOCK.cierres || []).find(c => c.turnoId === turnoId);
 
   const currentUser = useMemoA(() => {
     try { return JSON.parse(localStorage.getItem("invenpro-session"))?.user || {}; } catch { return {}; }
@@ -132,9 +181,12 @@ const Cajeros = () => {
           <div className="card tw-hidden md:tw-block">
             <div className="tbl-wrap">
               <table className="tbl">
-                <thead><tr><th>N° turno</th><th>Cajero</th><th>Apertura</th><th>Cierre</th><th>Estado</th><th className="num">Base</th><th className="num">Ventas</th><th className="num">Trans.</th></tr></thead>
+                <thead><tr><th>N° turno</th><th>Cajero</th><th>Apertura</th><th>Cierre</th><th>Estado</th><th className="num">Base</th><th className="num">Ventas</th><th className="num">Trans.</th><th className="num">Diferencia</th><th></th></tr></thead>
                 <tbody>
-                  {pagTur.slice.map(t => (
+                  {pagTur.slice.map(t => {
+                    const c = cierreDe(t.id);
+                    const difColor = !c ? "var(--text-3)" : c.diferencia === 0 ? "var(--good)" : c.diferencia > 0 ? "var(--warn)" : "var(--bad)";
+                    return (
                     <tr key={t.id} className="row-hover">
                       <td className="mono">{t.id}</td>
                       <td className="tw-font-medium">{t.cajero}</td>
@@ -144,8 +196,11 @@ const Cajeros = () => {
                       <td className="num mono">{window.fmtCOP(t.baseIni)}</td>
                       <td className="num mono">{window.fmtCOP(t.ventas)}</td>
                       <td className="num mono">{t.transacciones}</td>
+                      <td className="num mono" style={{ color: difColor, fontWeight: 600 }}>{c ? ((c.diferencia > 0 ? "+" : "") + window.fmtCOP(c.diferencia)) : "—"}</td>
+                      <td>{c ? <button className="btn sm" onClick={() => setVerCierre(t)}>Detalle</button> : <span className="muted">—</span>}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -153,7 +208,9 @@ const Cajeros = () => {
           </div>
           {/* Mobile: tarjetas */}
           <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2.5">
-            {pagTur.slice.map(t => (
+            {pagTur.slice.map(t => {
+              const c = cierreDe(t.id);
+              return (
               <div key={t.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm">
                 <div className="tw-flex tw-items-center tw-justify-between tw-mb-2">
                   <div>
@@ -168,8 +225,15 @@ const Cajeros = () => {
                   <div><span className="muted">Base:</span> <span className="mono">{window.fmtCOP(t.baseIni)}</span></div>
                   <div><span className="muted">Ventas:</span> <span className="mono">{window.fmtCOP(t.ventas)}</span></div>
                 </div>
+                {c && (
+                  <div className="tw-flex tw-items-center tw-justify-between tw-mt-2 tw-pt-2 tw-border-t tw-border-border">
+                    <span className="tw-text-xs">Diferencia: <span className="mono tw-font-semibold" style={{ color: c.diferencia === 0 ? "var(--good)" : c.diferencia > 0 ? "var(--warn)" : "var(--bad)" }}>{(c.diferencia > 0 ? "+" : "") + window.fmtCOP(c.diferencia)}</span></span>
+                    <button className="btn sm" onClick={() => setVerCierre(t)}>Detalle</button>
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
             <Pagination {...pagTur} label="turnos"/>
           </div>
         </>
@@ -259,6 +323,7 @@ const Cajeros = () => {
       )}
       {cfgCajero && <CajeroConfig cajero={cfgCajero} esSupervisor={esSupervisor} onClose={() => setCfgCajero(null)} onDone={(msg) => { setCfgCajero(null); setToast(msg); }}/>}
       {cfgUsuario && <UsuarioConfig usuario={cfgUsuario} esSupervisor={esSupervisor} onClose={() => setCfgUsuario(null)} onDone={(msg) => { setCfgUsuario(null); setToast(msg); }}/>}
+      {verCierre && <CierreDetalleModal turno={verCierre} cierre={cierreDe(verCierre.id)} onClose={() => setVerCierre(null)}/>}
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
     </>
   );
