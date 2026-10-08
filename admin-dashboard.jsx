@@ -20,7 +20,11 @@ const Hub = ({ go, user }) => (
 );
 
 const Dashboard = ({ go }) => {
-  useRealtimeSync("views");
+  // El dashboard vive de facturas (resumen/ventas por hora/por cajero), productos
+  // (alertas de stock/vencimiento) y configuracion (umbrales). Se suscribe a esas
+  // tablas para re-renderizar al instante; "views" solo no bastaba (una venta
+  // dispara realtime:facturas, no realtime:views).
+  useRealtimeSync(["facturas", "productos", "configuracion", "views"]);
   // Ventas por hora REALES: agrupadas por franja horaria desde las facturas del día
   // (módulo resumen/ · PorHoraStrategy). Antes usaba la vista ventas_hoy, que agrupaba
   // por el texto de hora completo ("04:31 p. m.") y rotulaba mal el gráfico.
