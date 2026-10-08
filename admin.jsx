@@ -4,28 +4,29 @@
 
 // =================== Reporte de ventas ===================
 const Reportes = () => {
-  const [filtroMes, setFiltroMes] = useStateA("Todos");
+  // Rango de fechas: por defecto el MES ACTUAL (día 1 → hoy). Fechas YYYY-MM-DD.
+  const _fmtFecha = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const _hoy = new Date();
+  const _iniMes = () => _fmtFecha(new Date(_hoy.getFullYear(), _hoy.getMonth(), 1));
+  const [desde, setDesde] = useStateA(_iniMes());
+  const [hasta, setHasta] = useStateA(_fmtFecha(_hoy));
   const [filtroCajero, setFiltroCajero] = useStateA("Todos");
   const [filtroProducto, setFiltroProducto] = useStateA("Todos");
   const [filtroMetodo, setFiltroMetodo] = useStateA("Todos");
-
-  const meses = useMemoA(() => {
-    const s = new Set(MOCK.facturas.map(f => f.fecha.slice(0,7)));
-    return ["Todos", ...Array.from(s).sort().reverse()];
-  }, []);
   const cajeros = ["Todos", ...new Set(MOCK.facturas.map(f => f.cajero))];
   const metodos = ["Todos", "Efectivo", "Transferencia", "Nequi", "Daviplata"];
   const productosOpts = ["Todos", ...MOCK.productos.map(p => p.nombre)];
   const filtered = useMemoA(() => {
     const facturas = MOCK.facturas || [];
     return facturas.filter((f) => {
-      if (filtroMes !== "Todos" && !f.fecha.startsWith(filtroMes)) return false;
+      if (desde && f.fecha < desde) return false;
+      if (hasta && f.fecha > hasta) return false;
       if (filtroCajero !== "Todos" && f.cajero !== filtroCajero) return false;
       if (filtroMetodo !== "Todos" && f.metodo !== filtroMetodo) return false;
       if (filtroProducto !== "Todos" && !f.items.some((i) => i.nombre === filtroProducto)) return false;
       return true;
     });
-  }, [filtroMes, filtroCajero, filtroProducto, filtroMetodo]);
+  }, [desde, hasta, filtroCajero, filtroProducto, filtroMetodo]);
 
   const summary = useMemoA(() => {
     const totalFiltro = filtered.reduce((s, f) => s + f.total, 0);
@@ -105,10 +106,15 @@ const Reportes = () => {
       </div>
 
       <div className="filterbar">
-        <div className="select-pill"><span className="lbl">Mes</span>
-          <select value={filtroMes} onChange={e => setFiltroMes(e.target.value)}>
-            {meses.map(m => <option key={m}>{m}</option>)}
-          </select>
+        <div className="select-pill"><span className="lbl">Desde</span>
+          <input type="date" value={desde} max={hasta || undefined}
+            style={{ border: "none", background: "transparent", color: "inherit", font: "inherit" }}
+            onChange={e => setDesde(e.target.value)}/>
+        </div>
+        <div className="select-pill"><span className="lbl">Hasta</span>
+          <input type="date" value={hasta} min={desde || undefined}
+            style={{ border: "none", background: "transparent", color: "inherit", font: "inherit" }}
+            onChange={e => setHasta(e.target.value)}/>
         </div>
         <div className="select-pill"><span className="lbl">Cajero</span>
           <select value={filtroCajero} onChange={e => setFiltroCajero(e.target.value)}>
@@ -125,7 +131,7 @@ const Reportes = () => {
             {metodos.map(m => <option key={m}>{m}</option>)}
           </select>
         </div>
-        <button className="btn sm" onClick={() => { setFiltroMes("Todos"); setFiltroCajero("Todos"); setFiltroProducto("Todos"); setFiltroMetodo("Todos"); }}>Limpiar</button>
+        <button className="btn sm" onClick={() => { setDesde(_iniMes()); setHasta(_fmtFecha(_hoy)); setFiltroCajero("Todos"); setFiltroProducto("Todos"); setFiltroMetodo("Todos"); }}>Limpiar</button>
       </div>
 
       <div className="kpi-grid tw-grid tw-grid-cols-1 sm:tw-grid-cols-3 tw-gap-2 md:tw-gap-[10px]">

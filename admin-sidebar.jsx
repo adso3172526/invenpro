@@ -62,7 +62,7 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
                onClick={onLogout}
                title={`Cerrar sesión (${(user && user.nombre) || "Usuario"})`}>
             <div className="nav-card-top">
-              <div className="avatar">{(user && user.nombre) ? user.nombre[0] : "A"}</div>
+              <Icon name="logout" size={26}/>
             </div>
             <div className="nav-card-bottom">
               <span className="nav-card-label">Cerrar sesión</span>

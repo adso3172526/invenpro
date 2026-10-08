@@ -430,7 +430,9 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   };
 
   return (
-    <div className="tw-h-screen tw-flex tw-flex-col tw-bg-bg tw-overflow-hidden">
+    <div className="tw-h-screen tw-flex tw-flex-col tw-bg-bg tw-overflow-hidden" style={{ height: "100dvh" }}>
+      {/* height: 100dvh = alto visible real en móvil (excluye la barra del navegador);
+          tw-h-screen (100vh) queda como fallback si el navegador no soporta dvh */}
       {/* Topbar — Desktop */}
       <div className="topbar tw-hidden md:tw-flex tw-items-center tw-gap-2">
         <div className="crumb tw-flex-1 tw-min-w-0">
