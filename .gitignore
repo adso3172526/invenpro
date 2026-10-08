@@ -13,6 +13,9 @@ dist/
 build/
 invenpro-m/
 
+# --- Entregables locales (presentaciones/informes del proyecto) ---
+entregables/
+
 # --- Documentos y presentaciones GENERADOS + sus generadores (uso puntual) ---
 *.pptx
 *.docx
