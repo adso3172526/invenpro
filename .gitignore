@@ -13,10 +13,11 @@ dist/
 build/
 invenpro-m/
 
-# --- Documentos y presentaciones GENERADOS (binarios regenerables con gen_*.py) ---
+# --- Documentos y presentaciones GENERADOS + sus generadores (uso puntual) ---
 *.pptx
 *.docx
 *.pdf
+gen_*.py
 
 # --- Temporales / scratch / OS ---
 *.log
