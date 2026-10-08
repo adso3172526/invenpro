@@ -18,9 +18,9 @@ const _hasAdminAccess = (user) => {
 const App = () => {
   const _ss = _ssRead();
   const [theme, setTheme] = useStateApp(() => localStorage.getItem("invenpro-theme") || "light");
-  const [stage, setStage] = useStateApp("login");
-  const [user, setUser] = useStateApp(null);
-  const [shift, setShift] = useStateApp(null);
+  const [stage, setStage] = useStateApp(_ss.stage || "login");
+  const [user, setUser] = useStateApp(_ss.user || null);
+  const [shift, setShift] = useStateApp(_ss.shift || null);
   const [shiftSummary, setShiftSummary] = useStateApp(null);
   const [adminPage, setAdminPage] = useStateApp(_ss.adminPage || "dashboard");
   const [, forceRender] = useStateApp(0);
