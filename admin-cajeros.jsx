@@ -62,16 +62,23 @@ const Cajeros = () => {
     }));
     return () => offs.forEach(fn => fn());
   }, []);
-  // Red de seguridad: relee los cierres de caja al entrar (el realtime puede no
-  // traerlos), así un turno recién cerrado muestra su "Detalle" sin recargar.
+  // Red de seguridad: al entrar al módulo relee turnos y cierres desde la BD. El
+  // realtime (websocket) puede perder el evento de cierre de turno, dejando MOCK con
+  // el estado viejo (turno "abierto" aunque ya se cerró); releer garantiza ver el
+  // estado correcto sin recargar la página.
   React.useEffect(() => {
     (async () => {
       try {
+        if (DB.turnos && DB.turnos.getAll) {
+          const ts = await DB.turnos.getAll();
+          if (ts && ts.length && MOCK.setTurnos) MOCK.setTurnos(ts);
+        }
         if (DB.cierres && DB.cierres.getAll) {
           const cs = await DB.cierres.getAll();
-          if (cs && MOCK.setCierres) { MOCK.setCierres(cs); _rtTick(n => n + 1); }
+          if (cs && MOCK.setCierres) MOCK.setCierres(cs);
         }
-      } catch (e) { console.error("refrescar cierres al entrar:", e); }
+        _rtTick(n => n + 1);
+      } catch (e) { console.error("refrescar turnos/cierres al entrar:", e); }
     })();
   }, []);
   const pagCaj = usePagination(MOCK.cajeros, 2);

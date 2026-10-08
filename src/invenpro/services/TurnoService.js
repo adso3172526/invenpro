@@ -14,6 +14,12 @@
       return this._helpers.snakify(obj);
     }
 
+    async getAll() {
+      var Turno = root.Turno || window.Turno;
+      var data = await this._findAll("turnos");
+      return this._helpers.camelize(data).map(function (d) { return new Turno(d); });
+    }
+
     async create(turno) {
       return this._insert("turnos", this._snakify(turno));
     }
