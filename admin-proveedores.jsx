@@ -1,7 +1,7 @@
 // Proveedores
 
 const Proveedores = () => {
-  const [list, setList] = useStateA(MOCK.proveedores);
+  const [list, setList] = useStateA(() => MOCK.proveedores || []);
   const [q, setQ] = useStateA("");
   const [estado, setEstado] = useStateA("Todos");
   const [categoria, setCategoria] = useStateA("Todas");
@@ -9,57 +9,68 @@ const Proveedores = () => {
   const [confirmBaja, setConfirmBaja] = useStateA(null);
   const [toast, setToast] = useStateA(null);
 
-  // Realtime: sync proveedores only when no modal is open
   const _modalRef = React.useRef(false);
   _modalRef.current = !!editing || !!confirmBaja;
   React.useEffect(() => {
     return window.EventBus.on("realtime:proveedores", () => {
-      if (!_modalRef.current) setList([...MOCK.proveedores]);
+      if (!_modalRef.current) setList(MOCK.proveedores || []);
     });
   }, []);
 
   const categorias = useMemoA(() => ["Todas", ...Array.from(new Set(list.map(p => p.categoria)))], [list]);
-
-  const filtered = useMemoA(() => list.filter(p => {
-    if (estado !== "Todos" && p.estado !== estado) return false;
-    if (categoria !== "Todas" && p.categoria !== categoria) return false;
+  const filtered = useMemoA(() => {
+    let l = list;
+    if (estado !== "Todos") l = l.filter((p) => p.estado === estado);
+    if (categoria !== "Todas") l = l.filter((p) => p.categoria === categoria);
     if (q) {
-      const s = q.toLowerCase();
-      if (!p.nombre.toLowerCase().includes(s) &&
-          !p.nit.toLowerCase().includes(s) &&
-          !(p.contacto || "").toLowerCase().includes(s) &&
-          !(p.email || "").toLowerCase().includes(s)) return false;
+      const query = q.toLowerCase();
+      l = l.filter((p) => {
+        const nombre = (p.nombre || "").toLowerCase();
+        const nit = (p.nit || "").toLowerCase();
+        const contacto = (p.contacto || "").toLowerCase();
+        const email = (p.email || "").toLowerCase();
+        return nombre.includes(query) || nit.includes(query) || contacto.includes(query) || email.includes(query);
+      });
     }
-    return true;
-  }), [list, q, estado, categoria]);
+    return [...l].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }, [list, q, estado, categoria]);
 
-  const activos = list.filter(p => p.estado === "activo").length;
-  const inactivos = list.length - activos;
+  const stats = useMemoA(() => {
+    const activos = list.filter((p) => p.estado === "activo").length;
+    return { total: list.length, activos, inactivos: list.length - activos };
+  }, [list]);
+  const activos = stats.activos;
+  const inactivos = stats.inactivos;
   const pagProv = usePagination(filtered, 10);
+
   const guardar = async (data) => {
+    let resultado = { ok: true, message: "" };
     if (data.id) {
-      await DB.proveedores.update(data.id, data);
-      // Optimistic update
-      const idx = MOCK.proveedores.findIndex(p => p.id === data.id);
-      if (idx !== -1) Object.assign(MOCK.proveedores[idx], data);
-      setList([...MOCK.proveedores]);
-      setToast("Proveedor actualizado");
+      const error = await DB.proveedores.update(data.id, data);
+      resultado = { ok: !error, message: error ? "Error al guardar: " + (error.message || "Intenta de nuevo") : "Proveedor actualizado" };
     } else {
-      const nextId = "PRV-" + String(list.length + 1).padStart(3, "0");
+      const nextId = `PRV-${String((list || []).length + 1).padStart(3, "0")}`;
       const nuevo = { ...data, id: nextId, ingresos: 0, ultimoIngreso: null, estado: "activo" };
-      await DB.proveedores.create(nuevo);
-      setToast("Proveedor creado");
+      const error = await DB.proveedores.create(nuevo);
+      resultado = { ok: !error, message: error ? "Error al crear: " + (error.message || "Intenta de nuevo") : "Proveedor creado" };
     }
+    if (!resultado.ok) {
+      setToast(resultado.message);
+      return;
+    }
+    setList(MOCK.proveedores || []);
     setEditing(null);
+    setToast(resultado.message);
   };
 
   const toggleEstado = async (p) => {
     const nuevoEstado = p.estado === "activo" ? "inactivo" : "activo";
-    await DB.proveedores.update(p.id, { estado: nuevoEstado });
-    // Optimistic update
-    const idx = MOCK.proveedores.findIndex(x => x.id === p.id);
-    if (idx !== -1) MOCK.proveedores[idx].estado = nuevoEstado;
-    setList([...MOCK.proveedores]);
+    const error = await DB.proveedores.update(p.id, { estado: nuevoEstado });
+    if (error) {
+      setToast("No se pudo cambiar el estado: " + (error.message || "Intenta de nuevo"));
+      return;
+    }
+    setList(MOCK.proveedores || []);
     setToast(p.estado === "activo" ? "Proveedor dado de baja" : "Proveedor reactivado");
     setConfirmBaja(null);
   };

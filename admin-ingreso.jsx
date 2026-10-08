@@ -2,8 +2,6 @@
 
 // Lista de categorías = las guardadas en config (clave "categorias", JSON) + las que
 // ya usan los productos, sin repetir, con "General" siempre primero.
-// Todas las categorías como objetos { nombre, activo }: las de config (clave "categorias")
-// + las que ya usan los productos. Compatible con el formato viejo (lista de strings).
 const getCategoriasAll = () => {
   const cfg = (window.MOCK && MOCK.configuracion) || {};
   let custom = [];
@@ -19,8 +17,7 @@ const getCategoriasAll = () => {
   (window.MOCK && MOCK.productos ? MOCK.productos : []).forEach(p => {
     if (p.categoria && !map.has(p.categoria)) map.set(p.categoria, { nombre: p.categoria, activo: true });
   });
-  return Array.from(map.values())
-    .sort((a, b) => a.nombre === "General" ? -1 : b.nombre === "General" ? 1 : a.nombre.localeCompare(b.nombre));
+  return Array.from(map.values()).sort((a, b) => a.nombre === "General" ? -1 : b.nombre === "General" ? 1 : a.nombre.localeCompare(b.nombre));
 };
 
 // Para los selects: solo las categorías ACTIVAS (nombres).
@@ -49,7 +46,7 @@ const Ingreso = () => {
   const hace30 = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
   const [desde, setDesde] = useStateA(hace30);
   const [hasta, setHasta] = useStateA(hoy);
-  const [proveedores, setProveedores] = useStateA([
+  const [proveedores, setProveedores] = useStateA(() => [
     { nombre: "Distribuidora El Sol", nit: "900.124.567-8", tel: "(4) 444 1820" },
     { nombre: "Lácteos del Valle", nit: "830.998.221-2", tel: "(2) 660 1245" },
     { nombre: "Frutiverduras Mayor", nit: "901.445.118-3", tel: "(1) 320 7790" },
@@ -68,29 +65,32 @@ const Ingreso = () => {
   const [toast, setToast] = useStateA(null);
   const [guardando, setGuardando] = useStateA(false);
   // Más reciente primero: por fecha desc y, en empate, por id (ING-<timestamp>) desc
-  const ingresosFiltrados = MOCK.ingresos
-    .filter(i => i.fecha >= desde && i.fecha <= hasta)
-    .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || "") || (b.id || "").localeCompare(a.id || ""));
+  const ingresosFiltrados = useMemoA(() => {
+    const list = (MOCK)?.ingresos || [];
+    return [...list].filter(i => !desde || !hasta ? true : i.fecha >= desde && i.fecha <= hasta).sort((a, b) => (b.fecha || "").localeCompare(a.fecha || "") || (b.id || "").localeCompare(a.id || ""));
+  }, [desde, hasta]);
   const pagIng = usePagination(ingresosFiltrados, 8);
 
   const add = (sku, qty, costo, vence, nombreManual, codigoBarras, precio, categoriaManual) => {
-    const p = MOCK.productos.find(x => x.sku === sku);
-    const esNuevo = !p;
-    const nombre = p ? p.nombre : (nombreManual || sku);
-    const item = { sku, nombre, qty: parseInt(qty)||0, costo: parseInt(costo)||0, vence, nuevo: esNuevo, codigoBarras: codigoBarras || (p && p.codigoBarras) || "" };
-    if (esNuevo) {
-      item.categoria = categoriaManual || "General";
-      item.precio = parseInt(precio) || Math.round((parseInt(costo)||0) * 1.3);
-    } else {
-      item.precio = parseInt(precio) || p.precio || 0;
-    }
-    setItems(it => [...it, item]);
+    const product = (MOCK?.productos || []).find(x => x.sku === sku);
+    const esNuevo = !product;
+    const itemName = product ? product.nombre : (nombreManual || sku);
+    const item = {
+      sku: sku || (esNuevo ? nextSku() : product.sku),
+      nombre: itemName,
+      qty: parseInt(qty) || 0,
+      costo: parseInt(costo) || 0,
+      vence: vence || null,
+      nuevo: esNuevo,
+      codigoBarras: codigoBarras || (product && product.codigoBarras) || "",
+      categoria: esNuevo ? (categoriaManual || "General") : undefined,
+      precio: parseInt(precio) || (product ? product.precio : Math.round((parseInt(costo) || 0) * 1.3)),
+    };
+    setItems((it) => [...it, item]);
   };
 
-  // Próximo SKU automático (P-xxxxx), considerando los productos existentes
-  // Y los ya agregados a este ingreso, para que no se repitan entre ítems nuevos.
   const nextSku = () => {
-    const used = new Set([...MOCK.productos.map(p => p.sku), ...items.map(it => it.sku)]);
+    const used = new Set([...(MOCK?.productos || []).map(p => p.sku), ...items.map(it => it.sku)]);
     let max = 0;
     used.forEach(s => { const m = /^P-(\d+)$/.exec(s || ""); if (m) max = Math.max(max, parseInt(m[1], 10)); });
     return "P-" + String(max + 1).padStart(5, "0");
@@ -417,7 +417,6 @@ const Ingreso = () => {
 
       {showForm && (() => {
         const provActual = proveedores.find(x => x.nombre === proveedor);
-        // Campos obligatorios para habilitar "Confirmar ingreso"
         const faltantes = [];
         if (!proveedor) faltantes.push("proveedor");
         if (!(provActual && (provActual.nit || "").trim())) faltantes.push("NIT del proveedor");
@@ -442,36 +441,24 @@ const Ingreso = () => {
               setGuardando(true);
               try {
                 const nuevos = items.filter(it => it.nuevo);
+                const existentes = items.filter(it => !it.nuevo);
+                const total = items.reduce((s, i) => s + i.qty * i.costo, 0);
+                
                 for (const it of nuevos) {
-                  // Usa el SKU ya asignado (P-xxxxx) al escanear/agregar; si no trae uno, lo genera
-                  if (!/^P-\d+$/.test(it.sku || "")) it.sku = nextSku();
-                  const err = await DB.productos.create({
-                    sku: it.sku,
-                    nombre: it.nombre,
-                    categoria: it.categoria || "General",
-                    precio: it.precio || Math.round(it.costo * 1.3),
-                    costo: it.costo,
-                    stock: it.qty,   // stock inicial = unidades ingresadas (no depende del RPC)
-                    vence: it.vence || null,
-                    codigoBarras: it.codigoBarras || null,
-                  });
-                  if (err) { setToast("Error creando producto: " + it.nombre); setGuardando(false); return; }
-                  MOCK.productos.push({ sku: it.sku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: it.qty, min: 0, vence: it.vence || null, unidad: "und", codigoBarras: it.codigoBarras || null });
+                  const sku = it.sku || nextSku();
+                  const error = await DB.productos.create({ sku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || Math.round((it.costo || 0) * 1.3), costo: it.costo, stock: it.qty, vence: it.vence || null, codigoBarras: it.codigoBarras || null, unidad: "und", min: 0 });
+                  if (error) { setToast("Error creando producto: " + (it.nombre || sku)); setGuardando(false); return; }
+                  MOCK.productos.push({ sku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: it.qty, min: 0, unidad: "und", vence: it.vence || null, codigoBarras: it.codigoBarras || null });
                 }
-                // Solo los EXISTENTES suman al stock vía RPC (los nuevos ya nacieron con su stock)
-                for (const it of items.filter(x => !x.nuevo)) {
-                  await DB.productos.incrementStock(it.sku, it.qty);
+                
+                for (const it of existentes) {
+                  const error = await DB.productos.incrementStock(it.sku, it.qty);
+                  if (error) { setToast("Error actualizando stock de " + (it.nombre || it.sku)); setGuardando(false); return; }
                 }
-                const ingreso = {
-                  id: "ING-" + Date.now(),
-                  fecha: new Date().toISOString().slice(0, 10),
-                  proveedor: proveedor,
-                  items: items.length,
-                  costo: total,
-                  recibe: "Administrador",
-                  factura: factura,
-                };
-                await DB.ingresos.create(ingreso, items);
+                
+                const ingreso = { id: "ING-" + Date.now(), fecha: new Date().toISOString().slice(0, 10), proveedor, items: items.length, costo: total, recibe: "Administrador", factura };
+                const error = await DB.ingresos.create(ingreso, items);
+                if (error) { setToast("Error al guardar el ingreso: " + (error.message || "Intenta de nuevo")); setGuardando(false); return; }
                 await hydrateData();
                 setShowForm(false); setItems([]); setVendedor(""); setCelular(""); setOrigen(null);
                 setToast("Ingreso registrado · " + nuevos.length + " producto(s) creado(s) · stock actualizado. Asigna códigos de barras en Bodega.");

@@ -16,66 +16,72 @@ const Reportes = () => {
   const cajeros = ["Todos", ...new Set(MOCK.facturas.map(f => f.cajero))];
   const metodos = ["Todos", "Efectivo", "Transferencia", "Nequi", "Daviplata"];
   const productosOpts = ["Todos", ...MOCK.productos.map(p => p.nombre)];
-  const filtered = useMemoA(() => MOCK.facturas.filter(f => {
-    if (desde && f.fecha < desde) return false;
-    if (hasta && f.fecha > hasta) return false;
-    if (filtroCajero !== "Todos" && f.cajero !== filtroCajero) return false;
-    if (filtroMetodo !== "Todos" && f.metodo !== filtroMetodo) return false;
-    if (filtroProducto !== "Todos" && !f.items.some(i => i.nombre === filtroProducto)) return false;
-    return true;
-  }), [desde, hasta, filtroCajero, filtroProducto, filtroMetodo]);
+  const filtered = useMemoA(() => {
+    const facturas = MOCK.facturas || [];
+    return facturas.filter((f) => {
+      if (desde && f.fecha < desde) return false;
+      if (hasta && f.fecha > hasta) return false;
+      if (filtroCajero !== "Todos" && f.cajero !== filtroCajero) return false;
+      if (filtroMetodo !== "Todos" && f.metodo !== filtroMetodo) return false;
+      if (filtroProducto !== "Todos" && !f.items.some((i) => i.nombre === filtroProducto)) return false;
+      return true;
+    });
+  }, [desde, hasta, filtroCajero, filtroProducto, filtroMetodo]);
 
-  const totalFiltro = filtered.reduce((s,f) => s + f.total, 0);
-  const tickets = filtered.length;
-  const promedio = tickets ? totalFiltro/tickets : 0;
+  const summary = useMemoA(() => {
+    const totalFiltro = filtered.reduce((s, f) => s + f.total, 0);
+    const tickets = filtered.length;
+    const promedio = tickets ? totalFiltro / tickets : 0;
+    const unidades = filtered.reduce((s, f) => s + f.items.reduce((a, i) => a + i.q, 0), 0);
+    return { totalFiltro, tickets, promedio, unidades };
+  }, [filtered]);
+  const totalFiltro = summary.totalFiltro;
+  const tickets = summary.tickets;
+  const promedio = summary.promedio;
 
   // Para el chart por mes
   const byMonth = useMemoA(() => {
     const map = {};
-    filtered.forEach(f => {
-      const k = f.fecha.slice(0,7);
-      map[k] = (map[k] || 0) + f.total;
-    });
-    return Object.entries(map).sort().map(([m,v]) => ({ mes: m, total: v }));
+    filtered.forEach((f) => { const k = f.fecha.slice(0, 7); map[k] = (map[k] || 0) + f.total; });
+    return Object.entries(map).sort().map(([mes, total]) => ({ mes, total }));
   }, [filtered]);
 
   // Por cajero
   const byCajero = useMemoA(() => {
     const map = {};
-    filtered.forEach(f => { map[f.cajero] = (map[f.cajero] || 0) + f.total; });
-    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([n,v]) => ({ nombre: n, total: v }));
+    filtered.forEach((f) => { map[f.cajero] = (map[f.cajero] || 0) + f.total; });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).map(([nombre, total]) => ({ nombre, total }));
   }, [filtered]);
 
-  // Por método de pago. Si la factura tiene desglose (pago mixto), cada monto
-  // se carga a SU medio (ej: 5.000 Nequi + 5.000 Daviplata), nunca como "Mixto".
-  // Facturas antiguas sin desglose usan el método simple de la factura.
+  // Por método de pago
   const byMetodo = useMemoA(() => {
     const map = {};
-    filtered.forEach(f => {
-      const pagos = Array.isArray(f.pagos) ? f.pagos.filter(p => p && p.monto > 0) : [];
+    filtered.forEach((f) => {
+      // Pago mixto: cada monto se carga a su medio REAL (desde factura_pagos)
+      const pagos = Array.isArray(f.pagos) ? f.pagos.filter((p) => p && p.monto > 0) : [];
       if (pagos.length) {
-        pagos.forEach(p => { map[p.metodo] = (map[p.metodo] || 0) + p.monto; });
+        pagos.forEach((p) => { map[p.metodo] = (map[p.metodo] || 0) + p.monto; });
       } else if (f.metodo && f.metodo !== "Mixto") {
+        // Factura simple (sin desglose): usa el método de la factura
         map[f.metodo] = (map[f.metodo] || 0) + f.total;
       }
-      // "Mixto" sin pagos cargados aún (realtime en vuelo): se omite hasta que lleguen
+      // "Mixto" sin pagos cargados se omite (llegan por realtime/hidratación)
     });
-    const sum = Object.values(map).reduce((a,b)=>a+b, 0) || 1;
-    // Ordenado de MENOR a MAYOR (ascendente)
-    return Object.entries(map).sort((a,b)=>a[1]-b[1]).map(([n,v]) => ({ nombre: n, total: v, pct: (v/sum)*100 }));
+    const sum = Object.values(map).reduce((a, b) => a + b, 0) || 1;
+    return Object.entries(map).sort((a, b) => a[1] - b[1]).map(([nombre, total]) => ({ nombre, total, pct: (total / sum) * 100 }));
   }, [filtered]);
 
   // Top productos del filtro
   const topProductosFiltro = useMemoA(() => {
     const map = {};
-    filtered.forEach(f => {
-      f.items.forEach(it => {
+    filtered.forEach((f) => {
+      f.items.forEach((it) => {
         if (!map[it.nombre]) map[it.nombre] = { nombre: it.nombre, qty: 0, total: 0 };
         map[it.nombre].qty += it.q;
         map[it.nombre].total += it.q * it.precio;
       });
     });
-    return Object.values(map).sort((a,b) => b.qty - a.qty).slice(0, 5);
+    return Object.values(map).sort((a, b) => b.qty - a.qty).slice(0, 5);
   }, [filtered]);
 
   const metodoColors = { Efectivo: "#22C55E", Transferencia: "#3B82F6", Nequi: "#8B5CF6", Daviplata: "#EF4444" };

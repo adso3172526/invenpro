@@ -1,35 +1,78 @@
 # AGENTS.md — InvenPro
 
-POS + inventory web app for a Colombian minimarket (ADSO academic project). React 18, **no build step** — Babel Standalone, Tailwind and React are loaded from CDNs by `index.html` and everything runs in the browser.
+## What is this
 
-## Run / verify
-- No package.json, no build, no tests, no lint/typecheck, no CI. Verification is manual: serve the folder statically (`python -m http.server 8000`) and open `http://localhost:8000`.
-- The app talks directly to the **live** Supabase project (real data). `supabase.js` holds URL + anon key.
-- Deploy = git push; Vercel auto-deploys branches `main`/`dev`/`test` (SPA rewrite in `vercel.json`). `Dockerfile` is a stub, not used.
+Inventory management prototype for a Colombian mini-market. Static frontend (React 18 + Babel in-browser transpilation) backed by Supabase. No build step, no bundler, no tests. Deployed on Vercel as a static site.
 
-## Adding/extending UI (easy to get wrong)
-- `index.html` wires everything via `<script>` tags in strict order: CDN libs → `supabase.js` → `data.js` → `facturacion/*` (contracts first, `composition.js` **last**) → babel-transpiled views (`ui.jsx` → `login.jsx` → `cashier.jsx` → `admin-utils.js` before `admin-*.jsx` → `admin.jsx` → `app.jsx` last).
-- New component files MUST be added to `index.html` in the right position — nothing is auto-imported.
-- All code is global scope (IIFEs assigning `window.X` or top-level consts). React-hook destructuring is namespaced per file (`useStateApp`, `useStateA`, `useMemoA`) to avoid collisions — keep this, no ES modules/imports.
-- One Babel syntax error in any loaded `.jsx` breaks globals for every file loaded after it.
-- New admin page = new `admin-*.jsx` + script tag + entry in the page switch in `app.jsx` + nav entry in `admin-utils.js`/`admin-sidebar.jsx`.
+## Architecture (read this first)
 
-## Data layer (`data.js`; `models.js` is dead — not loaded anywhere, don't trust it)
-- `window.MOCK` is the DataStore cache. Components **read** from `window.MOCK`; writes go through `window.DB.*` services to Supabase; Supabase Realtime patches `window.MOCK` and emits `realtime:<table>`. Components subscribe via `useRealtimeSync([...tables])` and re-read `window.MOCK`, ignoring event payloads — preserve that contract.
-- DB is snake_case ↔ JS camelCase via `camelize`/`snakify`. Money = integer COP. `productos.sku` is TEXT (numeric-looking strings). Stock changes only through RPCs `decrement_stock`/`increment_stock`.
-- `data.js` hardcodes `today = new Date(2026,4,8)`; `daysFromNow`/`todayStr` and dashboard "hoy" anchoring all pivot on it (seed data too, so vencimiento alerts line up).
-- Login hashes passwords client-side (SHA-256), falls back to plaintext match and upgrades the stored hash. Demo users in `seed.sql`: `admin/admin123`, `supervisor/super123`, cajeros `*/cajero123`. Admin vs cashier view is decided by `rol`/`permisos` in `app.jsx`, not by selection.
+**Two code coexist — understand which one you're editing:**
 
-## `facturacion/` module (POO+SOLID teaching artifact)
-- One class per file, exported as `window.X` inside an IIFE. Strict load order in `index.html` (interfaces first).
-- `composition.js` is the ONLY place `new` runs for this module and it overwrites `window.DB.facturas`; swapping provider/repo = changing one line there.
-- `FacturacionService.generarId()` reads the max `F-####` id from the DB, **not** `window.MOCK` (realtime has dropped INSERTs before, leaving the cache stale). Keep that behavior.
+- **Legacy IIFE layer** (`data.js`, `models.js`): Self-contained IIFEs that define classes and attach everything to `window`. This is the version actually loaded by `index.html`.
+- **ES modules layer** (`invenpro/domain.js`, `invenpro/services.js`, `invenpro/store.js`, `invenpro/bootstrap.js`): Cleaner refactored version under `window.InvenPro` namespace. Also loaded by `index.html`, but `bootstrap.js` only fills in if globals don't already exist (`if (!window.camelize)`, etc.).
 
-## Supabase (schema + Edge Function)
-- `schema.sql` + `seed.sql` recreate schema/RLS/seed (14 tables; RLS is allow-all — academic). Dashboards read SQL views `ventas_mes`, `ventas_cajero`, `top_productos`, `ventas_hoy`.
-- `supabase/functions/enviar-alerta/index.ts` is a Deno/TS Edge Function sending Gmail email alerts. Deploy with `supabase functions deploy enviar-alerta`. Gmail credentials + alert config are read server-side from the `configuracion` table — never ship them in the client. Daily cron is set up once via `supabase/cron-alertas.sql`.
+**Result:** If `data.js` loaded first and set `window.camelize`, the `invenpro/bootstrap.js` copy is skipped. Edits to `invenpro/` code may have no visible effect unless `data.js` is also updated or removed.
 
-## Style/conventions
-- UI text, comments, and commit messages are Spanish — keep it that way.
-- Styling is Tailwind (CDN, prefix `tw-`, preflight off) + CSS custom-property tokens in `styles.css`. `ui.jsx` exports `<Icon>` and shared primitives. `tweaks.jsx` is a dev theming panel that applies inline token overrides (persists to localStorage `__tweaks_state`); its `TWEAK_DEFAULTS` must match the `styles.css` tokens.
-- `gen_presentacion_pptx.py` / `gen_uml_pptx.py` generate course-deliverable `.pptx` (`pip install python-pptx`) — not app code.
+**`src/` directory** contains a third, unbundled ES modules version (`src/main.js` imports `src/invenpro/`). It is NOT loaded by `index.html`. Treat `src/` as a future rewrite, not active code.
+
+**Entry point:** `index.html` loads scripts in this exact order:
+1. CDN libs (React, Babel, Tailwind, XLSX, html5-qrcode, Chart.js)
+2. `supabase.lib.js` (minified Supabase UMD)
+3. `supabase.js` (creates `window.db`)
+4. `data.js` (all models, services, DataStore, EventBus, RealtimeManager, exports to `window`)
+5. `invenpro/*.js` (domain, services, store, bootstrap — fills gaps only)
+6. JSX components via `<script type="text/babel">`: ui → login → cashier → admin-* → admin → app → tweaks
+7. `app.jsx` bootstraps React rendering
+
+## Running locally
+
+No build step. Serve the root directory with any static HTTP server:
+
+```bash
+# Any of these work:
+npx serve .
+python -m http.server 8000
+# Vercel dev also works if you have the CLI
+```
+
+Open `http://localhost:8000` in browser. The app calls Supabase directly (credentials in `supabase.js`).
+
+## Database
+
+- **Supabase project:** `wwwfahcrwfowvnpusjbc.supabase.co`
+- **Schema:** `schema.sql` — 14 tables, 2 RPC functions (`decrement_stock`, `increment_stock`)
+- **Seed data:** `seed.sql` — 30 products, 5 users, 60+ invoices, etc. Base date hardcoded to `2026-05-08`
+- **Migrations:** `supabase/migracion-nota-ingreso.sql`, `supabase/cron-alertas.sql` (run manually in SQL Editor)
+- **Edge Function:** `supabase/functions/enviar-alerta/` — expiry alert notifications via pg_cron
+- **RLS:** All tables have `allow_all` policies (academic project, no real auth restrictions)
+
+## Key conventions
+
+- **Language:** All UI text, variable names, and comments are in Spanish
+- **Prices:** Integer COP (no decimals). Display via `window.fmtCOP()` → `"$12.345"`
+- **Currency format:** `es-CO` locale
+- **SKUs:** New products use `P-XXXXX` pattern (auto-generated via `ProductoService.generateSku()`)
+- **Date format:** ISO strings (`YYYY-MM-DD`), times as `HH:MM` strings
+- **CSS:** Tailwind with `tw-` prefix (`tailwind.config.prefix = 'tw-'`) to avoid conflicts with custom CSS in `styles.css` and `ecomoda.css`
+- **Theme:** CSS custom properties (`--bg`, `--surface`, `--accent`, etc.), toggled via `data-theme` attribute on `<html>`
+- **State:** `window.MOCK` (the DataStore) is the single source of truth for all data. Components read from it directly
+- **Realtime:** WebSocket via `RealtimeManager` listens to all 10 Supabase tables, updates `window.MOCK` in-place, emits events via `window.EventBus`
+- **Hydration:** On load, all data is fetched from Supabase with a 4s timeout per table. App renders even if Supabase is slow
+- **Session persistence:** Login state stored in `localStorage` key `invenpro-session`
+- **Auth:** SHA-256 hashing with auto-migration from legacy MD5 and plaintext passwords
+
+## Common pitfalls
+
+- **Duplicate class definitions:** `Producto`, `Usuario`, `Cajero`, etc. are defined in BOTH `data.js` AND `invenpro/domain.js`. The first one to run wins. If you add a method to `invenpro/domain.js` and it doesn't appear, `data.js` version is taking precedence.
+- **`window.MOCK` vs `window._dataStore`:** Both point to the same DataStore instance. `window.MOCK` is the public alias. Don't create a second instance.
+- **`window.DB` vs `window.db`:** `window.db` is the raw Supabase client. `window.DB` is the service layer (auth, productos, facturas, etc.). Don't confuse them.
+- **`factura_items` vs `facturaItems`:** Supabase returns `factura_items` (snake_case). The DataStore maps it to `items` on the Factura instance (via `raw.items = raw.facturaItems`). Same for `ingreso_detalle` → `detalle`.
+- **Script load order matters:** `data.js` must load before any JSX component that uses `window.MOCK`, `window.DB`, `camelize`, etc. Don't reorder scripts in `index.html` without understanding dependencies.
+- **No transpilation step:** JSX files use `<script type="text/babel">` which Babel transpiles at runtime. There's no `.babelrc` or build config — Babel standalone uses default settings. This means no JSX support in `.js` files.
+- **Dockerfile is a stub:** `FROM jsx` — not a real image. Don't use it.
+
+## Deployment
+
+- Vercel: `vercel.json` rewrites all routes to `index.html` (SPA fallback)
+- No CI/CD, no lint, no typecheck, no test suite
+- The `seed.sql` must be run manually against the Supabase SQL Editor to populate initial data

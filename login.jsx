@@ -13,7 +13,9 @@ const Login = ({ onLogin }) => {
     }
     let u;
     try {
-      u = await DB.auth.login(user.trim(), pass);
+      u = await (window.appController
+        ? window.appController.login(user.trim(), pass)
+        : DB.auth.login(user.trim(), pass));
     } catch (err) {
       console.error("login:", err);
       setError("No se pudo conectar. Revisa tu conexión e intenta de nuevo.");

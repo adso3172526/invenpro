@@ -1,5 +1,6 @@
 // Cajeros y turnos
 
+// Detalle del cierre de caja de un turno (arqueo + desglose por medio de pago)
 const CierreDetalleModal = ({ turno, cierre, onClose }) => {
   const c = cierre || {};
   const difColor = c.diferencia === 0 ? "var(--good)" : c.diferencia > 0 ? "var(--warn)" : "var(--bad)";
@@ -41,13 +42,14 @@ const Cajeros = () => {
   const [cfgUsuario, setCfgUsuario] = useStateA(null);
   const [toast, setToast] = useStateA(null);
   const [verCierre, setVerCierre] = useStateA(null);  // turno cuyo cierre se muestra
-
-  // Formulario "Nuevo cajero" (crea cajero + usuario de login vía fn_crear_cajero)
-  const [nuevo, setNuevo] = useStateA({ nombres: "", apellidos: "", doc: "", rol: "Cajero", usuario: "", pass: "" });
-  const [creando, setCreando] = useStateA(false);
-  const [errCrear, setErrCrear] = useStateA("");
-  const setN = (k, v) => setNuevo(p => ({ ...p, [k]: v }));
-  const resetNuevo = () => { setNuevo({ nombres: "", apellidos: "", doc: "", rol: "Cajero", usuario: "", pass: "" }); setErrCrear(""); };
+  const [newNombre, setNewNombre] = useStateA("");
+  const [newApellido, setNewApellido] = useStateA("");
+  const [newDoc, setNewDoc] = useStateA("");
+  const [newTel, setNewTel] = useStateA("");
+  const [newRol, setNewRol] = useStateA("Cajero");
+  const [newUsuario, setNewUsuario] = useStateA("");
+  const [newPass, setNewPass] = useStateA("");
+  const [savingNew, setSavingNew] = useStateA(false);
 
   // Realtime: only re-render when no modal is open
   const [, _rtTick] = React.useState(0);
@@ -60,29 +62,22 @@ const Cajeros = () => {
     }));
     return () => offs.forEach(fn => fn());
   }, []);
-
-  // Red de seguridad: al entrar al módulo, relee los turnos desde la BD.
-  // El realtime (websocket) puede perder el evento de cierre de turno, dejando
-  // MOCK.turnos con el estado viejo; entonces el estado no cambiaba sin recargar.
-  // Releer con DB.turnos.getAll() garantiza ver el estado correcto al entrar.
+  // Red de seguridad: relee los cierres de caja al entrar (el realtime puede no
+  // traerlos), así un turno recién cerrado muestra su "Detalle" sin recargar.
   React.useEffect(() => {
     (async () => {
       try {
-        const frescos = await DB.turnos.getAll();
-        if (frescos && frescos.length) MOCK.turnos = frescos;
-        const cierres = await DB.cierres.getAll();
-        if (cierres) MOCK.cierres = cierres;
-        if (!_modalRef.current) _rtTick(n => n + 1);
-      } catch (e) { console.error("refrescar turnos/cierres al entrar:", e); }
+        if (DB.cierres && DB.cierres.getAll) {
+          const cs = await DB.cierres.getAll();
+          if (cs && MOCK.setCierres) { MOCK.setCierres(cs); _rtTick(n => n + 1); }
+        }
+      } catch (e) { console.error("refrescar cierres al entrar:", e); }
     })();
   }, []);
-
   const pagCaj = usePagination(MOCK.cajeros, 2);
-  // Turnos ordenados del más reciente al más antiguo. Hay ids con dos formatos
-  // ("T-"+Date.now() de la app y "T-2029" de datos viejos), así que se compara
-  // el NÚMERO del id (no como texto, que pondría "T-2031" antes de "T-1788...").
-  // Los timestamps (grandes) quedan primero; los datos viejos, al final. Se
-  // ordena una copia para no mutar MOCK.
+  // Turnos del más reciente al más antiguo (por el número del id). Los turnos con
+  // cierre son los recientes (ids tipo "T-<timestamp>"), así salen primero y se ve
+  // su botón "Detalle"; los viejos "T-20xx" (sin cierre) quedan al final.
   const numTurno = (t) => { const m = String(t.id).match(/(\d+)$/); return m ? Number(m[1]) : 0; };
   const turnosOrdenados = [...MOCK.turnos].sort((a, b) => numTurno(b) - numTurno(a));
   const pagTur = usePagination(turnosOrdenados, 10);
@@ -102,20 +97,6 @@ const Cajeros = () => {
     [MOCK.usuarios_sistema, MOCK.cajeros, esSupervisor]
   );
   const pagUsr = usePagination(usuarios, 10);
-
-  const handleCrearCajero = async () => {
-    setErrCrear("");
-    if (!nuevo.nombres.trim() || !nuevo.apellidos.trim() || !nuevo.doc.trim() || !nuevo.usuario.trim() || !nuevo.pass.trim()) {
-      setErrCrear("Completa todos los campos."); return;
-    }
-    setCreando(true);
-    const { id, error } = await DB.cajeros.create(nuevo);
-    setCreando(false);
-    if (error) { setErrCrear(error.message || "No se pudo crear el cajero."); return; }
-    setShowAdd(false);
-    resetNuevo();
-    setToast(`Cajero ${id} creado correctamente`);
-  };
 
   return (
     <>
@@ -313,32 +294,35 @@ const Cajeros = () => {
       )}
 
       {showAdd && (
-        <Modal title="Nuevo cajero" bottomSheet onClose={() => { setShowAdd(false); resetNuevo(); }} footer={
+        <Modal title="Nuevo cajero" bottomSheet onClose={() => setShowAdd(false)} footer={
           <>
-            <button className="btn ghost" onClick={() => { setShowAdd(false); resetNuevo(); }}>Cancelar</button>
-            <button className="btn primary" disabled={creando} onClick={handleCrearCajero}>
-              <Icon name="check"/> {creando ? "Creando…" : "Crear cajero"}
-            </button>
+            <button className="btn ghost" onClick={() => setShowAdd(false)}>Cancelar</button>
+            <button className="btn primary" disabled={savingNew} onClick={async () => {
+              if (!newNombre.trim() || !newApellido.trim() || !newDoc.trim() || !newUsuario.trim()) {
+                setToast("Nombres, apellidos, documento y usuario son obligatorios"); return;
+              }
+              setSavingNew(true);
+              // Crea cajero + usuario de login de forma atómica (fn_crear_cajero en la BD).
+              const { id, error } = await DB.cajeros.create({
+                nombres: newNombre, apellidos: newApellido, doc: newDoc,
+                rol: newRol, usuario: newUsuario, pass: newPass.trim() || "123456",
+              });
+              setSavingNew(false);
+              if (error) { setToast(error.message || "No se pudo crear el cajero"); return; }
+              setShowAdd(false);
+              setToast(`Cajero ${id} creado correctamente`);
+              setNewNombre(""); setNewApellido(""); setNewDoc(""); setNewTel(""); setNewRol("Cajero"); setNewUsuario(""); setNewPass("");
+            }}><Icon name="check"/> {savingNew ? "Creando…" : "Crear cajero"}</button>
           </>
         }>
-          {errCrear && (
-            <div className="tw-bg-bad-soft tw-text-bad tw-py-2 tw-px-3 tw-rounded-md tw-text-xs tw-mb-3 tw-font-medium">
-              {errCrear}
-            </div>
-          )}
           <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
-            <div className="field"><label>Nombres</label>
-              <input value={nuevo.nombres} onChange={e => setN("nombres", e.target.value)} placeholder="Ej: Carolina"/></div>
-            <div className="field"><label>Apellidos</label>
-              <input value={nuevo.apellidos} onChange={e => setN("apellidos", e.target.value)} placeholder="Ej: Mendoza"/></div>
-            <div className="field"><label>Documento</label>
-              <input className="mono" value={nuevo.doc} onChange={e => setN("doc", e.target.value)} placeholder="C.C."/></div>
-            <div className="field"><label>Rol</label>
-              <select value={nuevo.rol} onChange={e => setN("rol", e.target.value)}><option>Cajero</option>{!esSupervisor && <option>Supervisor</option>}</select></div>
-            <div className="field"><label>Usuario POS</label>
-              <input className="mono" value={nuevo.usuario} onChange={e => setN("usuario", e.target.value)} placeholder="nombre.apellido"/></div>
-            <div className="field"><label>Contraseña</label>
-              <input className="mono" type="password" value={nuevo.pass} onChange={e => setN("pass", e.target.value)} placeholder="mín. 4 caracteres"/></div>
+            <div className="field"><label>Nombres</label><input value={newNombre} onChange={e => setNewNombre(e.target.value)} placeholder="Ej: Carolina"/></div>
+            <div className="field"><label>Apellidos</label><input value={newApellido} onChange={e => setNewApellido(e.target.value)} placeholder="Ej: Mendoza"/></div>
+            <div className="field"><label>Documento</label><input className="mono" value={newDoc} onChange={e => setNewDoc(e.target.value)} placeholder="C.C."/></div>
+            <div className="field"><label>Teléfono</label><input className="mono" value={newTel} onChange={e => setNewTel(e.target.value)} placeholder="+57"/></div>
+            <div className="field"><label>Rol</label><select value={newRol} onChange={e => setNewRol(e.target.value)}><option>Cajero</option>{!esSupervisor && <option>Supervisor</option>}</select></div>
+            <div className="field"><label>Usuario POS</label><input className="mono" value={newUsuario} onChange={e => setNewUsuario(e.target.value)} placeholder="nombre.apellido"/></div>
+            <div className="field sm:tw-col-span-2"><label>Contraseña inicial</label><input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Vacío = 123456 por defecto"/></div>
           </div>
         </Modal>
       )}

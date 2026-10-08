@@ -224,7 +224,7 @@ const BarcodeScanner = ({ onScan, onClose, closeOnScan }) => {
 const CATEGORIAS = ["Todos", "Lácteos", "Panadería", "Granos", "Despensa", "Enlatados", "Bebidas", "Frescos", "Aseo"];
 
 const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
-  const [productos, setProductos] = useState(() => MOCK.productos.map(p => ({ ...p })));
+  const [productos, setProductos] = useState(() => MOCK.productos.map(p => p));
   const [cart, setCart] = useState([]);
   const [cat, setCat] = useState("Todos");
   const [q, setQ] = useState("");
@@ -258,7 +258,18 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
         if (drop > 0) p = Math.max(0, p - drop);
       }
       pend[mp.sku] = p;
-      return { ...mp, stock: Math.max(0, serverStock - p) };
+      return new Producto({
+        sku: mp.sku,
+        nombre: mp.nombre,
+        categoria: mp.categoria,
+        precio: mp.precio,
+        costo: mp.costo,
+        stock: Math.max(0, serverStock - p),
+        min: mp.min,
+        vence: mp.vence,
+        unidad: mp.unidad,
+        codigoBarras: mp.codigoBarras,
+      });
     });
     prevServer.current = nextPrev;
     setProductos(out);
@@ -267,52 +278,6 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   // Al entrar al POS, refresca los datos de facturación desde la BD
   // (red de seguridad por si el realtime estaba caído cuando el admin los cambió)
   useEffect(() => { if (window.refreshConfig) window.refreshConfig(); }, []);
-
-  // Red de seguridad de STOCK: al entrar al POS, relee los productos desde la BD.
-  // El realtime puede perder eventos (websocket), dejando MOCK.productos con un
-  // stock mayor al real; entonces, al reabrir turno, el stock "reaparecía".
-  // Releer el valor autoritativo de la BD garantiza que la grilla parta correcta.
-  useEffect(() => {
-    (async () => {
-      try {
-        const frescos = await DB.productos.getAll();
-        if (frescos && frescos.length) {
-          MOCK.productos = frescos;
-          rebuildFromServer();
-        }
-      } catch (e) { console.error("refrescar productos al abrir POS:", e); }
-    })();
-  }, []);
-
-  // Red de seguridad del TURNO: al entrar/reanudar el POS, relee ventas y
-  // transacciones del turno DESDE LA BD (fuente autoritativa). onLogin toma el
-  // acumulado de MOCK.turnos, que puede quedar atrasado (hydrateData falló o el
-  // realtime perdió un evento) mostrando 0; releer de la BD garantiza que el
-  // total facturado del turno reaparezca correcto al reanudar sin cerrar turno.
-  useEffect(() => {
-    if (!shift.id) return;
-    (async () => {
-      try {
-        const { data } = await window.db.from("turnos")
-          .select("ventas,transacciones,por_metodo").eq("id", shift.id).maybeSingle();
-        if (data) {
-          setShiftStats(s => {
-            // Solo restaura el desglose si aún está vacío (no pisar ventas de esta sesión)
-            const vacia = !s.porMetodo || Object.values(s.porMetodo).every(v => !v);
-            const pmBD = (data.por_metodo && typeof data.por_metodo === "object")
-              ? { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0, ...data.por_metodo }
-              : s.porMetodo;
-            return {
-              ...s,
-              ventas: Math.max(s.ventas, data.ventas || 0),
-              trans: Math.max(s.trans, data.transacciones || 0),
-              porMetodo: vacia ? pmBD : s.porMetodo,
-            };
-          });
-        }
-      } catch (e) { console.error("refrescar turno al abrir POS:", e); }
-    })();
-  }, []);
 
   // Realtime: los productos nuevos y los cambios de stock (ingresos de mercancía,
   // ventas de otros cajeros) se reflejan en la grilla, respetando los descuentos
@@ -369,17 +334,40 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     return { ok: true, msg: p.nombre };
   };
 
+  // Restaura el desglose por medio (por_metodo) al reanudar un turno abierto
+  React.useEffect(() => {
+    if (!shift.id) return;
+    (async () => {
+      try {
+        const { data } = await window.db.from("turnos")
+          .select("ventas,transacciones,por_metodo").eq("id", shift.id).maybeSingle();
+        if (data) {
+          setShiftStats(s => {
+            const vacia = !s.porMetodo || Object.values(s.porMetodo).every(v => !v);
+            const pmBD = (data.por_metodo && typeof data.por_metodo === "object")
+              ? { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0, ...data.por_metodo }
+              : s.porMetodo;
+            return {
+              ...s,
+              ventas: Math.max(s.ventas, data.ventas || 0),
+              trans: Math.max(s.trans, data.transacciones || 0),
+              porMetodo: vacia ? pmBD : s.porMetodo,
+            };
+          });
+        }
+      } catch (e) { console.error("refrescar turno al abrir POS:", e); }
+    })();
+  }, []);
+
   const completePay = async (pago) => {
     // pago = { metodo, pagos:[{metodo,monto}], recibido, cambio }
     // Reservar el descuento localmente (UI inmediata) y refrescar la grilla.
-    // El pendiente se libera cuando el servidor confirme la baja vía realtime.
     cart.forEach(l => { pendingStock.current[l.sku] = (pendingStock.current[l.sku] || 0) + l.q; });
     rebuildFromServer();
     const ahora = new Date();
     const fechaActual = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
-    const facturaId = await DB.facturas.generarId();
     const factura = {
-      id: facturaId,
+      id: "F-" + (10310 + shiftStats.trans),
       fecha: fechaActual,
       hora: ahora.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }),
       cajero: cajero.nombre,
@@ -394,19 +382,14 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     const pm = shiftStats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
     const nuevoPorMetodo = { ...pm };
     (pago.pagos || []).forEach(p => { nuevoPorMetodo[p.metodo] = (nuevoPorMetodo[p.metodo] || 0) + p.monto; });
-    const newStats = {
-      ventas: shiftStats.ventas + totals.total,
-      trans: shiftStats.trans + 1,
-      items: shiftStats.items + totals.items,
-      porMetodo: nuevoPorMetodo,
-    };
+    const newStats = { ventas: shiftStats.ventas + totals.total, trans: shiftStats.trans + 1, items: shiftStats.items + totals.items, porMetodo: nuevoPorMetodo };
     setShiftStats(newStats);
     setDone(factura);
     setPay(null);
     setCart([]);
-    // Persistir factura en Supabase
+    // Persistir factura (con su desglose de pagos) en Supabase
     DB.facturas.create(factura, factura.items).catch(err => console.error("POS persist:", err));
-    // Actualizar turno con totales acumulados (así no se pierden si el cajero sale sin cerrar)
+    // Actualizar turno con totales + desglose por medio (sobreviven si el cajero sale sin cerrar)
     if (shift.id) {
       DB.turnos.close(shift.id, { ventas: newStats.ventas, transacciones: newStats.trans, porMetodo: nuevoPorMetodo })
         .catch(err => console.error("updateTurno stats:", err));
@@ -416,7 +399,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   const closeShift = (datos) => {
     const now = new Date();
     const pm = shiftStats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
-    const esperado = (shift.base || 0) + (pm.Efectivo || 0);
+    const esperado = (shift.base || 0) + (pm.Efectivo || 0);   // efectivo esperado = base + ventas en efectivo
     const contado = (datos && datos.efectivoContado != null) ? datos.efectivoContado : esperado;
     const summary = { ...shift, ...shiftStats, cierre: now, esperado, contado, diferencia: contado - esperado };
     // Persistir cierre en Supabase
@@ -427,7 +410,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
         ventas: shiftStats.ventas,
         transacciones: shiftStats.trans,
       }).catch(err => console.error("closeTurno:", err));
-      // Registro del cierre de caja (arqueo + desglose por medio de pago)
+      // Arqueo + desglose por medio de pago (tabla cierres_caja)
       DB.cierres.create({
         turnoId: shift.id,
         baseInicial: shift.base || 0,
@@ -496,7 +479,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
       {/* Layout POS */}
       <div className="pos">
         {/* ===== Desktop: estructura original con pos-left ===== */}
-        <div className="pos-left tw-hidden md:tw-flex">
+        <div className="pos-left pos-desktop-view tw-hidden md:tw-flex">
           <div className="pos-search">
             <Icon name="search" size={18}/>
             <input
@@ -602,10 +585,10 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
         </div>
 
         {/* ===== Mobile: diseño tipo app nativa ===== */}
-        <div className="tw-flex tw-flex-col md:tw-hidden tw-flex-1 tw-min-h-0 tw-bg-bg">
+        <div className="pos-mobile-view tw-flex tw-flex-col md:tw-hidden tw-flex-1 tw-min-h-0 tw-bg-bg">
 
           {/* Buscador con estilo pill */}
-          <div className="tw-px-3 tw-pt-3 tw-pb-2">
+          <div className="pos-mobile-search tw-px-3 tw-pt-3 tw-pb-2">
             <div className="tw-flex tw-items-center tw-gap-2 tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-px-3 tw-py-2.5 tw-shadow-sm">
               <Icon name="search" size={16}/>
               <input
@@ -636,7 +619,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
           </div>
 
           {/* Categorías — pills horizontales */}
-          <div className="tw-px-3 tw-pb-2">
+          <div className="pos-mobile-categories tw-px-3 tw-pb-2">
             <div className="tw-flex tw-gap-1.5 tw-overflow-x-auto tw-pb-0.5" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
               {CATEGORIAS.map(c => (
                 <button key={c}
@@ -650,8 +633,8 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
           </div>
 
           {/* Productos — grid con tarjetas bonitas */}
-          <div className="tw-flex-1 tw-overflow-y-auto tw-px-3 tw-pb-3 tw-min-h-0" style={{ WebkitOverflowScrolling: "touch" }}>
-            <div className="tw-grid tw-grid-cols-2 min-[400px]:tw-grid-cols-3 tw-gap-2">
+          <div className="pos-mobile-products tw-flex-1 tw-overflow-y-auto tw-px-3 tw-pb-3 tw-min-h-0" style={{ WebkitOverflowScrolling: "touch" }}>
+            <div className="pos-mobile-product-grid tw-grid tw-grid-cols-2 min-[400px]:tw-grid-cols-3 tw-gap-2">
               {pagProd.slice.map(p => {
                 const inCart = cart.find(l => l.sku === p.sku);
                 return (
@@ -685,7 +668,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
           </div>
 
           {/* Carrito flotante / bottom bar */}
-          <div className="tw-shrink-0 tw-bg-surface tw-border-t tw-border-border tw-shadow-lg">
+          <div className="pos-mobile-cart tw-shrink-0 tw-bg-surface tw-border-t tw-border-border tw-shadow-lg">
             {cart.length === 0 ? (
               /* Empty: barra mínima con icono */
               <div className="tw-flex tw-items-center tw-justify-center tw-gap-2 tw-py-2.5 tw-text-txt-3">
@@ -743,7 +726,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   );
 };
 
-// =================== Modal de pago (soporta pago mixto) ===================
+// =================== Modal de pago ===================
 const PaymentModal = ({ total, items, onClose, onPay }) => {
   const [montos, setMontos] = useState({ Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 });
   const [activo, setActivo] = useState("Efectivo"); // medio al que apuntan los atajos
@@ -838,18 +821,18 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
 // =================== Imprimir recibo 80mm ===================
 const printReceipt = (factura) => {
   const cfg = (window.MOCK && window.MOCK.configuracion) || {};
-  const nombre = cfg.tienda_nombre || "Mi Tienda";
-  const nit = cfg.tienda_nit || "";
-  const dir = cfg.tienda_direccion || "";
-  const tel = cfg.tienda_telefono || "";
-  const correo = cfg.tienda_correo || "";
-  const footer = cfg.tienda_footer || "¡Gracias por tu compra!";
+  const nombre = _escHtml(cfg.tienda_nombre || "Mi Tienda");
+  const nit = _escHtml(cfg.tienda_nit || "");
+  const dir = _escHtml(cfg.tienda_direccion || "");
+  const tel = _escHtml(cfg.tienda_telefono || "");
+  const correo = _escHtml(cfg.tienda_correo || "");
+  const footer = _escHtml(cfg.tienda_footer || "¡Gracias por tu compra!");
   // Ancho de tirilla: 80mm (default) o 58mm. Configurable desde cfg.recibo_ancho_mm.
   const anchoMm = parseInt(cfg.recibo_ancho_mm) === 58 ? 58 : 80;
   const bodyMm = anchoMm - 8;
 
   const lineas = factura.items.map(l =>
-    `<tr><td colspan="3" style="padding:1px 0 0">${l.nombre}</td></tr>
+    `<tr><td colspan="3" style="padding:1px 0 0">${_escHtml(l.nombre)}</td></tr>
      <tr>
        <td style="padding:0 0 1px 8px">${l.q} x $${l.precio.toLocaleString("es-CO")}</td>
        <td></td>
@@ -881,8 +864,8 @@ const printReceipt = (factura) => {
   <div class="center info">${factura.fecha} ${factura.hora}</div>
   <hr/>
   <table>
-    <tr><td>Factura</td><td></td><td class="right">${factura.id}</td></tr>
-    <tr><td>Cajero</td><td></td><td class="right">${factura.cajero}</td></tr>
+    <tr><td>Factura</td><td></td><td class="right">${_escHtml(factura.id)}</td></tr>
+    <tr><td>Cajero</td><td></td><td class="right">${_escHtml(factura.cajero)}</td></tr>
   </table>
   <hr/>
   <table>${lineas}</table>

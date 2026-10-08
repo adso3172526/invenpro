@@ -25,14 +25,6 @@
       }));
       const { error: iErr } = await window.db.from("factura_items").insert(rows);
       if (iErr) console.error("createFactura items:", iErr);
-
-      // Desglose de pago por medio (soporta pago mixto)
-      const pagos = Array.isArray(factura.pagos) ? factura.pagos.filter(p => p && p.monto > 0) : [];
-      if (pagos.length) {
-        const pagoRows = pagos.map((p) => ({ factura_id: factura.id, metodo: p.metodo, monto: p.monto }));
-        const { error: pErr } = await window.db.from("factura_pagos").insert(pagoRows);
-        if (pErr) console.error("createFactura pagos:", pErr);
-      }
     }
 
     async descontarStock(items) {

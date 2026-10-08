@@ -1,0 +1,10 @@
+.idea/
+.agents/
+.vscode/
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+Thumbs.db
+invenpro-m/

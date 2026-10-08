@@ -4,6 +4,22 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
   const [open, setOpen] = useStateA(false);
   const goTo = (id) => { setActive(id); setOpen(false); };
 
+  const venceBadge = React.useMemo(() => {
+    const productos = (window.MOCK && window.MOCK.productos) || [];
+    const cfg = (window.MOCK && window.MOCK.configuracion) || {};
+    let umbrales = { critico: 8, atencion: 15, preventivo: 30 };
+    try { if (cfg.alerta_umbrales) umbrales = JSON.parse(cfg.alerta_umbrales); } catch {}
+    const maxDias = umbrales.preventivo || 30;
+    let count = 0;
+    for (let i = 0; i < productos.length; i++) {
+      const p = productos[i];
+      if (!p.vence) continue;
+      const dias = window.daysFromNow(p.vence);
+      if (dias != null && dias <= maxDias) count++;
+    }
+    return count > 0 ? String(count) : null;
+  }, []);
+
   return (
     <>
       {/* Mobile topbar: hamburger + logo (el título de la sección ya va en el page-h) */}
@@ -32,7 +48,8 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
                  title={n.label}>
               <div className="nav-card-top">
                 <Icon name={n.icon} size={26}/>
-                {n.badge && <span className="nav-card-badge">{n.badge}</span>}
+                {n.id === "vence" && venceBadge && <span className="nav-card-badge">{venceBadge}</span>}
+                {n.id !== "vence" && n.badge && <span className="nav-card-badge">{n.badge}</span>}
               </div>
               <div className="nav-card-bottom">
                 <span className="nav-card-label">{n.label}</span>
