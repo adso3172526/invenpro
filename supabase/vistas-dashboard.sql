@@ -25,7 +25,7 @@ SELECT
   SUM(total)::int AS v,          -- total facturado en esa hora
   COUNT(*)::int   AS n           -- nº de transacciones en esa hora
 FROM facturas
-WHERE fecha = CURRENT_DATE
+WHERE fecha = (now() AT TIME ZONE 'America/Bogota')::date   -- "hoy" en zona Colombia (no UTC)
 GROUP BY 1
 ORDER BY 1;
 GRANT SELECT ON ventas_hoy TO anon, authenticated;
@@ -40,7 +40,7 @@ SELECT
   SUM(total)::int AS total,
   COUNT(*)::int   AS transacciones
 FROM facturas
-WHERE fecha = CURRENT_DATE
+WHERE fecha = (now() AT TIME ZONE 'America/Bogota')::date   -- "hoy" en zona Colombia (no UTC)
 GROUP BY cajero
 ORDER BY SUM(total) DESC;
 GRANT SELECT ON ventas_cajero_hoy TO anon, authenticated;
