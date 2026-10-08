@@ -15,7 +15,9 @@ const Inventario = () => {
   _editingRef.current = editing;
   React.useEffect(() => {
     return window.EventBus.on("realtime:productos", () => {
-      if (!_editingRef.current) setProductos(MOCK.productos || []);
+      // copia (nuevo array) para forzar re-render: el handler muta MOCK.productos
+      // en el sitio, así que pasar la misma referencia no re-renderiza.
+      if (!_editingRef.current) setProductos((MOCK.productos || []).slice());
     });
   }, []);
 
@@ -286,7 +288,19 @@ const Inventario = () => {
       {showAjuste && <AjustarPreciosModal
         productos={productos}
         onClose={() => setShowAjuste(false)}
-        onDone={(msg) => { setShowAjuste(false); setToast(msg); }}
+        onDone={async (msg) => {
+          setShowAjuste(false);
+          // Refleja los precios nuevos de inmediato: re-lee de la BD y refresca
+          // MOCK + estado local (no espera al realtime, que puede tardar/perderse).
+          try {
+            const frescos = await DB.productos.getAll();
+            if (frescos && frescos.length) {
+              if (MOCK.setProductos) MOCK.setProductos(frescos);
+              setProductos(frescos.slice());
+            }
+          } catch (e) { console.error("refrescar precios tras ajuste:", e); }
+          setToast(msg);
+        }}
       />}
 
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
