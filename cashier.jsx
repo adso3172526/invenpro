@@ -951,13 +951,15 @@ const ReceiptModal = ({ factura, onClose }) => {
 const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
   const pm = stats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
   const esperado = (shift.base || 0) + (pm.Efectivo || 0);   // efectivo esperado = base + ventas en efectivo
-  const [contado, setContado] = useState(esperado);
+  const [contado, setContado] = useState("");   // vacío: el cajero DEBE contar y escribir
   const [observaciones, setObservaciones] = useState("");
-  const diff = contado - esperado;
+  const sinContar = contado === "";
+  const contadoNum = sinContar ? 0 : (parseInt(contado, 10) || 0);
+  const diff = contadoNum - esperado;
 
-  const diffBg = diff === 0 ? "var(--good-soft)" : (diff > 0 ? "var(--warn-soft)" : "var(--bad-soft)");
-  const diffColor = diff === 0 ? "var(--good)" : (diff > 0 ? "var(--warn)" : "var(--bad)");
-  const diffMsg = diff === 0 ? "Caja cuadra perfectamente." : diff > 0 ? "Sobrante en caja — revisar." : "Faltante — debe justificarse.";
+  const diffBg = sinContar ? "var(--surface-2)" : diff === 0 ? "var(--good-soft)" : (diff > 0 ? "var(--warn-soft)" : "var(--bad-soft)");
+  const diffColor = sinContar ? "var(--text-3)" : diff === 0 ? "var(--good)" : (diff > 0 ? "var(--warn)" : "var(--bad)");
+  const diffMsg = sinContar ? "Cuenta el efectivo para ver la diferencia." : diff === 0 ? "Caja cuadra perfectamente." : diff > 0 ? "Sobrante en caja — revisar." : "Faltante — debe justificarse.";
 
   return (
     <div className="modal-bg" onClick={onClose}>
@@ -987,12 +989,12 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
             <div>
               <div className="field">
                 <label>Efectivo contado físicamente</label>
-                <input className="mono" value={contado.toLocaleString("es-CO")} onChange={e => setContado(parseInt(e.target.value.replace(/\D/g,"")) || 0)}/>
+                <input className="mono" placeholder="Cuenta el efectivo…" value={sinContar ? "" : contadoNum.toLocaleString("es-CO")} onChange={e => setContado(e.target.value.replace(/\D/g,""))}/>
               </div>
               <div className="card" style={{ background: diffBg }}>
                 <div className="card-b">
                   <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider">Diferencia</div>
-                  <div className="mono tw-text-[22px] tw-font-semibold tw-mt-1">{diff > 0 ? "+" : ""}{window.fmtCOP(diff)}</div>
+                  <div className="mono tw-text-[22px] tw-font-semibold tw-mt-1">{sinContar ? "—" : (diff > 0 ? "+" : "") + window.fmtCOP(diff)}</div>
                   <div className="tw-text-xs tw-mt-1">{diffMsg}</div>
                 </div>
               </div>
@@ -1005,7 +1007,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
         </div>
         <div className="modal-f">
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn primary" onClick={() => onConfirm({ efectivoContado: contado, observaciones })}><Icon name="check"/> Confirmar cierre</button>
+          <button className="btn primary" disabled={sinContar} onClick={() => onConfirm({ efectivoContado: contadoNum, observaciones })}><Icon name="check"/> Confirmar cierre</button>
         </div>
       </div>
 
@@ -1065,7 +1067,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
             <div className="tw-text-[10px] tw-text-txt-3 tw-uppercase tw-tracking-wider tw-mb-2">Conteo físico</div>
             <div className="field tw-mb-0">
               <label className="tw-text-xs">Efectivo contado</label>
-              <input className="mono" value={contado.toLocaleString("es-CO")} onChange={e => setContado(parseInt(e.target.value.replace(/\D/g,"")) || 0)}/>
+              <input className="mono" placeholder="Cuenta el efectivo…" value={sinContar ? "" : contadoNum.toLocaleString("es-CO")} onChange={e => setContado(e.target.value.replace(/\D/g,""))}/>
             </div>
           </div>
 
@@ -1074,7 +1076,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
             <div className="tw-rounded-xl tw-p-3" style={{ background: diffBg }}>
               <div className="tw-flex tw-justify-between tw-items-center">
                 <span className="tw-text-xs tw-font-medium">Diferencia</span>
-                <span className="mono tw-text-xl tw-font-bold" style={{ color: diffColor }}>{diff > 0 ? "+" : ""}{window.fmtCOP(diff)}</span>
+                <span className="mono tw-text-xl tw-font-bold" style={{ color: diffColor }}>{sinContar ? "—" : (diff > 0 ? "+" : "") + window.fmtCOP(diff)}</span>
               </div>
               <div className="tw-text-[11px] tw-mt-1 tw-opacity-80">{diffMsg}</div>
             </div>
@@ -1092,7 +1094,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
         {/* Footer fijo */}
         <div className="tw-px-4 tw-py-3 tw-border-t tw-border-border tw-bg-surface-2 tw-shrink-0 tw-flex tw-gap-2">
           <button className="tw-flex-1 tw-py-2.5 tw-rounded-xl tw-border tw-border-border tw-bg-surface tw-text-sm tw-font-medium tw-cursor-pointer" onClick={onClose}>Cancelar</button>
-          <button className="tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-bg-accent tw-text-white tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5" onClick={() => onConfirm({ efectivoContado: contado, observaciones })}>
+          <button className="tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-bg-accent tw-text-white tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5 disabled:tw-opacity-40 disabled:tw-cursor-not-allowed" disabled={sinContar} onClick={() => onConfirm({ efectivoContado: contadoNum, observaciones })}>
             <Icon name="check" size={15}/> Confirmar cierre
           </button>
         </div>
