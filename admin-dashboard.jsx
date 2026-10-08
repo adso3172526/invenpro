@@ -25,25 +25,19 @@ const Dashboard = ({ go }) => {
   // tablas para re-renderizar al instante; "views" solo no bastaba (una venta
   // dispara realtime:facturas, no realtime:views).
   useRealtimeSync(["facturas", "productos", "configuracion", "views"]);
-  // Ventas por hora REALES: agrupadas por franja horaria desde las facturas del día
-  // (módulo resumen/ · PorHoraStrategy). Antes usaba la vista ventas_hoy, que agrupaba
-  // por el texto de hora completo ("04:31 p. m.") y rotulaba mal el gráfico.
-  const PH = window.Resumenes && window.Resumenes.porHora;
-  const ventasHora = PH ? PH.resumen(MOCK.facturas).grupos : [];
-  const sparkData = ventasHora.map(h => h.total);
-  const maxHora = ventasHora.length ? Math.max(...ventasHora.map(h => h.total)) : 0;
-  const horaPico = ventasHora.find(h => h.total === maxHora) || { label: "--", total: 0 };
-
-  // Resumen REAL del día desde las facturas (módulo resumen/, patrón Estrategia).
-  // Reemplaza el cálculo anterior de "ventas por cajero" que usaba Math.random,
-  // y las transacciones/ticket que daban 0 (la vista ventas_hoy no las trae).
-  const R = window.Resumenes && window.Resumenes.porCajero;
-  const resumen = R ? R.resumen(MOCK.facturas) : { total: 0, transacciones: 0, grupos: [] };
-  const totalHoy = resumen.total;
-  const transacciones = resumen.transacciones;
+  // Dashboard alimentado desde las VISTAS de la BD (entregable de BD):
+  //  - ventas_hoy        -> ventas de HOY por hora  (h: "HH", v: total, n: transacciones)
+  //  - ventas_cajero_hoy -> ventas de HOY por cajero (nombre, total, transacciones)
+  // Las refresca ViewRefresher (debounce 2s tras cambios en facturas/productos) y
+  // emite realtime:views, al que este componente está suscrito.
+  const ventasHoy = Array.isArray(MOCK.ventasHoy) ? MOCK.ventasHoy.filter(Boolean) : [];
+  const sparkData = ventasHoy.map(x => x.v || 0);
+  const maxHora = ventasHoy.length ? Math.max(...ventasHoy.map(x => x.v || 0)) : 0;
+  const horaPico = ventasHoy.find(x => (x.v || 0) === maxHora) || { h: "--", v: 0 };
+  const totalHoy = ventasHoy.reduce((s, x) => s + (x.v || 0), 0);
+  const transacciones = ventasHoy.reduce((s, x) => s + (x.n || 0), 0);
   const ticketPromedio = transacciones > 0 ? Math.round(totalHoy / transacciones) : 0;
-  // Forma { id, nombre, hoy, transacciones } para alimentar el render existente
-  const ventasCajeroHoy = resumen.grupos.map(c => ({ id: c.nombre, nombre: c.nombre, hoy: c.total, transacciones: c.transacciones }));
+  const ventasCajeroHoy = (MOCK.ventasCajeroHoy || []).map(c => ({ id: c.nombre, nombre: c.nombre, hoy: c.total, transacciones: c.transacciones }));
 
   const productos = MOCK.productos || [];
   const umbralesCfg = (MOCK.configuracion && MOCK.configuracion.alerta_umbrales) || null;
@@ -74,7 +68,7 @@ const Dashboard = ({ go }) => {
             { Métrica: "Ticket promedio", Valor: ticketPromedio },
             { Métrica: "Alertas", Valor: alertasTotal },
           ]},
-          { name: "Ventas por hora", rows: ventasHora.map(h => ({ Hora: h.label + ":00", Total: h.total })) },
+          { name: "Ventas por hora", rows: ventasHoy.map(x => ({ Hora: x.h + ":00", Total: x.v })) },
           { name: "Ventas por cajero (hoy)", rows: ventasCajeroHoy.map(c => ({ Cajero: c.nombre, Total: c.hoy })) },
         ])}><Icon name="download" size={14}/> Exportar</button>
       </div>
@@ -92,8 +86,8 @@ const Dashboard = ({ go }) => {
         </div>
         <div className="kpi">
           <div className="label"><Icon name="clock" size={13}/> Hora pico</div>
-          <div className="val">{horaPico.label}:00</div>
-          <div className="delta">{window.fmtCOP(horaPico.total)} facturados</div>
+          <div className="val">{horaPico.h}:00</div>
+          <div className="delta">{window.fmtCOP(horaPico.v)} facturados</div>
         </div>
         <div className="kpi">
           <div className="label"><Icon name="alert" size={13}/> Alertas activas</div>
@@ -115,10 +109,10 @@ const Dashboard = ({ go }) => {
             <div className="tw-relative tw-h-[200px] md:tw-h-full md:tw-min-h-[240px] tw-p-1">
               <ChartCanvas type="bar"
                 data={{
-                  labels: ventasHora.map(h => h.label + "h"),
+                  labels: ventasHoy.map(x => x.h + "h"),
                   datasets: [{
-                    data: ventasHora.map(h => h.total),
-                    backgroundColor: ventasHora.map(h => h.total === maxHora ? "--accent" : "--accent/45"),
+                    data: ventasHoy.map(x => x.v),
+                    backgroundColor: ventasHoy.map(x => (x.v || 0) === maxHora ? "--accent" : "--accent/45"),
                     hoverBackgroundColor: "--accent",
                     borderRadius: 5,
                     maxBarThickness: 26,
