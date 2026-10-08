@@ -6,6 +6,7 @@
     ventas_cajero: "setVentasCajero",
     top_productos: "setTopProductos",
     ventas_hoy: "setVentasHoy",
+    ventas_cajero_hoy: "setVentasCajeroHoy",
   };
 
   class ViewRefresher {
@@ -16,7 +17,7 @@
       this._eventBus = deps.eventBus || null;
       this._camelize = deps.camelize || function (o) { return o; };
       this._timer = null;
-      this._views = deps.views || ["ventas_mes", "ventas_cajero", "top_productos", "ventas_hoy"];
+      this._views = deps.views || ["ventas_mes", "ventas_cajero", "top_productos", "ventas_hoy", "ventas_cajero_hoy"];
     }
 
     setDb(db) { this._db = db; }
