@@ -1,10 +1,27 @@
+# --- Editores / IDE ---
 .idea/
-.agents/
 .vscode/
+
+# --- Agentes / herramientas (no son parte de la app) ---
+.agents/
+.claude/
+skills-lock.json
+
+# --- Dependencias / builds (no aplican: app sin build, pero por si acaso) ---
 node_modules/
 dist/
 build/
+invenpro-m/
+
+# --- Documentos y presentaciones GENERADOS (binarios regenerables con gen_*.py) ---
+*.pptx
+*.docx
+*.pdf
+
+# --- Temporales / scratch / OS ---
 *.log
+*.tmp
+*~
+__verify_*.html
 .DS_Store
 Thumbs.db
-invenpro-m/
