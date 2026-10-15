@@ -11,6 +11,15 @@ const Inventario = () => {
   const [saving, setSaving] = useStateA(false);
   const [showAjuste, setShowAjuste] = useStateA(false);
 
+  // Los productos de MOCK son instancias de la clase Producto (campos privados + getters);
+  // hacerles spread {...p} NO copia esos getters y deja el objeto vacío. toPlain lee por
+  // getter (funciona igual para instancias y objetos planos) y devuelve un objeto plano editable.
+  const toPlain = (p) => p ? ({
+    sku: p.sku, nombre: p.nombre, categoria: p.categoria,
+    precio: p.precio, costo: p.costo, stock: p.stock, min: p.min,
+    vence: p.vence, unidad: p.unidad, codigoBarras: p.codigoBarras,
+  }) : p;
+
   const _editingRef = React.useRef(null);
   _editingRef.current = editing;
   React.useEffect(() => {
@@ -57,7 +66,7 @@ const Inventario = () => {
     if (existente) { setToast(`Este código ya está asignado a "${existente.nombre}"`); return; }
     const error = await DB.productos.updateBarcode(sku, codigo);
     if (error) { setToast("Error al guardar: " + (error.message || "Intenta de nuevo")); return; }
-    setProductos(ps => ps.map(p => p.sku === sku ? { ...p, codigoBarras: codigo } : p));
+    setProductos(ps => ps.map(p => p.sku === sku ? { ...toPlain(p), codigoBarras: codigo } : p));
     const mp = MOCK.productos.find(p => p.sku === sku);
     if (mp) mp.codigoBarras = codigo;
     setBarcodeInputs(prev => { const next = { ...prev }; delete next[sku]; return next; });
@@ -72,7 +81,7 @@ const Inventario = () => {
     }
     const error = await DB.productos.update(draft.sku, { nombre: draft.nombre, categoria: draft.categoria, precio: draft.precio, costo: draft.costo, stock: draft.stock, min: draft.min, unidad: draft.unidad, vence: draft.vence || null, codigoBarras: draft.codigoBarras || null });
     if (error) { setToast("Error al guardar: " + (error.message || "Intenta de nuevo")); setSaving(false); return; }
-    setProductos(ps => ps.map(p => p.sku === draft.sku ? { ...p, ...draft } : p));
+    setProductos(ps => ps.map(p => p.sku === draft.sku ? { ...toPlain(p), ...draft } : p));
     const mp = MOCK.productos.find(p => p.sku === draft.sku);
     if (mp) Object.assign(mp, draft);
     setEditing(null);
@@ -207,7 +216,7 @@ const Inventario = () => {
                         )}
                       </td>
                       <td className="num">
-                        <button className="btn sm ghost" onClick={() => setEditing({ ...p })} title="Ver / editar"><Icon name="eye" size={13}/></button>
+                        <button className="btn sm ghost" onClick={() => setEditing(toPlain(p))} title="Ver / editar"><Icon name="eye" size={13}/></button>
                       </td>
                     </tr>
                   );
@@ -238,7 +247,7 @@ const Inventario = () => {
                 </div>
                 <div className="tw-flex tw-items-center tw-gap-1 tw-shrink-0 tw-ml-2">
                   <span className="mono tw-text-xs" style={{ color: "var(--text-2)" }}>{window.fmtCOP(p.precio)}</span>
-                  <button className="btn sm ghost" onClick={() => setEditing({ ...p })} style={{ padding: 4 }}><Icon name="eye" size={12}/></button>
+                  <button className="btn sm ghost" onClick={() => setEditing(toPlain(p))} style={{ padding: 4 }}><Icon name="eye" size={12}/></button>
                 </div>
               </div>
               <div className="tw-flex tw-items-center tw-gap-3 tw-mb-1.5">

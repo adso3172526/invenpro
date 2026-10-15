@@ -252,7 +252,15 @@ const Proveedores = () => {
 };
 
 const ProveedorForm = ({ inicial, onClose, onSave }) => {
-  const [d, setD] = useStateA(inicial || {
+  // inicial es una instancia de Proveedor (datos en getters); se copia a un objeto PLANO.
+  // Si no, el { ...prev } de set() —spread de la instancia— borraría los demás campos al
+  // editar el primero (los getters no se copian con spread).
+  const [d, setD] = useStateA(() => inicial ? {
+    id: inicial.id, nombre: inicial.nombre, nit: inicial.nit, contacto: inicial.contacto,
+    tel: inicial.tel, email: inicial.email, ciudad: inicial.ciudad,
+    categoria: inicial.categoria, terminos: inicial.terminos,
+    estado: inicial.estado, ingresos: inicial.ingresos, ultimoIngreso: inicial.ultimoIngreso,
+  } : {
     nombre: "", nit: "", contacto: "", tel: "", email: "",
     ciudad: "", categoria: "Abarrotes", terminos: "30 días"
   });
