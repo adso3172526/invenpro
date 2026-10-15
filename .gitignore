@@ -7,6 +7,13 @@
 .claude/
 skills-lock.json
 
+# --- Secretos / variables de entorno (nunca subir) ---
+.env
+.env.*
+supabase/.env
+*.key
+*.pem
+
 # --- Dependencias / builds (no aplican: app sin build, pero por si acaso) ---
 node_modules/
 dist/
