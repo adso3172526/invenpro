@@ -23,24 +23,23 @@
       var db = this.getDb();
       var helpers = this._helpers;
 
-      var safeUsuario = this._sanitizeLike(usuario);
+      // La verificacion del hash ocurre en el SERVIDOR (fn_login, SECURITY DEFINER):
+      // nunca se lee la columna 'pass' desde el navegador. fn_login tambien migra
+      // un hash viejo (md5) a sha-256 cuando aplica. Devuelve el usuario SIN pass.
       var hashed = await helpers.hashPass(pass);
       var legacyMd5 = helpers.md5Hex(pass);
 
-      var result = await db
-        .from("usuarios_sistema").select("*")
-        .ilike("usuario", safeUsuario).eq("pass", hashed).maybeSingle();
-      if (!result.error && result.data) return helpers.camelize(result.data);
+      var result = await db.rpc("fn_login", {
+        p_usuario: String(usuario || ""),
+        p_sha: hashed,
+        p_md5: legacyMd5,
+      });
+      if (result.error) { console.error("[login]", result.error); return null; }
 
-      result = await db
-        .from("usuarios_sistema").select("*")
-        .ilike("usuario", safeUsuario).eq("pass", legacyMd5).maybeSingle();
-      if (!result.error && result.data) {
-        await db.from("usuarios_sistema").update({ pass: hashed }).eq("usuario", result.data.usuario);
-        return helpers.camelize(result.data);
-      }
-
-      return null;
+      var rows = result.data;
+      var user = Array.isArray(rows) ? rows[0] : rows;
+      if (!user) return null;
+      return helpers.camelize(user);
     }
 
     async updatePassword(usuario, newPass) {
