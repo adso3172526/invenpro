@@ -290,10 +290,13 @@ const Ajustes = () => {
 
   const guardarCorreo = async () => {
     setCorreoSaving(true);
-    await DB.config.saveBatch({
-      correo_gmail_user: correoUser.trim(),
-      correo_gmail_app_password: correoPass.trim(),
-    });
+    // Estas credenciales NO se pueden leer de vuelta (ocultas por RLS), así que
+    // los campos salen en blanco. Solo se guarda lo que el usuario ESCRIBE: si un
+    // campo queda vacío, se omite para NO sobrescribir el valor real con vacío.
+    const payload = {};
+    if (correoUser.trim()) payload.correo_gmail_user = correoUser.trim();
+    if (correoPass.trim()) payload.correo_gmail_app_password = correoPass.trim();
+    if (Object.keys(payload).length) await DB.config.saveBatch(payload);
     setCorreoSaving(false);
     setCorreoSaved(true);
     setTimeout(() => setCorreoSaved(false), 2500);
@@ -324,13 +327,16 @@ const Ajustes = () => {
 
   const guardar = async () => {
     setSaving(true);
-    await DB.config.saveBatch({
+    // La API key se oculta por RLS (no se puede leer de vuelta), así el campo sale
+    // vacío; solo se guarda si el usuario escribe una nueva (si no, se preserva).
+    const payload = {
       ia_url: urlApi.trim(),
-      ia_api_key: apiKey.trim(),
       ia_provider: detected.provider,
       ia_model: model,
       ia_format: detected.format,
-    });
+    };
+    if (apiKey.trim()) payload.ia_api_key = apiKey.trim();
+    await DB.config.saveBatch(payload);
     setSaving(false);
     setSaved(true);
     setTestResult(null);
@@ -458,7 +464,7 @@ const Ajustes = () => {
                 className="mono"
                 value={apiKey}
                 onChange={e => { setApiKey(e.target.value); setSaved(false); setTestResult(null); }}
-                placeholder="tu-api-key"
+                placeholder="•••••• guardada (oculta por seguridad) — escribe para cambiarla"
                 style={{ width: "100%", paddingRight: 44 }}
               />
               <button
@@ -530,7 +536,7 @@ const Ajustes = () => {
               className="mono"
               value={correoUser}
               onChange={e => { setCorreoUser(e.target.value); setCorreoSaved(false); }}
-              placeholder="tucuenta@gmail.com"
+              placeholder="guardado (oculto por seguridad) — escribe para cambiarlo"
             />
           </div>
 
@@ -542,7 +548,7 @@ const Ajustes = () => {
                 className="mono"
                 value={correoPass}
                 onChange={e => { setCorreoPass(e.target.value); setCorreoSaved(false); }}
-                placeholder="16 caracteres de Google"
+                placeholder="•••••• guardada (oculta) — escribe para cambiarla"
                 style={{ width: "100%", paddingRight: 44 }}
               />
               <button
