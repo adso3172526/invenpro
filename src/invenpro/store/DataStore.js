@@ -17,6 +17,7 @@
     #topProductos = [];
     #ventasHoy = [];
     #ventasCajeroHoy = [];
+    #productosPorVencer = [];
     #configuracion = {};
 
     constructor(deps) {
@@ -38,6 +39,7 @@
     get topProductos() { return this.#topProductos; }
     get ventasHoy() { return this.#ventasHoy; }
     get ventasCajeroHoy() { return this.#ventasCajeroHoy; }
+    get productosPorVencer() { return this.#productosPorVencer; }
     get configuracion() { return this.#configuracion; }
 
     setProductos(items) { this.#productos = items; }
@@ -53,6 +55,7 @@
     setTopProductos(items) { this.#topProductos = items; }
     setVentasHoy(items) { this.#ventasHoy = items; }
     setVentasCajeroHoy(items) { this.#ventasCajeroHoy = items; }
+    setProductosPorVencer(items) { this.#productosPorVencer = items; }
     setConfiguracion(map) { this.#configuracion = map; }
 
     _getClass(name) {
@@ -125,6 +128,7 @@
         q(db.from("configuracion").select("*"), "configuracion"),
         q(db.from("cierres_caja").select("*"), "cierres_caja"),
         q(db.from("ventas_cajero_hoy").select("*"), "ventas_cajero_hoy"),
+        q(db.from("productos_por_vencer").select("*"), "productos_por_vencer"),
       ]);
 
       var facturas = results[9] && results[9].data || [];
@@ -156,6 +160,7 @@
       this.#topProductos = camelize(results[5] && results[5].data || []);
       this.#ventasHoy = camelize(results[6] && results[6].data || []);
       this.#ventasCajeroHoy = camelize(results[13] && results[13].data || []);
+      this.#productosPorVencer = camelize(results[14] && results[14].data || []);
       this.#proveedores = camelize(results[7] && results[7].data || []).map(function (d) { return new Proveedor(d); });
       this.#turnos = camelize(results[8] && results[8].data || []).map(function (d) { return new Turno(d); });
       this.#facturas = facturasConItems;

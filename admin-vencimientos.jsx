@@ -33,9 +33,11 @@ const Vencimientos = () => {
   const _modalRef = React.useRef(false);
   _modalRef.current = showConfig;
   React.useEffect(() => {
-    return window.EventBus.on("realtime:productos", () => {
-      if (!_modalRef.current) _rtTick(n => n + 1);
-    });
+    const bump = () => { if (!_modalRef.current) _rtTick(n => n + 1); };
+    // realtime:productos = cambio directo; realtime:views = la vista productos_por_vencer ya se refrescó (2s)
+    const off1 = window.EventBus.on("realtime:productos", bump);
+    const off2 = window.EventBus.on("realtime:views", bump);
+    return () => { off1 && off1(); off2 && off2(); };
   }, []);
 
   React.useEffect(() => {
@@ -75,17 +77,25 @@ const Vencimientos = () => {
   // Cerrar con la X / fondo: guarda igual como red de seguridad (sin toast).
   const cerrarConfig = () => { setShowConfig(false); persistConfig(); };
 
-  const all = (MOCK?.productos || []).filter((p) => p.vence);
+  // Fuente de verdad: la vista productos_por_vencer (la BD calcula dias_para_vencer y nivel).
+  // La 'unidad' no viene en la vista; se toma de productos solo para mostrarla junto al stock.
+  const _unidadPorSku = {};
+  (MOCK?.productos || []).forEach((p) => { _unidadPorSku[p.sku] = p.unidad; });
+  const all = (MOCK?.productosPorVencer || [])
+    .filter((p) => p.vence)
+    .map((p) => ({ ...p, unidad: p.unidad || _unidadPorSku[p.sku] || "" }));
+  // Usa los días ya calculados por la vista; fallback al cálculo local por si faltara.
+  const diasDe = (p) => (p.diasParaVencer != null ? p.diasParaVencer : window.daysFromNow(p.vence));
   const buckets = (() => {
     return {
-      vencido: all.filter((p) => window.daysFromNow(p.vence) < 0),
-      critico: all.filter((p) => { const d = window.daysFromNow(p.vence); return d >= 0 && d <= umbrales.critico; }),
-      atencion: all.filter((p) => { const d = window.daysFromNow(p.vence); return d > umbrales.critico && d <= umbrales.atencion; }),
-      preventivo: all.filter((p) => { const d = window.daysFromNow(p.vence); return d > umbrales.atencion && d <= umbrales.preventivo; }),
-      ok: all.filter((p) => window.daysFromNow(p.vence) > umbrales.preventivo),
+      vencido: all.filter((p) => diasDe(p) < 0),
+      critico: all.filter((p) => { const d = diasDe(p); return d >= 0 && d <= umbrales.critico; }),
+      atencion: all.filter((p) => { const d = diasDe(p); return d > umbrales.critico && d <= umbrales.atencion; }),
+      preventivo: all.filter((p) => { const d = diasDe(p); return d > umbrales.atencion && d <= umbrales.preventivo; }),
+      ok: all.filter((p) => diasDe(p) > umbrales.preventivo),
     };
   })();
-  const visible = (buckets[tab] || []).slice().sort((a,b) => window.daysFromNow(a.vence) - window.daysFromNow(b.vence));
+  const visible = (buckets[tab] || []).slice().sort((a,b) => diasDe(a) - diasDe(b));
   const pagVis = usePagination(visible, 10);
   const validEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
@@ -115,7 +125,7 @@ const Vencimientos = () => {
     const cfg = (window.MOCK && window.MOCK.configuracion) || {};
     const productos = items.map(p => ({
       nombre: p.nombre, sku: p.sku, vence: p.vence,
-      dias: window.daysFromNow(p.vence), stock: p.stock,
+      dias: diasDe(p), stock: p.stock,
     }));
     try {
       const { data, error } = await window.db.functions.invoke("enviar-alerta", {
@@ -209,7 +219,7 @@ const Vencimientos = () => {
             <thead><tr><th>Producto</th><th className="num">Stock</th><th>Vence</th><th>Días</th></tr></thead>
             <tbody>
               {pagVis.slice.map(p => {
-                const d = window.daysFromNow(p.vence);
+                const d = diasDe(p);
                 const cls = d < 0 ? "bad" : d <= umbrales.critico ? "bad" : d <= umbrales.atencion ? "warn" : d <= umbrales.preventivo ? "accent" : "good";
                 return (
                   <tr key={p.sku} className="row-hover">
@@ -243,7 +253,7 @@ const Vencimientos = () => {
         ) : (
           <div className="tw-flex tw-flex-col tw-gap-2.5">
             {pagVis.slice.map(p => {
-              const d = window.daysFromNow(p.vence);
+              const d = diasDe(p);
               const cls = d < 0 ? "bad" : d <= umbrales.critico ? "bad" : d <= umbrales.atencion ? "warn" : d <= umbrales.preventivo ? "accent" : "good";
               const borderMap = { bad: "var(--bad)", warn: "var(--warn)", accent: "var(--accent)", good: "var(--good)" };
               return (
