@@ -599,6 +599,7 @@ const Ingreso = () => {
                     <tbody>
                       {items.map((it, i) => {
                         const stockActual = getStock(it.sku);
+                        const _pFoto = (MOCK.productos || []).find(x => x.sku === it.sku); const itFoto = _pFoto && _pFoto.fotoUrl;
                         const lbl = { fontSize: 10, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".3px" };
                         const cats = [...new Set(MOCK.productos.map(p => p.categoria))].sort();
                         return (
@@ -606,6 +607,9 @@ const Ingreso = () => {
                         <tr className={"item-main" + (it.nuevo ? " row-nuevo" : "")}>
                           <td>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <div style={{ width: 32, height: 32, borderRadius: 6, overflow: "hidden", background: "var(--surface-2)", display: "grid", placeItems: "center", flexShrink: 0, fontSize: 14 }}>
+                                {itFoto ? <img src={itFoto} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}/> : "📷"}
+                              </div>
                               <input
                                 value={it.nombre}
                                 onChange={e => actualizarItem(i, "nombre", e.target.value)}
@@ -672,27 +676,33 @@ const Ingreso = () => {
               <div className="tw-flex tw-flex-col tw-gap-2.5 md:tw-hidden" style={{ padding: 10 }}>
                 {items.map((it, i) => {
                   const stockActual = getStock(it.sku);
+                  const _pFotoM = (MOCK.productos || []).find(x => x.sku === it.sku); const itFoto = _pFotoM && _pFotoM.fotoUrl;
                   return (
                   <div key={i} className={
                     "tw-border tw-border-border tw-rounded-lg tw-p-3 tw-relative"
                     + (it.nuevo ? " tw-bg-amber-50 tw-border-l-[3px] tw-border-l-amber-400" : " tw-bg-surface")
                   }>
                     <button className="btn sm ghost tw-absolute tw-top-2 tw-right-2" onClick={() => setItems(items.filter((_,j) => j !== i))} style={{ padding: 4 }}><Icon name="x" size={13}/></button>
-                    <div className="tw-mb-1.5">
-                      <input
-                        value={it.nombre}
-                        onChange={e => actualizarItem(i, "nombre", e.target.value)}
-                        style={{ fontWeight: 600, fontSize: 14, border: "1px solid transparent", background: "transparent", color: "var(--text)", padding: "2px 0", borderRadius: 4, width: "calc(100% - 30px)" }}
-                        onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; e.target.style.padding = "2px 4px"; }}
-                        onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; e.target.style.padding = "2px 0"; }}
-                      />
-                      <div className="tw-flex tw-items-center tw-gap-1 tw-flex-wrap tw-mt-0.5">
-                        {!it.nuevo && <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>}
-                        {it.nuevo && <span className="chip warn" style={{ fontSize: 9 }}>NUEVO</span>}
-                        {!it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46" }}>EN BODEGA</span>}
-                        {it.confianza !== undefined && it.confianza < 0.9 && (
-                          <span className="chip" style={{ fontSize: 9, background: "#FFF1D6", color: "#8C6A1E" }}>IA {Math.round(it.confianza*100)}%</span>
-                        )}
+                    <div className="tw-mb-1.5 tw-flex tw-items-start tw-gap-2" style={{ paddingRight: 26 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 7, overflow: "hidden", background: "var(--surface-2)", display: "grid", placeItems: "center", flexShrink: 0, fontSize: 15 }}>
+                        {itFoto ? <img src={itFoto} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}/> : "📷"}
+                      </div>
+                      <div className="tw-flex-1 tw-min-w-0">
+                        <input
+                          value={it.nombre}
+                          onChange={e => actualizarItem(i, "nombre", e.target.value)}
+                          style={{ fontWeight: 600, fontSize: 14, border: "1px solid transparent", background: "transparent", color: "var(--text)", padding: "2px 0", borderRadius: 4, width: "100%" }}
+                          onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; e.target.style.padding = "2px 4px"; }}
+                          onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; e.target.style.padding = "2px 0"; }}
+                        />
+                        <div className="tw-flex tw-items-center tw-gap-1 tw-flex-wrap tw-mt-0.5">
+                          {!it.nuevo && <span className="muted mono" style={{ fontSize: 11 }}>{it.sku}</span>}
+                          {it.nuevo && <span className="chip warn" style={{ fontSize: 9 }}>NUEVO</span>}
+                          {!it.nuevo && <span className="chip" style={{ fontSize: 9, background: "#D1FAE5", color: "#065F46" }}>EN BODEGA</span>}
+                          {it.confianza !== undefined && it.confianza < 0.9 && (
+                            <span className="chip" style={{ fontSize: 9, background: "#FFF1D6", color: "#8C6A1E" }}>IA {Math.round(it.confianza*100)}%</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="tw-grid tw-grid-cols-3 tw-gap-2 tw-mb-2">
