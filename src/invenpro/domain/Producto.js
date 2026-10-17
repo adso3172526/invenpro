@@ -13,6 +13,7 @@
     #vence;
     #unidad;
     #codigoBarras;
+    #fotoUrl;
 
     constructor(data) {
       super(data);
@@ -27,6 +28,7 @@
       this.#vence = data.vence || null;
       this.#unidad = data.unidad || "und";
       this.#codigoBarras = data.codigoBarras || data.codigo_barras || "";
+      this.#fotoUrl = data.fotoUrl || data.foto_url || "";
     }
 
     get sku() { return this.#sku; }
@@ -58,6 +60,9 @@
 
     get codigoBarras() { return this.#codigoBarras; }
     set codigoBarras(v) { this.#codigoBarras = v; }
+
+    get fotoUrl() { return this.#fotoUrl; }
+    set fotoUrl(v) { this.#fotoUrl = v; }
 
     get id() { return this.#sku || ""; }
 
