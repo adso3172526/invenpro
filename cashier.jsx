@@ -396,22 +396,36 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     }
   };
 
-  const closeShift = (datos) => {
+  const [cerrando, setCerrando] = useState(false);
+  const closeShift = async (datos) => {
+    if (cerrando) return;
     const now = new Date();
     const pm = shiftStats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
     const esperado = (shift.base || 0) + (pm.Efectivo || 0);   // efectivo esperado = base + ventas en efectivo
     const contado = (datos && datos.efectivoContado != null) ? datos.efectivoContado : esperado;
     const summary = { ...shift, ...shiftStats, cierre: now, esperado, contado, diferencia: contado - esperado };
-    // Persistir cierre en Supabase
-    if (shift.id) {
-      DB.turnos.close(shift.id, {
+
+    // Sin id de turno no se puede persistir -> avisar y NO fingir que cerró.
+    if (!shift.id) {
+      setToast("No se pudo cerrar: el turno no tiene identificador. Recarga la página e intenta de nuevo.");
+      return;
+    }
+
+    // Persistir cierre en Supabase. Si algo falla, el turno queda ABIERTO y se
+    // avisa (antes los errores se tragaban con .catch y mostraba "Turno cerrado"
+    // aunque no se hubiera guardado nada).
+    setCerrando(true);
+    try {
+      const errTurno = await DB.turnos.close(shift.id, {
         fechaFin: now.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }),
         estado: "cerrado",
         ventas: shiftStats.ventas,
         transacciones: shiftStats.trans,
-      }).catch(err => console.error("closeTurno:", err));
+      });
+      if (errTurno) throw errTurno;
+
       // Arqueo + desglose por medio de pago (tabla cierres_caja)
-      DB.cierres.create({
+      const errCierre = await DB.cierres.create({
         turnoId: shift.id,
         baseInicial: shift.base || 0,
         ventasEfectivo: pm.Efectivo || 0,
@@ -424,8 +438,15 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
         efectivoContado: contado,
         diferencia: contado - esperado,
         observaciones: (datos && datos.observaciones) || null,
-      }).catch(err => console.error("crearCierre:", err));
+      });
+      if (errCierre) throw errCierre;
+    } catch (err) {
+      console.error("closeShift:", err);
+      setCerrando(false);
+      setToast("No se pudo guardar el cierre: " + ((err && err.message) || "error de conexión") + ". El turno sigue abierto; reintenta.");
+      return;  // NO avanzar a "Turno cerrado" si no se guardó
     }
+    setCerrando(false);
     onCloseShift(summary);
   };
 
@@ -719,7 +740,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
 
       {pay && <PaymentModal total={totals.total} items={totals.items} onClose={() => setPay(null)} onPay={completePay}/>}
       {done && <ReceiptModal factura={done} onClose={() => setDone(null)}/>}
-      {closing && <CloseShiftModal shift={shift} stats={shiftStats} onClose={() => setClosing(false)} onConfirm={closeShift}/>}
+      {closing && <CloseShiftModal shift={shift} stats={shiftStats} onClose={() => setClosing(false)} onConfirm={closeShift} saving={cerrando}/>}
       {scanOpen && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setScanOpen(false)}/>}
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
     </div>
@@ -948,7 +969,7 @@ const ReceiptModal = ({ factura, onClose }) => {
 };
 
 // =================== Cierre de turno ===================
-const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
+const CloseShiftModal = ({ shift, stats, onClose, onConfirm, saving }) => {
   const pm = stats.porMetodo || { Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 };
   const esperado = (shift.base || 0) + (pm.Efectivo || 0);   // efectivo esperado = base + ventas en efectivo
   const [contado, setContado] = useState("");   // vacío: el cajero DEBE contar y escribir
@@ -1007,7 +1028,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
         </div>
         <div className="modal-f">
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn primary" disabled={sinContar} onClick={() => onConfirm({ efectivoContado: contadoNum, observaciones })}><Icon name="check"/> Confirmar cierre</button>
+          <button className="btn primary" disabled={sinContar || saving} onClick={() => onConfirm({ efectivoContado: contadoNum, observaciones })}><Icon name="check"/> {saving ? "Cerrando…" : "Confirmar cierre"}</button>
         </div>
       </div>
 
@@ -1094,8 +1115,8 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm }) => {
         {/* Footer fijo */}
         <div className="tw-px-4 tw-py-3 tw-border-t tw-border-border tw-bg-surface-2 tw-shrink-0 tw-flex tw-gap-2">
           <button className="tw-flex-1 tw-py-2.5 tw-rounded-xl tw-border tw-border-border tw-bg-surface tw-text-sm tw-font-medium tw-cursor-pointer" onClick={onClose}>Cancelar</button>
-          <button className="tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-bg-accent tw-text-white tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5 disabled:tw-opacity-40 disabled:tw-cursor-not-allowed" disabled={sinContar} onClick={() => onConfirm({ efectivoContado: contadoNum, observaciones })}>
-            <Icon name="check" size={15}/> Confirmar cierre
+          <button className="tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-bg-accent tw-text-white tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5 disabled:tw-opacity-40 disabled:tw-cursor-not-allowed" disabled={sinContar || saving} onClick={() => onConfirm({ efectivoContado: contadoNum, observaciones })}>
+            <Icon name="check" size={15}/> {saving ? "Cerrando…" : "Confirmar cierre"}
           </button>
         </div>
       </div>
