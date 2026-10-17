@@ -31,6 +31,7 @@
         precio: producto.precio || 0, costo: producto.costo || 0, stock: producto.stock || 0,
         min: producto.min || 0, vence: producto.vence || null, unidad: producto.unidad || "und",
         codigo_barras: producto.codigoBarras || null,
+        foto_url: producto.fotoUrl || null,
       });
       return this._insert("productos", row);
     }
