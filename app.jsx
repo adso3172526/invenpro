@@ -61,7 +61,19 @@ const App = () => {
       t => t.cajero === u.nombre && t.estado === "abierto"
     );
     if (turnoAbierto) {
-      setShift({ ...turnoAbierto, caja: turnoAbierto.caja || "Caja 01", base: turnoAbierto.baseIni });
+      // turnoAbierto es una instancia de Turno (campos privados + getters): hacerle
+      // spread {...} NO copia el id ni los demás campos. Se leen por getter.
+      setShift({
+        id: turnoAbierto.id,
+        cajero: turnoAbierto.cajero,
+        fechaIni: turnoAbierto.fechaIni,
+        estado: turnoAbierto.estado,
+        baseIni: turnoAbierto.baseIni,
+        ventas: turnoAbierto.ventas,
+        transacciones: turnoAbierto.transacciones,
+        caja: turnoAbierto.caja || "Caja 01",
+        base: turnoAbierto.baseIni,
+      });
       setStage("pos");
     } else {
       setStage("shift-open");
