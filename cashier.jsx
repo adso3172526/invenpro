@@ -532,7 +532,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
           <div className="product-grid">
             {pagProd.slice.map(p => (
               <button key={p.sku} className="product" onClick={() => addToCart(p)} disabled={p.stock <= 0}>
-                <div className="thumb" style={{ height: "auto", aspectRatio: "1 / 1", overflow: "hidden" }}>{p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}/> : <Icon name="box" size={22}/>}</div>
+                <div className="thumb" style={{ height: "auto", aspectRatio: "1 / 1", overflow: "hidden" }}>{p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}/> : <Icon name="box" size={22}/>}</div>
                 <div className="name">{p.nombre}</div>
                 <div className="meta">
                   <span className="mono">{p.codigoBarras || p.sku}</span>
@@ -668,7 +668,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
                       <span className="tw-absolute tw-top-[-6px] tw-right-[-4px] tw-bg-accent tw-text-white tw-text-[9px] tw-font-bold tw-w-[18px] tw-h-[18px] tw-rounded-full tw-grid tw-place-items-center tw-shadow-sm">{inCart.q}</span>
                     )}
                     <div className="tw-w-full tw-rounded-lg tw-overflow-hidden tw-grid tw-place-items-center" style={{ aspectRatio: "1 / 1", background: "var(--surface-2)" }}>
-                      {p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}/> : <span style={{ fontSize: 22 }}>📷</span>}
+                      {p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}/> : <span style={{ fontSize: 22 }}>📷</span>}
                     </div>
                     <div className="tw-text-[11px] tw-font-semibold tw-leading-snug tw-line-clamp-2 tw-min-h-[2.6em]">{p.nombre}</div>
                     <div className="mono tw-text-xs tw-font-bold tw-text-accent">{window.fmtCOP(p.precio)}</div>
