@@ -269,6 +269,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
         vence: mp.vence,
         unidad: mp.unidad,
         codigoBarras: mp.codigoBarras,
+        fotoUrl: mp.fotoUrl,
       });
     });
     prevServer.current = nextPrev;
