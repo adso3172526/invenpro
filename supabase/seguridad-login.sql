@@ -37,3 +37,13 @@ end;
 $fn$;
 
 grant execute on function fn_login(text, text, text) to anon, authenticated;
+
+
+-- ============================================================================
+--  Paso 4: ocultar el hash de contrasena de la API publica.
+--  anon/authenticated ya NO pueden leer la columna 'pass'; solo las no sensibles.
+--  El login usa fn_login (security definer), que lee 'pass' internamente.
+--  Correr DESPUES de confirmar que el login por fn_login ya funciona.
+-- ============================================================================
+revoke select on usuarios_sistema from anon, authenticated;
+grant select (usuario, nombre, rol, permisos) on usuarios_sistema to anon, authenticated;
