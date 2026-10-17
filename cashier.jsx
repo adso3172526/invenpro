@@ -405,18 +405,28 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
     const contado = (datos && datos.efectivoContado != null) ? datos.efectivoContado : esperado;
     const summary = { ...shift, ...shiftStats, cierre: now, esperado, contado, diferencia: contado - esperado };
 
-    // Sin id de turno no se puede persistir -> avisar y NO fingir que cerró.
-    if (!shift.id) {
-      setToast("No se pudo cerrar: el turno no tiene identificador. Recarga la página e intenta de nuevo.");
+    setCerrando(true);
+    // Recuperar el id del turno: la sesión a veces lo pierde (restaurada de una
+    // versión vieja). Si falta, se busca el turno ABIERTO del cajero en la BD.
+    let turnoId = shift.id;
+    if (!turnoId) {
+      try {
+        const { data } = await window.db.from("turnos").select("id")
+          .eq("cajero", cajero.nombre).eq("estado", "abierto")
+          .order("id", { ascending: false }).limit(1);
+        if (data && data.length) turnoId = data[0].id;
+      } catch (e) { console.error("recuperar turno:", e); }
+    }
+    if (!turnoId) {
+      setCerrando(false);
+      setToast("No se pudo cerrar: no se encontró un turno abierto para este cajero. Recarga la página e intenta de nuevo.");
       return;
     }
 
-    // Persistir cierre en Supabase. Si algo falla, el turno queda ABIERTO y se
-    // avisa (antes los errores se tragaban con .catch y mostraba "Turno cerrado"
-    // aunque no se hubiera guardado nada).
-    setCerrando(true);
+    // Persistir cierre en Supabase. Si algo falla, el turno queda ABIERTO y se avisa
+    // (antes los errores se tragaban con .catch y mostraba "Turno cerrado" en falso).
     try {
-      const errTurno = await DB.turnos.close(shift.id, {
+      const errTurno = await DB.turnos.close(turnoId, {
         fechaFin: now.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }),
         estado: "cerrado",
         ventas: shiftStats.ventas,
@@ -426,7 +436,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
 
       // Arqueo + desglose por medio de pago (tabla cierres_caja)
       const errCierre = await DB.cierres.create({
-        turnoId: shift.id,
+        turnoId: turnoId,
         baseInicial: shift.base || 0,
         ventasEfectivo: pm.Efectivo || 0,
         ventasTransferencia: pm.Transferencia || 0,
