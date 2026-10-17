@@ -33,7 +33,7 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
       {/* Sidebar lateral (desktop) y menú overlay (mobile) */}
       <aside className={"sidebar" + (open ? " open" : "")}>
         <div className="mobile-menu-h">
-          <img src="logo.png" alt="InvenPro" style={{ height: 36, objectFit: "contain" }}/>
+          <img src="logo.png" alt="InvenPro" style={{ height: 51, objectFit: "contain" }}/>
           <button className="btn sm ghost" onClick={() => setOpen(false)}><Icon name="x" size={16}/></button>
         </div>
         <div className="brand" style={{ paddingTop: 4, justifyContent: "center", display: "flex" }}>

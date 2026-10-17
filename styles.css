@@ -641,7 +641,7 @@ input, select, textarea { font: inherit; color: inherit; }
     animation: fade .2s ease;
   }
 
-  /* Sidebar como overlay de pantalla completa */
+  /* Sidebar como overlay de pantalla completa con la imagen de fondo */
   .sidebar {
     position: fixed;
     left: 0;
@@ -653,43 +653,108 @@ input, select, textarea { font: inherit; color: inherit; }
     z-index: 100;
     box-shadow: none;
     flex-direction: column;
-    padding: 24px;
-    background: #ffffff;
+    padding: 20px 16px 36px;
+    background-color: transparent;
     overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     align-items: center;
+    box-sizing: border-box;
   }
   .sidebar.open { transform: translateX(0); }
 
-  /* Header del menú móvil con logo centrado */
+  /* Fondo con la segunda imagen (supermercado) más clara y luminosa */
+  .sidebar::before {
+    content: "";
+    position: fixed;
+    top: -15px;
+    left: -15px;
+    right: -15px;
+    bottom: -15px;
+    background-image: url('bg-mobile.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    filter: blur(2.5px) brightness(1.02);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Overlay sutil y transparente para mantener legibilidad sin oscurecer la imagen */
+  .sidebar::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.16) 0%,
+      rgba(15, 23, 42, 0.20) 50%,
+      rgba(15, 23, 42, 0.28) 100%
+    );
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Elementos hijos por encima del fondo y overlay */
+  .sidebar > * {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Header del menú móvil con logo centrado y botón cerrar transparente */
   .mobile-menu-h {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
+    max-width: 380px;
     position: relative;
-    margin-bottom: 24px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+    padding: 4px 0 16px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   }
   .mobile-menu-h img {
-    height: 70px;
+    height: 51px !important;
     object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));
   }
   .mobile-menu-h .btn {
     position: absolute;
     right: 0;
     top: 50%;
     transform: translateY(-50%);
+    width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+    background: rgba(255, 255, 255, 0.26) !important;
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    border-radius: 9px !important;
+    outline: none !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    transition: background 0.15s, transform 0.15s;
+  }
+  .mobile-menu-h .btn:hover {
+    background: rgba(255, 255, 255, 0.38) !important;
+    transform: translateY(-50%) scale(1.05);
   }
   .sidebar .brand { display: none !important; }
 
-  /* Nav cards — Cuadrícula móvil de 2 columnas de tarjetas sólidas */
+  /* Nav cards — Cuadrícula móvil de 2 columnas de tarjetas sólidas estilo foto 1 */
   .sidebar .nav-cards {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     gap: 12px !important;
     width: 100% !important;
+    max-width: 380px !important;
+    margin: 0 auto !important;
     flex: none !important;
   }
   .sidebar .nav-card {
@@ -698,19 +763,23 @@ input, select, textarea { font: inherit; color: inherit; }
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    height: 110px !important;
+    height: 98px !important;
     background: var(--nav-c) !important;
     border-radius: 16px !important;
-    border: none !important;
-    box-shadow: var(--shadow-sm) !important;
+    border: 1px solid #ffffff !important;
+    outline: none !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.16) !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    padding: 12px !important;
+    padding: 12px 8px !important;
     margin: 0 !important;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
   }
-  .sidebar .nav-card:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 20px -6px var(--nav-c) !important;
+  .sidebar .nav-card:hover,
+  .sidebar .nav-card:active {
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4) !important;
   }
   .sidebar .nav-card-top {
     background: transparent !important;
@@ -720,22 +789,36 @@ input, select, textarea { font: inherit; color: inherit; }
     height: auto !important;
     border: none !important;
     width: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
   }
   .sidebar .nav-card-top svg {
-    width: 32px !important;
-    height: 32px !important;
+    width: 30px !important;
+    height: 30px !important;
     color: #fff !important;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.25));
   }
   .sidebar .nav-card-badge {
+    position: absolute !important;
     top: -6px !important;
-    right: -6px !important;
-    background: rgba(255, 255, 255, 0.25) !important;
+    right: -8px !important;
+    background: rgba(0, 0, 0, 0.42) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    color: #fff !important;
     font-size: 10px !important;
+    font-weight: 700 !important;
+    padding: 1px 6px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3) !important;
   }
   .sidebar .nav-card-bottom {
     background: transparent !important;
     border: none !important;
-    padding: 0 !important;
+    padding: 0 4px !important;
     justify-content: center !important;
     height: auto !important;
     width: 100% !important;
@@ -747,6 +830,8 @@ input, select, textarea { font: inherit; color: inherit; }
     text-align: center !important;
     white-space: normal !important;
     display: block !important;
+    line-height: 1.25 !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   }
   .sidebar .nav-card-arrow-circle {
     display: none !important;
