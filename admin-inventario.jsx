@@ -17,7 +17,7 @@ const Inventario = () => {
   const toPlain = (p) => p ? ({
     sku: p.sku, nombre: p.nombre, categoria: p.categoria,
     precio: p.precio, costo: p.costo, stock: p.stock, min: p.min,
-    vence: p.vence, unidad: p.unidad, codigoBarras: p.codigoBarras,
+    vence: p.vence, unidad: p.unidad, codigoBarras: p.codigoBarras, fotoUrl: p.fotoUrl,
   }) : p;
 
   const _editingRef = React.useRef(null);
@@ -79,7 +79,7 @@ const Inventario = () => {
       const dup = productos.find((p) => p.codigoBarras === draft.codigoBarras && p.sku !== draft.sku);
       if (dup) { setToast(`Código de barras ya asignado a "${dup.nombre}"`); setSaving(false); return; }
     }
-    const error = await DB.productos.update(draft.sku, { nombre: draft.nombre, categoria: draft.categoria, precio: draft.precio, costo: draft.costo, stock: draft.stock, min: draft.min, unidad: draft.unidad, vence: draft.vence || null, codigoBarras: draft.codigoBarras || null });
+    const error = await DB.productos.update(draft.sku, { nombre: draft.nombre, categoria: draft.categoria, precio: draft.precio, costo: draft.costo, stock: draft.stock, min: draft.min, unidad: draft.unidad, vence: draft.vence || null, codigoBarras: draft.codigoBarras || null, fotoUrl: draft.fotoUrl || null });
     if (error) { setToast("Error al guardar: " + (error.message || "Intenta de nuevo")); setSaving(false); return; }
     setProductos(ps => ps.map(p => p.sku === draft.sku ? { ...toPlain(p), ...draft } : p));
     const mp = MOCK.productos.find(p => p.sku === draft.sku);
@@ -185,8 +185,15 @@ const Inventario = () => {
                   return (
                     <tr key={p.sku} className={!p.codigoBarras ? "row-sin-codigo" : "row-hover"}>
                       <td>
-                        <div style={{ fontWeight: 500 }}>{p.nombre}</div>
-                        <div className="mono muted" style={{ fontSize: 11 }}>{p.sku}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 8, overflow: "hidden", background: "var(--surface-2)", display: "grid", placeItems: "center", flexShrink: 0, fontSize: 16 }}>
+                            {p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}/> : "📷"}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 500 }}>{p.nombre}</div>
+                            <div className="mono muted" style={{ fontSize: 11 }}>{p.sku}</div>
+                          </div>
+                        </div>
                       </td>
                       <td><span className="chip">{p.categoria}</span></td>
                       <td className="num mono">{window.fmtCOP(p.precio)}</td>
@@ -241,9 +248,14 @@ const Inventario = () => {
               + (!p.codigoBarras ? " tw-border-l-[3px] tw-border-l-amber-400" : "")
             }>
               <div className="tw-flex tw-justify-between tw-items-start tw-mb-1.5">
-                <div className="tw-min-w-0">
-                  <div className="tw-font-semibold tw-text-[13px] tw-leading-tight tw-truncate">{p.nombre}</div>
-                  <div className="mono muted tw-text-[10px]">{p.sku} · {p.categoria}</div>
+                <div className="tw-flex tw-items-center tw-gap-2 tw-min-w-0">
+                  <div style={{ width: 36, height: 36, borderRadius: 8, overflow: "hidden", background: "var(--surface-2)", display: "grid", placeItems: "center", flexShrink: 0, fontSize: 15 }}>
+                    {p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}/> : "📷"}
+                  </div>
+                  <div className="tw-min-w-0">
+                    <div className="tw-font-semibold tw-text-[13px] tw-leading-tight tw-truncate">{p.nombre}</div>
+                    <div className="mono muted tw-text-[10px]">{p.sku} · {p.categoria}</div>
+                  </div>
                 </div>
                 <div className="tw-flex tw-items-center tw-gap-1 tw-shrink-0 tw-ml-2">
                   <span className="mono tw-text-xs" style={{ color: "var(--text-2)" }}>{window.fmtCOP(p.precio)}</span>
@@ -321,6 +333,22 @@ const ProductoEditModal = ({ producto, saving, onClose, onSave }) => {
   const [d, setD] = useStateA({ ...producto });
   const set = (k, v) => setD(prev => ({ ...prev, [k]: v }));
   const venceDays = d.vence ? window.daysFromNow(d.vence) : null;
+  const [subiendoFoto, setSubiendoFoto] = useStateA(false);
+  const [fotoErr, setFotoErr] = useStateA("");
+  const onPickFoto = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!d.sku) { setFotoErr("El producto necesita SKU antes de subir la foto."); return; }
+    setSubiendoFoto(true); setFotoErr("");
+    try {
+      const url = await window.subirFotoProducto(file, d.sku);
+      set("fotoUrl", url);
+    } catch (err) {
+      setFotoErr((err && err.message) || "No se pudo subir la foto.");
+    }
+    setSubiendoFoto(false);
+  };
 
   return (
     <Modal title="Editar producto" lg bottomSheet onClose={onClose} footer={
@@ -338,6 +366,20 @@ const ProductoEditModal = ({ producto, saving, onClose, onSave }) => {
         <div>
           <div style={{ fontWeight: 600, fontSize: 15 }}>{d.nombre || "Producto"}</div>
           <div className="mono muted" style={{ fontSize: 11 }}>{d.sku}</div>
+        </div>
+      </div>
+
+      <div className="field">
+        <label>Foto del producto</label>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 10, overflow: "hidden", background: "var(--surface-2)", display: "grid", placeItems: "center", flexShrink: 0, fontSize: 24 }}>
+            {d.fotoUrl ? <img src={d.fotoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}/> : "📷"}
+          </div>
+          <div>
+            <input type="file" accept="image/*" id={"prod-foto-" + d.sku} style={{ display: "none" }} onChange={onPickFoto}/>
+            <label htmlFor={"prod-foto-" + d.sku} className="btn sm" style={{ cursor: "pointer" }}>{subiendoFoto ? "Subiendo…" : (d.fotoUrl ? "Cambiar foto" : "Subir foto")}</label>
+            {fotoErr && <div className="muted" style={{ fontSize: 11, color: "var(--bad)", marginTop: 4 }}>{fotoErr}</div>}
+          </div>
         </div>
       </div>
 
