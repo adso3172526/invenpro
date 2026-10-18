@@ -93,7 +93,7 @@ const Reportes = () => {
           <h2>Reporte de ventas</h2>
           <p className="sub">Análisis filtrable por mes, cajero, producto o método de pago.</p>
         </div>
-        <button className="btn" onClick={() => exportXlsx("InvenPro_reporte_ventas.xlsx", [
+        <button className="btn btn-export" style={{ background: "#21864A", color: "#ffffff", borderColor: "#21864A" }} onClick={() => exportXlsx("InvenPro_reporte_ventas.xlsx", [
           { name: "Facturas", rows: filtered.map(f => ({
             Factura: f.id, Fecha: f.fecha, Hora: f.hora, Cajero: f.cajero,
             Items: f.items.reduce((a,i)=>a+i.q, 0), Método: f.metodo, Total: f.total

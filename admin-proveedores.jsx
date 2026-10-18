@@ -85,7 +85,7 @@ const Proveedores = () => {
         <button className="btn primary tw-w-full sm:tw-w-auto" onClick={() => setEditing("new")}><Icon name="plus" size={14}/> Nuevo proveedor</button>
       </div>
 
-      <div className="tw-grid tw-grid-cols-3 tw-gap-2 tw-mt-2">
+      <div className="kpi-grid grid-3 tw-grid tw-grid-cols-3 tw-gap-2 tw-mt-2" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginTop: "8px", marginBottom: "16px" }}>
         <div className="kpi">
           <div className="label tw-text-[11px] sm:tw-text-xs"><Icon name="users" size={14}/> Total</div>
           <div className="val">{list.length}</div>

@@ -61,7 +61,7 @@ const Dashboard = ({ go }) => {
           <h2 className="tw-text-lg md:tw-text-[22px] tw-font-bold tw-m-0">Buen día, admin</h2>
           <p className="sub tw-text-xs tw-mt-0.5">Resumen de hoy — {new Date().toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
         </div>
-        <button className="btn tw-w-full sm:tw-w-auto tw-justify-center" onClick={() => exportXlsx("InvenPro_resumen_hoy.xlsx", [
+        <button className="btn btn-export tw-w-full sm:tw-w-auto tw-justify-center" style={{ background: "#21864A", color: "#ffffff", borderColor: "#21864A" }} onClick={() => exportXlsx("InvenPro_resumen_hoy.xlsx", [
           { name: "KPIs hoy", rows: [
             { Métrica: "Ventas hoy", Valor: totalHoy },
             { Métrica: "Transacciones", Valor: transacciones },

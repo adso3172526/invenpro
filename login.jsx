@@ -33,8 +33,8 @@ const Login = ({ onLogin }) => {
       <div className="deco" />
       <div className="login-form-wrap">
         <form className="login-form tw-w-full tw-max-w-[400px] tw-mx-auto tw-px-4 sm:tw-px-0" onSubmit={submit} style={{ animation: shake ? "shake .3s" : undefined }}>
-          <div className="tw-flex tw-justify-center tw-mb-6">
-            <img src="logo.png" alt="InvenPro" className="tw-object-contain tw-w-[125px] tw-h-[45px]" />
+          <div className="login-logo-wrap tw-flex tw-justify-center tw-mb-6" style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%", marginBottom: "24px", textAlign: "center" }}>
+            <img src="logo.png" alt="InvenPro" className="tw-object-contain" style={{ display: "block", margin: "0 auto", objectFit: "contain", width: "210px", height: "auto" }} />
           </div>
           <h2 className="tw-text-center">Bienvenido</h2>
 
