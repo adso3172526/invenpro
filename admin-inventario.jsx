@@ -10,6 +10,7 @@ const Inventario = () => {
   const [editing, setEditing] = useStateA(null);
   const [saving, setSaving] = useStateA(false);
   const [showAjuste, setShowAjuste] = useStateA(false);
+  const [scanningSku, setScanningSku] = useStateA(null);
 
   // Los productos de MOCK son instancias de la clase Producto (campos privados + getters);
   // hacerles spread {...p} NO copia esos getters y deja el objeto vacío. toPlain lee por
@@ -73,6 +74,23 @@ const Inventario = () => {
     setToast("Código de barras asignado correctamente");
   };
 
+  const handleScanForSku = async (codigo) => {
+    if (!scanningSku) return;
+    const sku = scanningSku;
+    setScanningSku(null);
+    const cod = (codigo || "").trim();
+    if (!cod) return;
+    const existente = productos.find((p) => p.codigoBarras === cod && p.sku !== sku);
+    if (existente) { setToast(`Este código ya está asignado a "${existente.nombre}"`); return; }
+    const error = await DB.productos.updateBarcode(sku, cod);
+    if (error) { setToast("Error al guardar: " + (error.message || "Intenta de nuevo")); return; }
+    setProductos(ps => ps.map(p => p.sku === sku ? { ...toPlain(p), codigoBarras: cod } : p));
+    const mp = MOCK.productos.find(p => p.sku === sku);
+    if (mp) mp.codigoBarras = cod;
+    setBarcodeInputs(prev => { const next = { ...prev }; delete next[sku]; return next; });
+    setToast("Código de barras asignado con éxito");
+  };
+
   const guardarProducto = async (draft) => {
     setSaving(true);
     if (draft.codigoBarras) {
@@ -100,9 +118,9 @@ const Inventario = () => {
             <h2>Inventario</h2>
             <p className="sub">Gestiona productos, stock y códigos de barras.</p>
           </div>
-          <div className="tw-flex tw-gap-2 tw-shrink-0">
+          <div className="tw-flex tw-gap-2 tw-shrink-0 tw-flex-wrap">
             <button className="btn sm" onClick={() => setShowAjuste(true)}>
-              <Icon name="settings" size={13} /> <span className="tw-hidden sm:tw-inline">Ajustar precios</span>
+              <Icon name="settings" size={13} /> <span>Ajustar precios</span>
             </button>
             <button className="btn sm btn-export" style={{ background: "#21864A", color: "#ffffff", borderColor: "#21864A" }} onClick={() => exportXlsx("InvenPro_inventario.xlsx", [
               {
@@ -111,11 +129,11 @@ const Inventario = () => {
                   Precio: p.precio, Costo: p.costo, Stock: p.stock, Mínimo: p.min, Unidad: p.unidad, Vence: p.vence || ""
                 }))
               },
-            ])}><Icon name="download" size={13} /> <span className="tw-hidden sm:tw-inline">Exportar</span></button>
+            ])}><Icon name="download" size={13} /> <span>Exportar</span></button>
           </div>
         </div>
 
-        <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 tw-mb-1.5">
+        <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 tw-mb-2">
           {[
             { key: "Todos", lbl: "Productos", val: productos.length, icon: "box", c: "accent" },
             { key: "stock", lbl: "Stock total", val: totalStock.toLocaleString("es-CO"), icon: "cart", c: "good" },
@@ -143,26 +161,38 @@ const Inventario = () => {
           })}
         </div>
 
-        <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-1.5 tw-mb-1.5">
-          <div className="search tw-flex-1 tw-min-w-[140px]" style={{ height: 32 }}>
+        <div className="tw-flex tw-flex-col sm:tw-flex-row tw-items-stretch sm:tw-items-center tw-gap-2 tw-mb-2.5">
+          <div className="search tw-flex-1" style={{ height: 36 }}>
             <Icon name="search" size={14} />
-            <input placeholder="Buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ fontSize: 12 }} />
+            <input placeholder="Buscar por nombre, SKU o código…" value={q} onChange={e => setQ(e.target.value)} style={{ fontSize: 13 }} />
+            {q && (
+              <button
+                type="button"
+                className="btn sm ghost"
+                onClick={() => setQ("")}
+                style={{ padding: "0 6px", minHeight: "auto", height: 24, fontSize: 12 }}
+                title="Limpiar búsqueda"
+              >✕</button>
+            )}
           </div>
-          <div className="select-pill" style={{ height: 32, fontSize: 12 }}>
-            <span className="lbl">Cat</span>
-            <select value={cat} onChange={e => setCat(e.target.value)} style={{ fontSize: 12 }}>
-              <option>Todos</option>
-              {CATEGORIAS.slice(1).map(c => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="select-pill" style={{ height: 32, fontSize: 12 }}>
-            <span className="lbl">Estado</span>
-            <select value={estado} onChange={e => setEstado(e.target.value)} style={{ fontSize: 12 }}>
-              <option>Todos</option>
-              <option>Bajo</option>
-              <option>Sin stock</option>
-              <option>Sin código</option>
-            </select>
+          <div className="tw-flex tw-gap-2 tw-w-full sm:tw-w-auto">
+            <div className="select-pill tw-flex-1 sm:tw-flex-none" style={{ height: 36, fontSize: 13 }}>
+              <span className="lbl">Cat</span>
+              <select value={cat} onChange={e => setCat(e.target.value)} style={{ fontSize: 13 }}>
+                <option>Todos</option>
+                {CATEGORIAS.slice(1).map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="select-pill tw-flex-1 sm:tw-flex-none" style={{ height: 36, fontSize: 13 }}>
+              <span className="lbl">Estado</span>
+              <select value={estado} onChange={e => setEstado(e.target.value)} style={{ fontSize: 13 }}>
+                <option>Todos</option>
+                <option>Bajo</option>
+                <option>Sin stock</option>
+                <option>Sin código</option>
+                <option>Con código</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -240,56 +270,127 @@ const Inventario = () => {
           </div>
         </div>
 
-        <div className="tw-flex tw-flex-col tw-gap-2 md:tw-hidden">
+        <div className="inventario-mobile-list md:tw-hidden">
           {pag.slice.map(p => {
             const stockPct = Math.min(100, (p.stock / (Math.max(p.min, 1) * 3)) * 100);
             const stockClass = p.stock === 0 ? "bad" : p.stock < p.min ? "warn" : "good";
+            const stockLabel = p.stock === 0 ? "Agotado" : p.stock < p.min ? "Bajo" : "En stock";
+            const hasBarcode = !!p.codigoBarras;
+
             return (
-              <div key={p.sku} className={
-                "tw-bg-surface tw-border tw-border-border tw-rounded-lg tw-p-2.5 tw-shadow-sm"
-                + (!p.codigoBarras ? " tw-border-l-[3px] tw-border-l-amber-400" : "")
-              }>
-                <div className="tw-flex tw-justify-between tw-items-start tw-mb-1.5">
-                  <div className="tw-flex tw-items-center tw-gap-2 tw-min-w-0">
-                    <div style={{ width: 36, height: 36, borderRadius: 8, overflow: "hidden", background: "var(--surface-2)", display: "grid", placeItems: "center", flexShrink: 0, fontSize: 15 }}>
-                      {p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "📷"}
-                    </div>
-                    <div className="tw-min-w-0">
-                      <div className="tw-font-semibold tw-text-[13px] tw-leading-tight tw-truncate">{p.nombre}</div>
-                      <div className="mono muted tw-text-[10px]">{p.sku} · {p.categoria}</div>
+              <div key={p.sku} className={"inventario-card" + (!hasBarcode ? " sin-codigo" : "")}>
+                {/* Header: Foto + Nombre + Chips + Botón Ver/Editar */}
+                <div className="inventario-card-head">
+                  <div className="inventario-card-thumb">
+                    {p.fotoUrl ? (
+                      <img src={p.fotoUrl} alt={p.nombre} loading="lazy" />
+                    ) : (
+                      <span role="img" aria-label="Sin foto">📷</span>
+                    )}
+                  </div>
+                  <div className="inventario-card-info">
+                    <div className="inventario-card-title">{p.nombre}</div>
+                    <div className="inventario-card-meta">
+                      <span className="chip mono">{p.sku}</span>
+                      <span className="chip">{p.categoria}</span>
+                      {p.vence && (
+                        <span className="chip muted" title={`Vence: ${p.vence}`}>
+                          📅 {p.vence}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="tw-flex tw-items-center tw-gap-1 tw-shrink-0 tw-ml-2">
-                    <span className="mono tw-text-xs" style={{ color: "var(--text-2)" }}>{window.fmtCOP(p.precio)}</span>
-                    <button className="btn sm ghost" onClick={() => setEditing(toPlain(p))} style={{ padding: 4 }}><Icon name="eye" size={12} /></button>
-                  </div>
-                </div>
-                <div className="tw-flex tw-items-center tw-gap-3 tw-mb-1.5">
-                  <div className="tw-flex-1 tw-min-w-0">
-                    <div className="tw-flex tw-justify-between tw-mb-0.5">
-                      <span className="mono tw-text-[11px] tw-font-medium">{p.stock} {p.unidad}</span>
-                      <span className="muted mono tw-text-[10px]">mín {p.min}</span>
-                    </div>
-                    <div className={"progress " + stockClass}><span style={{ width: `${stockPct}%` }} /></div>
-                  </div>
-                </div>
-                {!p.codigoBarras ? (
-                  <div className="tw-flex tw-gap-1.5 tw-items-center tw-pt-1.5" style={{ borderTop: "1px dashed var(--border)" }}>
-                    <input
-                      className="bodega-barcode-input mono tw-flex-1"
-                      value={barcodeInputs[p.sku] || ""}
-                      onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
-                      onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
-                      placeholder="Escanear código…"
-                      style={{ minHeight: 36, fontSize: 14 }}
-                    />
-                    <button className="btn sm primary" style={{ minHeight: 36 }} onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
-                      <Icon name="check" size={13} />
+                  <div className="inventario-card-action">
+                    <button
+                      className="btn sm ghost"
+                      onClick={() => setEditing(toPlain(p))}
+                      title="Ver o editar producto"
+                      style={{ width: 28, height: 28, padding: 0, display: "grid", placeItems: "center" }}
+                    >
+                      <Icon name="eye" size={13} />
                     </button>
                   </div>
-                ) : (
-                  <div className="mono muted tw-text-[11px] tw-pt-1" style={{ borderTop: "1px dashed var(--border)" }}>{p.codigoBarras}</div>
-                )}
+                </div>
+
+                {/* Strip de métricas compacto: Precio y Stock */}
+                <div className="inventario-metrics-strip">
+                  <div className="inventario-metric">
+                    <span className="inventario-metric-lbl">Precio</span>
+                    <span className="inventario-metric-val mono" style={{ color: "var(--accent)" }}>
+                      {window.fmtCOP(p.precio)}
+                    </span>
+                  </div>
+                  <div className="inventario-metric">
+                    <div className="tw-flex tw-justify-between tw-items-center">
+                      <span className="inventario-metric-lbl">Stock (Mín {p.min})</span>
+                      <span className={"chip " + stockClass} style={{ fontSize: 9, padding: "0 4px", lineHeight: "14px" }}>
+                        <span className="dot" /> {stockLabel}
+                      </span>
+                    </div>
+                    <div className="mono tw-text-xs tw-font-semibold tw-leading-tight">
+                      {p.stock} <span className="muted" style={{ fontSize: 10, fontWeight: "normal" }}>{p.unidad}</span>
+                    </div>
+                    <div className="inventario-progress-wrap">
+                      <div className={"progress " + stockClass} style={{ height: 3 }}>
+                        <span style={{ width: `${stockPct}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Código de barras: Asignado vs Por asignar */}
+                <div className="inventario-card-barcode">
+                  {hasBarcode ? (
+                    <div className="tw-flex tw-items-center tw-justify-between tw-text-[11px] tw-py-0.5">
+                      <div className="tw-flex tw-items-center tw-gap-1 tw-min-w-0">
+                        <Icon name="tag" size={11} style={{ color: "var(--text-3)", flexShrink: 0 }} />
+                        <span className="mono tw-truncate muted" style={{ fontSize: 11 }}>
+                          {p.codigoBarras}
+                        </span>
+                      </div>
+                      <span className="tw-text-good tw-font-semibold tw-flex tw-items-center tw-gap-0.5 tw-text-[10px] tw-shrink-0">
+                        <Icon name="check" size={10} /> Código OK
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="tw-flex tw-flex-col tw-gap-1">
+                      <div className="tw-flex tw-items-center tw-justify-between">
+                        <span className="tw-text-[10px] tw-font-semibold" style={{ color: "#D97706" }}>
+                          ⚠️ Sin código de barras
+                        </span>
+                      </div>
+                      <div className="inventario-barcode-assign-row">
+                        <input
+                          className="bodega-barcode-input mono"
+                          value={barcodeInputs[p.sku] || ""}
+                          onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
+                          onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
+                          placeholder="Digitar / escanear código…"
+                        />
+                        {window.BarcodeScanner && (
+                          <button
+                            type="button"
+                            className="btn sm ghost"
+                            style={{ minHeight: 30, height: 30, width: 30, padding: 0, display: "grid", placeItems: "center", fontSize: 13 }}
+                            onClick={() => setScanningSku(p.sku)}
+                            title="Escanear con cámara"
+                          >
+                            📷
+                          </button>
+                        )}
+                        <button
+                          className="btn sm primary"
+                          style={{ minHeight: 30, height: 30, padding: "0 10px" }}
+                          onClick={() => asignarCodigo(p.sku)}
+                          disabled={!(barcodeInputs[p.sku] || "").trim()}
+                          title="Guardar código"
+                        >
+                          <Icon name="check" size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -307,6 +408,14 @@ const Inventario = () => {
         onClose={() => setEditing(null)}
         onSave={guardarProducto}
       />}
+
+      {scanningSku && window.BarcodeScanner && (
+        <BarcodeScanner
+          closeOnScan
+          onScan={handleScanForSku}
+          onClose={() => setScanningSku(null)}
+        />
+      )}
 
       {showAjuste && <AjustarPreciosModal
         productos={productos}

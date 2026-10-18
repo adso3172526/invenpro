@@ -179,34 +179,65 @@ const Proveedores = () => {
         </div>
 
         {/* Mobile: tarjetas */}
-        <div className="tw-flex tw-flex-col tw-gap-2.5 md:tw-hidden">
+        <div className="prov-mobile-list md:tw-hidden">
           {pagProv.slice.map(p => (
-            <div key={p.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3 tw-shadow-sm">
-              <div className="tw-flex tw-items-start tw-justify-between tw-gap-2 tw-mb-2">
-                <div className="tw-flex tw-items-center tw-gap-2.5 tw-min-w-0">
-                  <div className="tw-w-8 tw-h-8 tw-rounded-lg tw-bg-accent-soft tw-grid tw-place-items-center tw-font-semibold tw-text-xs tw-shrink-0" style={{ color: "var(--accent-ink)" }}>
-                    {p.nombre.split(" ").map(x => x[0]).slice(0,2).join("").toUpperCase()}
-                  </div>
-                  <div className="tw-min-w-0">
-                    <div className="tw-font-medium tw-text-sm tw-truncate">{p.nombre}</div>
-                    <div className="muted mono tw-text-[11px]">{p.id} · {p.ciudad}</div>
+            <div key={p.id} className={"prov-card" + (p.estado !== "activo" ? " inactivo" : "")}>
+              <div className="prov-card-head">
+                <div className="prov-card-avatar">
+                  {p.nombre.split(" ").map(x => x[0]).slice(0, 2).join("").toUpperCase()}
+                </div>
+                <div className="prov-card-info">
+                  <div className="prov-card-name" title={p.nombre}>{p.nombre}</div>
+                  <div className="prov-card-meta">
+                    <span className="chip mono">{p.id}</span>
+                    <span className="chip">{p.ciudad}</span>
+                    <span className="chip">{p.categoria}</span>
                   </div>
                 </div>
-                <span className={"chip tw-shrink-0 " + (p.estado === "activo" ? "good" : "bad")}><span className="dot"/>{p.estado}</span>
+                <span className={"chip tw-shrink-0 " + (p.estado === "activo" ? "good" : "bad")}>
+                  <span className="dot"/>{p.estado}
+                </span>
               </div>
-              <div className="tw-grid tw-grid-cols-1 min-[360px]:tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1.5 tw-text-xs tw-mb-3 tw-pl-0 min-[360px]:tw-pl-[42px]">
-                <div><span className="muted">NIT:</span> <span className="mono">{p.nit}</span></div>
-                <div><span className="muted">Categoría:</span> {p.categoria}</div>
-                <div><span className="muted">Contacto:</span> {p.contacto}</div>
-                <div><span className="muted">Tel:</span> <span className="mono">{p.tel}</span></div>
-                <div><span className="muted">Términos:</span> <span className="mono">{p.terminos}</span></div>
-                <div><span className="muted">Ingresos:</span> <span className="mono">{p.ingresos}</span></div>
+
+              <div className="prov-data-grid">
+                <div className="prov-data-item">
+                  <span className="prov-data-lbl">NIT</span>
+                  <span className="prov-data-val mono">{p.nit}</span>
+                </div>
+                <div className="prov-data-item">
+                  <span className="prov-data-lbl">Contacto</span>
+                  <span className="prov-data-val" title={p.contacto}>{p.contacto || "—"}</span>
+                </div>
+                <div className="prov-data-item">
+                  <span className="prov-data-lbl">Teléfono</span>
+                  <span className="prov-data-val mono">
+                    {p.tel ? <a href={`tel:${p.tel.replace(/[^\d+]/g, '')}`}>{p.tel}</a> : "—"}
+                  </span>
+                </div>
+                <div className="prov-data-item">
+                  <span className="prov-data-lbl">Términos</span>
+                  <span className="prov-data-val">{p.terminos || "Contado"}</span>
+                </div>
               </div>
-              <div className="tw-flex tw-justify-end tw-gap-1.5 tw-border-t tw-border-border tw-pt-2.5 tw-mt-1">
-                <button className="btn sm ghost" onClick={() => setEditing(p)}><Icon name="edit" size={13}/> Editar</button>
-                <button className="btn sm ghost" onClick={() => setConfirmBaja(p)}>
-                  <Icon name={p.estado === "activo" ? "trash" : "check"} size={13}/> {p.estado === "activo" ? "Baja" : "Reactivar"}
-                </button>
+
+              <div className="prov-card-foot">
+                <div className="prov-card-ingresos muted tw-text-xs tw-flex tw-items-center tw-gap-1">
+                  <Icon name="truck" size={12}/>
+                  <span><strong className="mono">{p.ingresos || 0}</strong> {p.ingresos === 1 ? "ingreso" : "ingresos"}</span>
+                </div>
+                <div className="prov-card-actions">
+                  <button className="btn sm ghost" onClick={() => setEditing(p)} title="Editar proveedor">
+                    <Icon name="edit" size={12}/> Editar
+                  </button>
+                  <button 
+                    className={"btn sm ghost " + (p.estado === "activo" ? "bad" : "good")} 
+                    onClick={() => setConfirmBaja(p)}
+                    title={p.estado === "activo" ? "Dar de baja" : "Reactivar"}
+                  >
+                    <Icon name={p.estado === "activo" ? "trash" : "check"} size={12}/> 
+                    {p.estado === "activo" ? "Baja" : "Reactivar"}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
