@@ -238,55 +238,59 @@ const Inventario = () => {
         </div>
       </div>
 
-      <div className="tw-flex tw-flex-col tw-gap-2 md:tw-hidden">
+      <div className="inventario-mobile-list md:tw-hidden">
         {pag.slice.map(p => {
           const stockPct = Math.min(100, (p.stock / (Math.max(p.min, 1) * 3)) * 100);
           const stockClass = p.stock === 0 ? "bad" : p.stock < p.min ? "warn" : "good";
           return (
-            <div key={p.sku} className={
-              "tw-bg-surface tw-border tw-border-border tw-rounded-lg tw-p-2.5 tw-shadow-sm"
-              + (!p.codigoBarras ? " tw-border-l-[3px] tw-border-l-amber-400" : "")
-            }>
-              <div className="tw-flex tw-justify-between tw-items-start tw-mb-1.5">
-                <div className="tw-flex tw-items-center tw-gap-2 tw-min-w-0">
-                  <div style={{ width: 36, height: 36, borderRadius: 8, overflow: "hidden", background: "var(--surface-2)", display: "grid", placeItems: "center", flexShrink: 0, fontSize: 15 }}>
-                    {p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}/> : "📷"}
+            <div key={p.sku} className={"inventario-card" + (!p.codigoBarras ? " sin-codigo" : "")}>
+              <div className="inventario-card-head">
+                <div className="inventario-card-left">
+                  <div className="inventario-card-thumb">
+                    {p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy"/> : "📷"}
                   </div>
-                  <div className="tw-min-w-0">
-                    <div className="tw-font-semibold tw-text-[13px] tw-leading-tight tw-truncate">{p.nombre}</div>
-                    <div className="mono muted tw-text-[10px]">{p.sku} · {p.categoria}</div>
+                  <div className="inventario-card-info">
+                    <div className="inventario-card-name">{p.nombre}</div>
+                    <div className="inventario-card-meta">{p.sku} · {p.categoria}</div>
                   </div>
                 </div>
-                <div className="tw-flex tw-items-center tw-gap-1 tw-shrink-0 tw-ml-2">
-                  <span className="mono tw-text-xs" style={{ color: "var(--text-2)" }}>{window.fmtCOP(p.precio)}</span>
-                  <button className="btn sm ghost" onClick={() => setEditing(toPlain(p))} style={{ padding: 4 }}><Icon name="eye" size={12}/></button>
-                </div>
-              </div>
-              <div className="tw-flex tw-items-center tw-gap-3 tw-mb-1.5">
-                <div className="tw-flex-1 tw-min-w-0">
-                  <div className="tw-flex tw-justify-between tw-mb-0.5">
-                    <span className="mono tw-text-[11px] tw-font-medium">{p.stock} {p.unidad}</span>
-                    <span className="muted mono tw-text-[10px]">mín {p.min}</span>
-                  </div>
-                  <div className={"progress " + stockClass}><span style={{ width: `${stockPct}%` }}/></div>
+                <div className="inventario-card-right">
+                  <span className="inventario-card-price">{window.fmtCOP(p.precio)}</span>
+                  <button className="btn sm ghost" onClick={() => setEditing(toPlain(p))} title="Ver / Editar" style={{ padding: 6 }}>
+                    <Icon name="eye" size={13}/>
+                  </button>
                 </div>
               </div>
+
+              <div className="inventario-stock-box">
+                <div className="inventario-stock-header">
+                  <span className="mono" style={{ fontWeight: 600, color: "var(--text)", fontSize: 12 }}>{p.stock} {p.unidad}</span>
+                  <span className="muted mono" style={{ fontSize: 11 }}>mín {p.min} {p.unidad}</span>
+                </div>
+                <div className={"progress " + stockClass} style={{ height: 6 }}>
+                  <span style={{ width: `${stockPct}%` }}/>
+                </div>
+              </div>
+
               {!p.codigoBarras ? (
-                <div className="tw-flex tw-gap-1.5 tw-items-center tw-pt-1.5" style={{ borderTop: "1px dashed var(--border)" }}>
+                <div className="inventario-barcode-row">
                   <input
-                    className="bodega-barcode-input mono tw-flex-1"
+                    className="bodega-barcode-input mono"
                     value={barcodeInputs[p.sku] || ""}
                     onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
                     onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
-                    placeholder="Escanear código…"
-                    style={{ minHeight: 36, fontSize: 14 }}
+                    placeholder="Escanear o ingresar código…"
+                    style={{ flex: 1, minHeight: 38, fontSize: 13 }}
                   />
-                  <button className="btn sm primary" style={{ minHeight: 36 }} onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
-                    <Icon name="check" size={13}/>
+                  <button className="btn sm primary" style={{ minHeight: 38, padding: "0 14px" }} onClick={() => asignarCodigo(p.sku)} disabled={!(barcodeInputs[p.sku] || "").trim()}>
+                    <Icon name="check" size={14}/>
                   </button>
                 </div>
               ) : (
-                <div className="mono muted tw-text-[11px] tw-pt-1" style={{ borderTop: "1px dashed var(--border)" }}>{p.codigoBarras}</div>
+                <div className="inventario-barcode-row" style={{ justifyContent: "space-between" }}>
+                  <span className="muted" style={{ fontSize: 11 }}>Código de barras:</span>
+                  <span className="mono" style={{ fontSize: 11, background: "var(--surface-2)", padding: "2px 8px", borderRadius: 4, border: "1px solid var(--border)" }}>{p.codigoBarras}</span>
+                </div>
               )}
             </div>
           );

@@ -179,30 +179,50 @@ const Proveedores = () => {
         </div>
 
         {/* Mobile: tarjetas */}
-        <div className="tw-flex tw-flex-col tw-gap-2.5 md:tw-hidden">
+        <div className="prov-mobile-list md:tw-hidden">
           {pagProv.slice.map(p => (
-            <div key={p.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3 tw-shadow-sm">
-              <div className="tw-flex tw-items-start tw-justify-between tw-gap-2 tw-mb-2">
-                <div className="tw-flex tw-items-center tw-gap-2.5 tw-min-w-0">
-                  <div className="tw-w-8 tw-h-8 tw-rounded-lg tw-bg-accent-soft tw-grid tw-place-items-center tw-font-semibold tw-text-xs tw-shrink-0" style={{ color: "var(--accent-ink)" }}>
+            <div key={p.id} className="prov-card">
+              <div className="prov-card-head">
+                <div className="prov-card-identity">
+                  <div className="prov-card-avatar">
                     {p.nombre.split(" ").map(x => x[0]).slice(0,2).join("").toUpperCase()}
                   </div>
-                  <div className="tw-min-w-0">
-                    <div className="tw-font-medium tw-text-sm tw-truncate">{p.nombre}</div>
-                    <div className="muted mono tw-text-[11px]">{p.id} · {p.ciudad}</div>
+                  <div className="prov-card-info">
+                    <div className="prov-card-name">{p.nombre}</div>
+                    <div className="prov-card-sub">{p.id} · {p.ciudad}</div>
                   </div>
                 </div>
-                <span className={"chip tw-shrink-0 " + (p.estado === "activo" ? "good" : "bad")}><span className="dot"/>{p.estado}</span>
+                <span className={"chip " + (p.estado === "activo" ? "good" : "bad")}><span className="dot"/>{p.estado}</span>
               </div>
-              <div className="tw-grid tw-grid-cols-1 min-[360px]:tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1.5 tw-text-xs tw-mb-3 tw-pl-0 min-[360px]:tw-pl-[42px]">
-                <div><span className="muted">NIT:</span> <span className="mono">{p.nit}</span></div>
-                <div><span className="muted">Categoría:</span> {p.categoria}</div>
-                <div><span className="muted">Contacto:</span> {p.contacto}</div>
-                <div><span className="muted">Tel:</span> <span className="mono">{p.tel}</span></div>
-                <div><span className="muted">Términos:</span> <span className="mono">{p.terminos}</span></div>
-                <div><span className="muted">Ingresos:</span> <span className="mono">{p.ingresos}</span></div>
+              
+              <div className="prov-card-grid">
+                <div className="prov-grid-item">
+                  <span className="prov-grid-label">NIT</span>
+                  <span className="prov-grid-val mono">{p.nit}</span>
+                </div>
+                <div className="prov-grid-item">
+                  <span className="prov-grid-label">Categoría</span>
+                  <span className="prov-grid-val">{p.categoria}</span>
+                </div>
+                <div className="prov-grid-item">
+                  <span className="prov-grid-label">Contacto</span>
+                  <span className="prov-grid-val">{p.contacto}</span>
+                </div>
+                <div className="prov-grid-item">
+                  <span className="prov-grid-label">Teléfono</span>
+                  <span className="prov-grid-val mono">{p.tel}</span>
+                </div>
+                <div className="prov-grid-item">
+                  <span className="prov-grid-label">Términos</span>
+                  <span className="prov-grid-val mono">{p.terminos}</span>
+                </div>
+                <div className="prov-grid-item">
+                  <span className="prov-grid-label">Ingresos</span>
+                  <span className="prov-grid-val mono">{p.ingresos}</span>
+                </div>
               </div>
-              <div className="tw-flex tw-justify-end tw-gap-1.5 tw-border-t tw-border-border tw-pt-2.5 tw-mt-1">
+
+              <div className="prov-card-foot">
                 <button className="btn sm ghost" onClick={() => setEditing(p)}><Icon name="edit" size={13}/> Editar</button>
                 <button className="btn sm ghost" onClick={() => setConfirmBaja(p)}>
                   <Icon name={p.estado === "activo" ? "trash" : "check"} size={13}/> {p.estado === "activo" ? "Baja" : "Reactivar"}
