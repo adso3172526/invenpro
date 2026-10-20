@@ -24,6 +24,7 @@ const App = () => {
   const [shiftSummary, setShiftSummary] = useStateApp(null);
   const [adminPage, setAdminPage] = useStateApp(_ss.adminPage || "dashboard");
   const [, forceRender] = useStateApp(0);
+  const [showExitConfirm, setShowExitConfirm] = useStateApp(false);
 
   // Re-render when Supabase hydration completes (if it was slow)
   useEffectApp(() => {
@@ -87,56 +88,90 @@ const App = () => {
     setStage("login"); setAdminPage("dashboard");
   };
 
-  if (stage === "login") return <Login onLogin={onLogin}/>;
+  // --- Guardia del botón "atrás" del navegador --------------------------------
+  // La app no usa rutas/URL (todo es `stage`), así que "atrás" saldría del sitio.
+  // Con sesión activa sembramos una entrada de historial y escuchamos popstate:
+  // al dar "atrás" mostramos la confirmación (salir y cerrar sesión / permanecer)
+  // y re-sembramos la entrada para no abandonar la app. Aplica a TODOS los usuarios.
+  const loggedIn = stage !== "login";
+  useEffectApp(() => {
+    if (!loggedIn) return;
+    window.history.pushState({ invenpro: true }, "");
+    const onPop = () => {
+      setShowExitConfirm(true);
+      window.history.pushState({ invenpro: true }, "");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [loggedIn]);
 
-  if (stage === "shift-open") return (
-    <ShiftOpen cajero={user} onLogout={onLogout} onOpen={(s) => { setShift(s); setStage("pos"); }}/>
-  );
-
-  if (stage === "pos") return (
-    <POS shift={shift} cajero={user}
-      onLogout={onLogout}
-      onCloseShift={(summary) => { setShiftSummary(summary); setStage("shift-closed"); }}/>
-  );
-
-  if (stage === "shift-closed") return <ShiftClosed summary={shiftSummary} onLogout={onLogout}/>;
-
-  // Admin
-  if (stage === "admin") {
+  let screen = null;
+  if (stage === "login") {
+    screen = <Login onLogin={onLogin}/>;
+  } else if (stage === "shift-open") {
+    screen = <ShiftOpen cajero={user} onLogout={onLogout} onOpen={(s) => { setShift(s); setStage("pos"); }}/>;
+  } else if (stage === "pos") {
+    screen = (
+      <POS shift={shift} cajero={user}
+        onLogout={onLogout}
+        onCloseShift={(summary) => { setShiftSummary(summary); setStage("shift-closed"); }}/>
+    );
+  } else if (stage === "shift-closed") {
+    screen = <ShiftClosed summary={shiftSummary} onLogout={onLogout}/>;
+  } else if (stage === "admin") {
     if (adminPage === "pos") {
       // Si el admin no ha abierto turno, mostrarlo como al cajero
       if (!shift) {
-        return (
+        screen = (
           <ShiftOpen cajero={user}
             onLogout={() => setAdminPage("dashboard")}
             onOpen={(s) => setShift(s)}/>
         );
+      } else {
+        screen = (
+          <POS shift={shift} cajero={user}
+            onLogout={() => setAdminPage("dashboard")}
+            onCloseShift={() => { setShift(null); setAdminPage("dashboard"); }}/>
+        );
       }
-      return (
-        <POS shift={shift} cajero={user}
-          onLogout={() => setAdminPage("dashboard")}
-          onCloseShift={() => { setShift(null); setAdminPage("dashboard"); }}/>
-      );
-    }
-    return (
-      <div className="app">
-        <Sidebar active={adminPage} setActive={setAdminPage} user={user} onLogout={onLogout}/>
-        <div className="main">
-          <div className="page">
-            {adminPage === "dashboard" && <Dashboard go={setAdminPage}/>}
-            {adminPage === "inventory" && <Inventario/>}
-            {adminPage === "ingreso" && <Ingreso/>}
-            {adminPage === "vence" && <Vencimientos/>}
-            {adminPage === "proveedores" && <Proveedores/>}
-            {adminPage === "cajeros" && <Cajeros/>}
-            {adminPage === "reportes" && <Reportes/>}
-            {adminPage === "ajustes" && <Ajustes/>}
+    } else {
+      screen = (
+        <div className="app">
+          <Sidebar active={adminPage} setActive={setAdminPage} user={user} onLogout={onLogout}/>
+          <div className="main">
+            <div className="page">
+              {adminPage === "dashboard" && <Dashboard go={setAdminPage}/>}
+              {adminPage === "inventory" && <Inventario/>}
+              {adminPage === "ingreso" && <Ingreso/>}
+              {adminPage === "vence" && <Vencimientos/>}
+              {adminPage === "proveedores" && <Proveedores/>}
+              {adminPage === "cajeros" && <Cajeros/>}
+              {adminPage === "reportes" && <Reportes/>}
+              {adminPage === "ajustes" && <Ajustes/>}
+            </div>
           </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
-  return null;
+
+  return (
+    <>
+      {screen}
+      {showExitConfirm && (
+        <Modal title="¿Salir de InvenPro?" onClose={() => setShowExitConfirm(false)} footer={
+          <>
+            <button className="btn ghost" onClick={() => setShowExitConfirm(false)}>Permanecer en InvenPro</button>
+            <button className="btn primary" onClick={() => { setShowExitConfirm(false); onLogout(); }}>Salir y cerrar sesión</button>
+          </>
+        }>
+          <p style={{ margin: 0, lineHeight: 1.6 }}>
+            Si sales se <b>cerrará tu sesión</b>. ¿Deseas salir de InvenPro o permanecer en la aplicación?
+          </p>
+        </Modal>
+      )}
+    </>
+  );
 };
 
 (async () => {
