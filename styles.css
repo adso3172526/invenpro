@@ -2621,7 +2621,6 @@ table.tbl th.num {
 @media (max-width: 767px) {
 
   [class~="tw-hidden"][class~="md:tw-flex"],
-<<<<<<< HEAD
   [class~="tw-hidden"][class~="md:tw-block"] { display: none !important; }
   [class~="md:tw-hidden"][class~="tw-flex"] { display: flex !important; }
   [class~="md:tw-hidden"][class~="tw-block"] { display: block !important; }
@@ -2630,22 +2629,7 @@ table.tbl th.num {
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
-=======
-  [class~="tw-hidden"][class~="md:tw-block"] {
-    display: none !important;
   }
-
-  [class~="md:tw-hidden"][class~="tw-flex"] {
-    display: flex !important;
-  }
-
-  [class~="md:tw-hidden"][class~="tw-block"] {
-    display: block !important;
-  }
-
-  [class~="md:tw-hidden"][class~="tw-grid"] {
-    display: grid !important;
->>>>>>> b9400a161bfa572be25f7838ad046c7f357b96a3
   }
 }
 
@@ -4395,7 +4379,7 @@ table.tbl tr.item-detail td {
    ============================================================ */
 @media (min-width: 901px) {
 
-  /* Alineación horizontal en escritorio */
+  /* Alineación horizontal en escritorio con barra de módulos a la derecha */
   .app {
     display: flex;
     flex-direction: row;
@@ -4404,29 +4388,33 @@ table.tbl tr.item-detail td {
     background: var(--bg);
   }
 
-  /* Contenido principal ocupa el resto del espacio */
+  /* Contenido principal ocupa el resto del espacio (a la izquierda) */
   .main {
     flex: 1;
     min-width: 0;
     height: 100vh;
     overflow-y: auto;
+    order: 1;
   }
 
-  /* Sidebar vertical a la izquierda con ancho suficiente para tarjetas de 130px */
+  /* Sidebar vertical a la derecha con ancho suficiente para tarjetas de 130px */
   .sidebar {
+    order: 2;
     width: 160px;
     height: 100vh;
     position: sticky;
     top: 0;
-    left: 0;
+    right: 0;
+    left: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 12px 0;
-    border-right: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    border-right: none;
     border-bottom: none;
     background: transparent;
-    box-shadow: 2px 0 14px rgba(0, 0, 0, 0.08);
+    box-shadow: -2px 0 14px rgba(0, 0, 0, 0.08);
     z-index: 100;
     flex-shrink: 0;
     overflow-y: auto;
@@ -4611,7 +4599,6 @@ table.tbl tr.item-detail td {
     border: 1px solid rgba(255, 255, 255, 0.35);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
-<<<<<<< HEAD
 }
 
 /* ==========================================================================
@@ -4874,6 +4861,3 @@ table.tbl tr.item-detail td {
 
 
 
-=======
-}
->>>>>>> b9400a161bfa572be25f7838ad046c7f357b96a3
