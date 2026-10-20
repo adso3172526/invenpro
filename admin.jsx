@@ -140,12 +140,13 @@ const Reportes = () => {
         <div className="kpi"><div className="label">Productos vendidos</div><div className="val">{filtered.reduce((s,f) => s + f.items.reduce((a,i)=>a+i.q, 0), 0)}</div></div>
       </div>
 
-      <div className="mt-3 tw-grid tw-grid-cols-1 lg:tw-grid-cols-[1.4fr_1fr] tw-gap-[10px] tw-items-start">
-        <div className="card">
+      <div className="mt-3 tw-grid tw-grid-cols-1 lg:tw-grid-cols-2 tw-gap-[10px] tw-items-stretch">
+        {/* Ventas por mes */}
+        <div className="card tw-flex tw-flex-col tw-h-full">
           <div className="card-h"><h3>Ventas por mes</h3><p className="sub">{byMonth.length} mes(es)</p></div>
-          <div className="card-b">
+          <div className="tw-h-[300px] tw-p-3 tw-flex tw-items-center tw-justify-center">
             {byMonth.length > 0 ? (
-              <div className="tw-relative tw-h-[200px] md:tw-h-[240px]">
+              <div className="tw-relative tw-h-full tw-w-full">
                 <ChartCanvas type="bar"
                   data={{
                     labels: byMonth.map(b => b.mes),
@@ -172,9 +173,11 @@ const Reportes = () => {
             ) : <div className="empty-state">Sin ventas con estos filtros.</div>}
           </div>
         </div>
-        <div className="card">
-          <div className="card-h"><h3>Por cajero</h3></div>
-          <div>
+
+        {/* Por cajero */}
+        <div className="card tw-flex tw-flex-col tw-h-full">
+          <div className="card-h"><h3>Por cajero</h3><p className="sub">{byCajero.length} cajero(s)</p></div>
+          <div className="tw-h-[300px] tw-overflow-y-auto">
             {byCajero.length > 0 ? byCajero.map(c => {
               const max = byCajero[0].total;
               return (
@@ -189,13 +192,11 @@ const Reportes = () => {
             }) : <div className="empty-state">Sin datos.</div>}
           </div>
         </div>
-      </div>
 
-      <div className="mt-3 tw-grid tw-grid-cols-1 lg:tw-grid-cols-[1.4fr_1fr] tw-gap-[10px] tw-items-start">
         {/* Productos más vendidos */}
-        <div className="card">
+        <div className="card tw-flex tw-flex-col tw-h-full">
           <div className="card-h"><h3>Productos más vendidos</h3><p className="sub">Top {topProductosFiltro.length}</p></div>
-          <div>
+          <div className="tw-h-[300px] tw-overflow-y-auto">
             {topProductosFiltro.length > 0 ? topProductosFiltro.map((p, i) => {
               const max = topProductosFiltro[0].qty || 1;
               return (
@@ -213,10 +214,11 @@ const Reportes = () => {
         </div>
 
         {/* Medios de pago (de menor a mayor) */}
-        <div className="card">
+        <div className="card tw-flex tw-flex-col tw-h-full">
           <div className="card-h"><h3>Medios de pago</h3><p className="sub">de menor a mayor</p></div>
+          <div className="tw-h-[300px] tw-overflow-y-auto">
           {byMetodo.length > 0 && (
-            <div className="tw-relative tw-h-[170px] tw-mt-3">
+            <div className="tw-relative tw-h-[150px] tw-mt-3">
               <ChartCanvas type="doughnut"
                 data={{
                   labels: byMetodo.map(m => m.nombre),
@@ -252,6 +254,7 @@ const Reportes = () => {
                 <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{m.pct.toFixed(1)}% del total</div>
               </div>
             )) : <div className="empty-state">Sin datos.</div>}
+          </div>
           </div>
         </div>
       </div>
