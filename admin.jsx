@@ -389,8 +389,9 @@ const Ajustes = () => {
         </div>
       </div>
 
+      <div className="tw-grid tw-grid-cols-1 lg:tw-grid-cols-3 tw-gap-[10px] tw-items-start" style={{ marginTop: 16 }}>
       {/* ── Card: Datos de facturación ── */}
-      <div className="card" style={{ marginTop: 16 }}>
+      <div className="card">
         <div className="card-h">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Icon name="store" size={18}/>
@@ -437,7 +438,7 @@ const Ajustes = () => {
       </div>
 
       {/* ── Card: Conexión de IA ── */}
-      <div className="card" style={{ marginTop: 16 }}>
+      <div className="card">
         <div className="card-h">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
@@ -523,7 +524,7 @@ const Ajustes = () => {
       </div>
 
       {/* ── Card: Servicio de correo (alertas de vencimiento) ── */}
-      <div className="card" style={{ marginTop: 16 }}>
+      <div className="card">
         <div className="card-h">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Icon name="bell" size={18}/>
@@ -576,6 +577,7 @@ const Ajustes = () => {
             No uses la contraseña normal de la cuenta: genera una <b>contraseña de aplicación</b> de Google (requiere verificación en 2 pasos activada) en <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" style={{ color: "var(--accent)" }}>myaccount.google.com/apppasswords</a>.
           </p>
         </div>
+      </div>
       </div>
     </>
   );
