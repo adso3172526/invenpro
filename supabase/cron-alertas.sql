@@ -1,24 +1,35 @@
 -- ============================================================================
 --  Envío AUTOMÁTICO diario de alertas de vencimiento (InvenPro)
---  Ejecuta la Edge Function `enviar-alerta` en modo { auto: true } cada día.
+--  Llama a la Edge Function `enviar-alerta` en modo { auto: true } cada día.
 --
---  Corre esto UNA vez en el SQL Editor de Supabase (o como migración).
---  Requiere haber desplegado antes la función:  supabase functions deploy enviar-alerta
+--  Pega TODO en Supabase -> SQL Editor y ejecútalo. Es idempotente
+--  (puedes correrlo de nuevo sin romper nada).
+--
+--  IMPORTANTE antes de correr:
+--  1) La función debe estar desplegada con el slug EXACTO `enviar-alerta`.
+--  2) pg_cron y pg_net deben estar ACTIVADAS desde el panel:
+--     Database -> Extensions -> buscar "pg_cron" y "pg_net" -> Enable.
+--     (El `create extension` de abajo ayuda, pero en Supabase el worker de
+--      pg_cron solo arranca si la extensión está activada desde ese panel.)
 -- ============================================================================
 
--- 1) Extensiones necesarias (pg_cron = agenda, pg_net = llamadas HTTP salientes)
+-- 1) Extensiones (agenda + llamadas HTTP salientes)
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
--- 2) Guardar el service-role key en Vault (NO lo pongas en texto plano en el cron).
---    Copia tu service_role key desde: Project Settings → API → service_role.
---    Reemplaza PEGA_AQUI_TU_SERVICE_ROLE_KEY y ejecuta esta línea una sola vez.
---    (Si ya existe el secreto, primero: select vault.delete_secret('service_role_key');)
-select vault.create_secret('PEGA_AQUI_TU_SERVICE_ROLE_KEY', 'service_role_key');
+-- 2) Borrar el job anterior si existe (para re-crearlo limpio).
+--    Si no existía, esta línea simplemente no hace nada (va en un bloque seguro).
+do $$
+begin
+  perform cron.unschedule('alertas-vencimiento-diaria');
+exception when others then
+  null; -- no existía, se ignora
+end $$;
 
 -- 3) Programar el envío diario.
---    '0 13 * * *' = 13:00 UTC = 08:00 en Colombia (UTC-5). Ajusta la hora si quieres.
---    Si necesitas reprogramar, primero: select cron.unschedule('alertas-vencimiento-diaria');
+--    '0 13 * * *' = 13:00 UTC = 08:00 en Colombia (UTC-5). Cambia la hora si quieres.
+--    Usa la ANON KEY (pública) como Bearer: basta para pasar el gateway; la función
+--    lee la BD con su propio service_role interno, no con este token.
 select cron.schedule(
   'alertas-vencimiento-diaria',
   '0 13 * * *',
@@ -27,19 +38,29 @@ select cron.schedule(
     url     := 'https://wwwfahcrwfowvnpusjbc.supabase.co/functions/v1/enviar-alerta',
     headers := jsonb_build_object(
       'Content-Type',  'application/json',
-      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key')
+      'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3d2ZhaGNyd2Zvd3ZucHVzamJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NjUyOTIsImV4cCI6MjA5NjE0MTI5Mn0.umZOMowkRGeuASytetlcKUrSjnNGiM6UgxJnzDV1JYE'
     ),
     body    := jsonb_build_object('auto', true)
   );
   $$
 );
 
--- ── Utilidades ──────────────────────────────────────────────────────────────
--- Ver los jobs programados:
---   select jobid, schedule, jobname, active from cron.job;
--- Ver el historial de ejecuciones (éxito/fallo del cron):
---   select * from cron.job_run_details order by start_time desc limit 20;
--- Ver las respuestas de las llamadas HTTP hechas por pg_net:
---   select * from net._http_response order by created desc limit 20;
--- Probar el envío YA (sin esperar a la hora del cron), corre el mismo net.http_post
--- del paso 3 directamente en el SQL Editor.
+-- 4) VERIFICAR que quedó programado y activo (debe salir 1 fila, active = true)
+select jobid, jobname, schedule, active from cron.job
+where jobname = 'alertas-vencimiento-diaria';
+
+-- ============================================================================
+--  (OPCIONAL) PROBAR YA, sin esperar a las 08:00.
+--  OJO: esto ENVIA CORREOS REALES a los destinatarios configurados.
+--  Quita el comentario de las 8 lineas de abajo SOLO si quieres probar ahora.
+-- ============================================================================
+-- select net.http_post(
+--   url     := 'https://wwwfahcrwfowvnpusjbc.supabase.co/functions/v1/enviar-alerta',
+--   headers := jsonb_build_object(
+--     'Content-Type',  'application/json',
+--     'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3d2ZhaGNyd2Zvd3ZucHVzamJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NjUyOTIsImV4cCI6MjA5NjE0MTI5Mn0.umZOMowkRGeuASytetlcKUrSjnNGiM6UgxJnzDV1JYE'
+--   ),
+--   body    := jsonb_build_object('auto', true)
+-- );
+-- -- y mira la respuesta HTTP que hizo pg_net (status 200 = ok):
+-- select id, status_code, content from net._http_response order by created desc limit 3;
