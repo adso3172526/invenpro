@@ -23,12 +23,18 @@ const Inventario = () => {
 
   const _editingRef = React.useRef(null);
   _editingRef.current = editing;
+  const [, _catTick] = useStateA(0);
   React.useEffect(() => {
-    return window.EventBus.on("realtime:productos", () => {
+    const off = window.EventBus.on("realtime:productos", () => {
       // copia (nuevo array) para forzar re-render: el handler muta MOCK.productos
       // en el sitio, así que pasar la misma referencia no re-renderiza.
       if (!_editingRef.current) setProductos((MOCK.productos || []).slice());
     });
+    // Categorías: re-render al cambiar la config (crear/renombrar/activar) para que
+    // los selects reflejen getCategorias() al instante (cambio local y por realtime).
+    const offCfg1 = window.EventBus.on("config:change", () => _catTick(n => n + 1));
+    const offCfg2 = window.EventBus.on("realtime:configuracion", () => _catTick(n => n + 1));
+    return () => { off(); offCfg1(); offCfg2(); };
   }, []);
 
   const stats = useMemoA(() => {
@@ -180,7 +186,7 @@ const Inventario = () => {
               <span className="lbl">Cat</span>
               <select value={cat} onChange={e => setCat(e.target.value)} style={{ fontSize: 13 }}>
                 <option>Todos</option>
-                {CATEGORIAS.slice(1).map(c => <option key={c}>{c}</option>)}
+                {getCategorias().map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div className="select-pill tw-flex-1 sm:tw-flex-none" style={{ height: 36, fontSize: 13 }}>
@@ -499,8 +505,7 @@ const ProductoEditModal = ({ producto, saving, onClose, onSave }) => {
           <input value={d.nombre} onChange={e => set("nombre", e.target.value)} placeholder="Nombre del producto" /></div>
         <div className="field"><label>Categoría</label>
           <select value={d.categoria} onChange={e => set("categoria", e.target.value)}>
-            {CATEGORIAS.slice(1).map(c => <option key={c}>{c}</option>)}
-            <option value="General">General</option>
+            {getCategorias().map(c => <option key={c} value={c}>{c}</option>)}
           </select></div>
       </div>
 
@@ -554,7 +559,7 @@ const ProductoEditModal = ({ producto, saving, onClose, onSave }) => {
 // Modal de ajuste de precios por categoría. Llama a DB.productos.ajustarPreciosCategoria
 // (FUNCTION fn_ajustar_precios_categoria en la BD). Vista previa con el mismo redondeo a 50.
 const AjustarPreciosModal = ({ productos, onClose, onDone }) => {
-  const cats = CATEGORIAS.slice(1);
+  const cats = getCategorias();
   const [categoria, setCategoria] = useStateA(cats[0] || "General");
   const [pct, setPct] = useStateA("");
   const [saving, setSaving] = useStateA(false);

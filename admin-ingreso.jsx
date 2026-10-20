@@ -35,10 +35,13 @@ const Ingreso = () => {
   const [showCategorias, setShowCategorias] = useStateA(false);
   _formOpenRef.current = showForm;
   React.useEffect(() => {
+    const tick = () => { if (!_formOpenRef.current) _rtTick(n => n + 1); };
     const tables = ["ingresos", "productos"];
-    const offs = tables.map(t => window.EventBus.on("realtime:" + t, () => {
-      if (!_formOpenRef.current) _rtTick(n => n + 1);
-    }));
+    const offs = tables.map(t => window.EventBus.on("realtime:" + t, tick));
+    // Categorías: reflejar al instante los cambios de config (crear/renombrar/activar),
+    // tanto locales (config:change) como por realtime (realtime:configuracion).
+    offs.push(window.EventBus.on("config:change", tick));
+    offs.push(window.EventBus.on("realtime:configuracion", tick));
     return () => offs.forEach(fn => fn());
   }, []);
   const [verIngreso, setVerIngreso] = useStateA(null);
