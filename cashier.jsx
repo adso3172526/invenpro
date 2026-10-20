@@ -221,7 +221,8 @@ const BarcodeScanner = ({ onScan, onClose, closeOnScan }) => {
 };
 
 // =================== POS principal ===================
-const CATEGORIAS = ["Todos", "Lácteos", "Panadería", "Granos", "Despensa", "Enlatados", "Bebidas", "Frescos", "Aseo"];
+// Las categorías del POS ahora son DINÁMICAS (getCategorias() = config + las que usan
+// los productos), ya no una lista fija. Ver el useMemo `cats` dentro de POS.
 
 const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   const [productos, setProductos] = useState(() => MOCK.productos.map(p => p));
@@ -286,6 +287,17 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   useEffect(() => {
     return window.EventBus.on("realtime:productos", rebuildFromServer);
   }, []);
+
+  // Categorías dinámicas: "Todos" + las activas de la config + las que usan los
+  // productos (getCategorias). Reaccionan al realtime de productos (renombres) y a
+  // los cambios de config (crear/renombrar/activar), para reflejarse al instante.
+  const [catTick, setCatTick] = useState(0);
+  useEffect(() => {
+    const off1 = window.EventBus.on("config:change", () => setCatTick(n => n + 1));
+    const off2 = window.EventBus.on("realtime:configuracion", () => setCatTick(n => n + 1));
+    return () => { off1(); off2(); };
+  }, []);
+  const cats = useMemo(() => ["Todos", ...getCategorias()], [productos, catTick]);
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
@@ -535,7 +547,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
             <span className="kbd">↵</span>
           </div>
           <div className="cat-tabs">
-            {CATEGORIAS.map(c => (
+            {cats.map(c => (
               <button key={c} className={"cat-tab" + (cat === c ? " active" : "")} onClick={() => setCat(c)}>{c}</button>
             ))}
           </div>
@@ -653,7 +665,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
           {/* Categorías — pills horizontales */}
           <div className="pos-mobile-categories tw-px-3 tw-pb-2">
             <div className="tw-flex tw-gap-1.5 tw-overflow-x-auto tw-pb-0.5" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
-              {CATEGORIAS.map(c => (
+              {cats.map(c => (
                 <button key={c}
                   className={"tw-shrink-0 tw-text-[11px] tw-font-medium tw-py-1.5 tw-px-3 tw-rounded-full tw-border tw-cursor-pointer tw-transition-all "
                     + (cat === c
