@@ -2576,17 +2576,17 @@ table.tbl th.num {
 .inventario-mobile-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .inventario-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   box-shadow: var(--shadow-sm);
   transition: border-color .15s ease, box-shadow .15s ease;
 }
@@ -2597,18 +2597,18 @@ table.tbl th.num {
 
 .inventario-card-head {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
 }
 
 .inventario-card-thumb {
-  width: 52px;
-  height: 52px;
-  min-width: 52px;
-  min-height: 52px;
-  max-width: 52px;
-  max-height: 52px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  border-radius: 8px;
   overflow: hidden;
   background: var(--surface-2);
   display: flex;
@@ -2616,7 +2616,7 @@ table.tbl th.num {
   justify-content: center;
   flex-shrink: 0;
   border: 1px solid var(--border);
-  padding: 2px;
+  padding: 1px;
 }
 
 .inventario-card-thumb img {
@@ -2636,17 +2636,26 @@ table.tbl th.num {
 .inventario-card-title {
   font-weight: 600;
   font-size: 13px;
-  line-height: 1.35;
+  line-height: 1.25;
   color: var(--text);
-  margin-bottom: 4px;
-  word-break: break-word;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .inventario-card-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
   align-items: center;
+}
+
+.inventario-card-meta .chip {
+  font-size: 10px;
+  padding: 1px 6px;
+  height: 18px;
+  line-height: 16px;
 }
 
 .inventario-card-action {
@@ -2654,11 +2663,12 @@ table.tbl th.num {
 }
 
 .inventario-metrics-strip {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   background: var(--surface-2);
-  padding: 8px 12px;
+  padding: 5px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
@@ -2666,52 +2676,50 @@ table.tbl th.num {
 .inventario-metric {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  min-width: 0;
 }
 
 .inventario-metric-lbl {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-3);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  line-height: 1;
 }
 
 .inventario-metric-val {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .inventario-progress-wrap {
-  margin-top: 4px;
-}
-
-.inventario-card-barcode {
-  border-top: 1px dashed var(--border);
-  padding-top: 6px;
+  margin-top: 2px;
 }
 
 .inventario-barcode-assign-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 5px;
+  margin-top: 1px;
 }
 
 .inventario-barcode-assign-row input {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
-  padding: 5px 8px;
-  height: 30px;
+  font-size: 11px;
+  padding: 3px 6px;
+  height: 26px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
 }
 
-/* ============ Inventario KPI Grid (2x2 móvil / 4 desktop) ============ */
-.inventario-kpis {
+/* ============ Métricas 2x2 móvil / 4 desktop (Inventario y Vencimientos) ============ */
+.inventario-kpis,
+.vencimientos-kpis {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 8px !important;
@@ -2719,13 +2727,15 @@ table.tbl th.num {
 }
 
 @media (min-width: 768px) {
-  .inventario-kpis {
+  .inventario-kpis,
+  .vencimientos-kpis {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: 10px !important;
   }
 }
 
-.inventario-kpis .kpi {
+.inventario-kpis .kpi,
+.vencimientos-kpis .kpi {
   text-align: left;
   display: flex;
   flex-direction: column;
@@ -2741,15 +2751,18 @@ table.tbl th.num {
   width: 100%;
 }
 
-.inventario-kpis .kpi:hover {
+.inventario-kpis .kpi:hover,
+.vencimientos-kpis .kpi:hover {
   border-color: var(--accent);
 }
 
-.inventario-kpis .kpi:active {
+.inventario-kpis .kpi:active,
+.vencimientos-kpis .kpi:active {
   transform: scale(0.98);
 }
 
-.inventario-kpis .kpi .label {
+.inventario-kpis .kpi .label,
+.vencimientos-kpis .kpi .label {
   font-size: 11px;
   font-weight: 500;
   color: var(--text-2);
@@ -2761,7 +2774,8 @@ table.tbl th.num {
   text-overflow: ellipsis;
 }
 
-.inventario-kpis .kpi .val {
+.inventario-kpis .kpi .val,
+.vencimientos-kpis .kpi .val {
   font-size: 20px;
   font-weight: 700;
   line-height: 1.2;

@@ -194,15 +194,29 @@ const Vencimientos = () => {
         </div>
       </div>
 
-      <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 tw-mb-3">
+      <div className="vencimientos-kpis kpi-grid tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 tw-mb-3">
         {[
           { id: "critico",    lbl: `Crítico · ≤ ${umbrales.critico} días`,                          n: buckets.critico.length,    c: "bad" },
           { id: "atencion",   lbl: `Atención · ${umbrales.critico+1}-${umbrales.atencion} días`,    n: buckets.atencion.length,   c: "warn" },
           { id: "preventivo", lbl: `Preventivo · ${umbrales.atencion+1}-${umbrales.preventivo} días`, n: buckets.preventivo.length, c: "accent" },
           { id: "ok",         lbl: `Sin riesgo · más de ${umbrales.preventivo}d`,                   n: buckets.ok.length,         c: "good" },
         ].map(b => (
-          <button key={b.id} className="kpi" style={{ textAlign: "left", borderColor: tab === b.id ? "var(--accent)" : undefined, background: tab === b.id ? "var(--accent-soft)" : undefined, cursor: "pointer" }} onClick={() => setTab(b.id)}>
-            <div className="label tw-text-xs tw-truncate"><span className={"chip " + b.c}><span className="dot"/></span>{b.lbl}</div>
+          <button
+            key={b.id}
+            type="button"
+            className="kpi"
+            style={{
+              textAlign: "left",
+              borderColor: tab === b.id ? "var(--accent)" : undefined,
+              background: tab === b.id ? "var(--accent-soft)" : undefined,
+              cursor: "pointer"
+            }}
+            onClick={() => setTab(b.id)}
+          >
+            <div className="label tw-text-xs tw-truncate">
+              <span className={"chip " + b.c}><span className="dot"/></span>
+              <span>{b.lbl}</span>
+            </div>
             <div className="val">{b.n}</div>
           </button>
         ))}

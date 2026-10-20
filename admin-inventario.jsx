@@ -299,27 +299,27 @@ const Inventario = () => {
                   background: "var(--surface)",
                   border: "1px solid var(--border)",
                   borderRadius: "var(--radius)",
-                  padding: 12,
-                  marginBottom: 10,
+                  padding: "8px 10px",
+                  marginBottom: 6,
                   display: "flex",
                   flexDirection: "column",
-                  gap: 10,
+                  gap: 6,
                   boxShadow: "var(--shadow-sm)",
                   borderLeft: !hasBarcode ? "3px solid #D97706" : "1px solid var(--border)"
                 }}
               >
                 {/* Header: Foto + Nombre + Chips + Botón Ver/Editar */}
-                <div className="inventario-card-head" style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div className="inventario-card-head" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div
                     className="inventario-card-thumb"
                     style={{
-                      width: 52,
-                      height: 52,
-                      minWidth: 52,
-                      minHeight: 52,
-                      maxWidth: 52,
-                      maxHeight: 52,
-                      borderRadius: 10,
+                      width: 40,
+                      height: 40,
+                      minWidth: 40,
+                      minHeight: 40,
+                      maxWidth: 40,
+                      maxHeight: 40,
+                      borderRadius: 8,
                       overflow: "hidden",
                       background: "var(--surface-2)",
                       display: "flex",
@@ -327,7 +327,7 @@ const Inventario = () => {
                       justifyContent: "center",
                       flexShrink: 0,
                       border: "1px solid var(--border)",
-                      padding: 2
+                      padding: 1
                     }}
                   >
                     {p.fotoUrl ? (
@@ -338,18 +338,18 @@ const Inventario = () => {
                         style={{ width: "100%", height: "100%", maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }}
                       />
                     ) : (
-                      <span role="img" aria-label="Sin foto" style={{ fontSize: 20 }}>📷</span>
+                      <span role="img" aria-label="Sin foto" style={{ fontSize: 16 }}>📷</span>
                     )}
                   </div>
                   <div className="inventario-card-info" style={{ flex: 1, minWidth: 0 }}>
-                    <div className="inventario-card-title" style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.35, color: "var(--text)", marginBottom: 4 }}>
+                    <div className="inventario-card-title" style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.25, color: "var(--text)", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={p.nombre}>
                       {p.nombre}
                     </div>
-                    <div className="inventario-card-meta" style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
-                      <span className="chip mono">{p.sku}</span>
-                      <span className="chip">{p.categoria}</span>
+                    <div className="inventario-card-meta" style={{ display: "flex", flexWrap: "wrap", gap: 3, alignItems: "center" }}>
+                      <span className="chip" style={{ fontSize: 10, padding: "1px 6px", height: 18, lineHeight: "16px" }}>{p.categoria}</span>
+                      <span className="chip mono" style={{ fontSize: 10, padding: "1px 6px", height: 18, lineHeight: "16px" }}>{p.sku}</span>
                       {p.vence && (
-                        <span className="chip muted" title={`Vence: ${p.vence}`}>
+                        <span className="chip muted" style={{ fontSize: 10, padding: "1px 6px", height: 18, lineHeight: "16px" }} title={`Vence: ${p.vence}`}>
                           📅 {p.vence}
                         </span>
                       )}
@@ -360,103 +360,100 @@ const Inventario = () => {
                       className="btn sm ghost"
                       onClick={() => setEditing(toPlain(p))}
                       title="Ver o editar producto"
-                      style={{ width: 28, height: 28, padding: 0, display: "grid", placeItems: "center" }}
+                      style={{ width: 26, height: 26, padding: 0, display: "grid", placeItems: "center", borderRadius: 6 }}
                     >
                       <Icon name="eye" size={13} />
                     </button>
                   </div>
                 </div>
 
-                {/* Strip de métricas compacto: Precio y Stock */}
+                {/* Strip de métricas compacto: Precio, Stock con barra y Código */}
                 <div
                   className="inventario-metrics-strip"
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 6,
                     background: "var(--surface-2)",
-                    padding: "8px 12px",
+                    padding: "5px 8px",
                     borderRadius: "var(--radius-sm)",
                     border: "1px solid var(--border)"
                   }}
                 >
-                  <div className="inventario-metric">
-                    <span className="inventario-metric-lbl">Precio</span>
-                    <span className="inventario-metric-val mono" style={{ color: "var(--accent)" }}>
+                  {/* Precio */}
+                  <div className="inventario-metric" style={{ flex: "1 1 0", minWidth: 0 }}>
+                    <span className="inventario-metric-lbl" style={{ fontSize: 9, color: "var(--text-3)", textTransform: "uppercase", display: "block", lineHeight: 1 }}>Precio</span>
+                    <span className="inventario-metric-val mono" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", lineHeight: 1.2 }}>
                       {window.fmtCOP(p.precio)}
                     </span>
                   </div>
-                  <div className="inventario-metric">
-                    <div className="tw-flex tw-justify-between tw-items-center">
-                      <span className="inventario-metric-lbl">Stock (Mín {p.min})</span>
-                      <span className={"chip " + stockClass} style={{ fontSize: 9, padding: "0 4px", lineHeight: "14px" }}>
-                        <span className="dot" /> {stockLabel}
+
+                  {/* Stock con mini badge y barra */}
+                  <div className="inventario-metric" style={{ flex: "1.3 1 0", minWidth: 0 }}>
+                    <div className="tw-flex tw-items-center tw-gap-1">
+                      <span className="inventario-metric-lbl" style={{ fontSize: 9, color: "var(--text-3)", textTransform: "uppercase", lineHeight: 1 }}>Stock</span>
+                      <span className={"chip " + stockClass} style={{ fontSize: 8.5, padding: "0 3px", height: 13, lineHeight: "13px" }}>
+                        <span className="dot" style={{ width: 4, height: 4 }} /> {stockLabel}
                       </span>
                     </div>
-                    <div className="mono tw-text-xs tw-font-semibold tw-leading-tight">
-                      {p.stock} <span className="muted" style={{ fontSize: 10, fontWeight: "normal" }}>{p.unidad}</span>
+                    <div className="mono tw-text-xs tw-font-semibold tw-leading-tight" style={{ fontSize: 11.5, marginTop: 1 }}>
+                      {p.stock} <span className="muted" style={{ fontSize: 9.5, fontWeight: "normal" }}>{p.unidad} (mín {p.min})</span>
                     </div>
-                    <div className="inventario-progress-wrap">
-                      <div className={"progress " + stockClass} style={{ height: 3 }}>
+                    <div className="inventario-progress-wrap" style={{ marginTop: 2 }}>
+                      <div className={"progress " + stockClass} style={{ height: 2 }}>
                         <span style={{ width: `${stockPct}%` }} />
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Código de barras: Asignado vs Por asignar */}
-                <div className="inventario-card-barcode">
-                  {hasBarcode ? (
-                    <div className="tw-flex tw-items-center tw-justify-between tw-text-[11px] tw-py-0.5">
-                      <div className="tw-flex tw-items-center tw-gap-1 tw-min-w-0">
-                        <Icon name="tag" size={11} style={{ color: "var(--text-3)", flexShrink: 0 }} />
-                        <span className="mono tw-truncate muted" style={{ fontSize: 11 }}>
-                          {p.codigoBarras}
-                        </span>
-                      </div>
-                      <span className="tw-text-good tw-font-semibold tw-flex tw-items-center tw-gap-0.5 tw-text-[10px] tw-shrink-0">
-                        <Icon name="check" size={10} /> Código OK
+                  {/* Código de barras (integrado si ya tiene) */}
+                  {hasBarcode && (
+                    <div className="inventario-metric" style={{ flex: "1.1 1 0", minWidth: 0, textAlign: "right", alignItems: "flex-end" }}>
+                      <span className="inventario-metric-lbl" style={{ fontSize: 9, color: "var(--text-3)", textTransform: "uppercase", lineHeight: 1 }}>Código</span>
+                      <span className="tw-text-good mono tw-text-[10.5px] tw-font-semibold tw-flex tw-items-center tw-justify-end tw-gap-0.5" style={{ marginTop: 1 }} title={p.codigoBarras}>
+                        <Icon name="check" size={9} /> <span className="tw-truncate">{p.codigoBarras}</span>
                       </span>
-                    </div>
-                  ) : (
-                    <div className="tw-flex tw-flex-col tw-gap-1">
-                      <div className="tw-flex tw-items-center tw-justify-between">
-                        <span className="tw-text-[10px] tw-font-semibold" style={{ color: "#D97706" }}>
-                          ⚠️ Sin código de barras
-                        </span>
-                      </div>
-                      <div className="inventario-barcode-assign-row">
-                        <input
-                          className="bodega-barcode-input mono"
-                          value={barcodeInputs[p.sku] || ""}
-                          onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
-                          onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
-                          placeholder="Digitar / escanear código…"
-                        />
-                        {window.BarcodeScanner && (
-                          <button
-                            type="button"
-                            className="btn sm ghost"
-                            style={{ minHeight: 30, height: 30, width: 30, padding: 0, display: "grid", placeItems: "center", fontSize: 13 }}
-                            onClick={() => setScanningSku(p.sku)}
-                            title="Escanear con cámara"
-                          >
-                            📷
-                          </button>
-                        )}
-                        <button
-                          className="btn sm primary"
-                          style={{ minHeight: 30, height: 30, padding: "0 10px" }}
-                          onClick={() => asignarCodigo(p.sku)}
-                          disabled={!(barcodeInputs[p.sku] || "").trim()}
-                          title="Guardar código"
-                        >
-                          <Icon name="check" size={12} />
-                        </button>
-                      </div>
                     </div>
                   )}
                 </div>
+
+                {/* Si no tiene código de barras, fila de asignación rápida compacta */}
+                {!hasBarcode && (
+                  <div className="inventario-barcode-assign-row" style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 1 }}>
+                    <span className="tw-text-[10px] tw-font-semibold tw-shrink-0" style={{ color: "#D97706" }}>
+                      ⚠️ Sin código:
+                    </span>
+                    <input
+                      className="bodega-barcode-input mono"
+                      value={barcodeInputs[p.sku] || ""}
+                      onChange={e => setBarcodeInputs(prev => ({ ...prev, [p.sku]: e.target.value }))}
+                      onKeyDown={e => { if (e.key === "Enter") asignarCodigo(p.sku); }}
+                      placeholder="Digitar / escanear…"
+                      style={{ flex: 1, minWidth: 0, height: 26, fontSize: 11, padding: "2px 6px", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", background: "var(--surface)" }}
+                    />
+                    {window.BarcodeScanner && (
+                      <button
+                        type="button"
+                        className="btn sm ghost"
+                        style={{ minHeight: 26, height: 26, width: 26, padding: 0, display: "grid", placeItems: "center", fontSize: 12 }}
+                        onClick={() => setScanningSku(p.sku)}
+                        title="Escanear con cámara"
+                      >
+                        📷
+                      </button>
+                    )}
+                    <button
+                      className="btn sm primary"
+                      style={{ minHeight: 26, height: 26, padding: "0 8px", fontSize: 11 }}
+                      onClick={() => asignarCodigo(p.sku)}
+                      disabled={!(barcodeInputs[p.sku] || "").trim()}
+                      title="Guardar código"
+                    >
+                      <Icon name="check" size={11} />
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
