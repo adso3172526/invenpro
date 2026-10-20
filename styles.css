@@ -5096,12 +5096,8 @@ table.tbl tr.item-detail td {
     position: relative;
     outline: none !important;
     outline-offset: 0 !important;
-    /* Animar solo propiedades baratas (GPU): transform/opacity/border.
-       box-shadow se aplica al instante; animarlo causaba repintados y lag. */
-    transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
+    /* Hover instantaneo (linea blanca via box-shadow): sin transiciones ni
+       will-change -> cero trabajo por frame, maximo rendimiento. */
   }
 
   /* Parte superior coloreada */
@@ -5193,10 +5189,9 @@ table.tbl tr.item-detail td {
      Se quitó el atenuar las demás (opacity sobre el fondo borroso) porque
      obligaba a recomponer las 9 tarjetas en cada movimiento -> lag. */
   .sidebar .nav-cards .nav-card:hover {
-    transform: scale(1.08);
-    box-shadow: 0 8px 24px color-mix(in oklab, var(--nav-c) 35%, transparent),
-      0 2px 8px color-mix(in oklab, var(--nav-c) 15%, transparent);
-    border-color: var(--nav-c);
+    /* Linea blanca alrededor del boton, INSTANTANEA (sin movimiento ni
+       transparencia; sin transicion = sin trabajo por frame = sin lag). */
+    box-shadow: 0 0 0 2px #fff, var(--shadow-sm);
   }
 
   /* Estado Activo: borde y resplandor permanente */
