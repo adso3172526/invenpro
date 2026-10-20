@@ -1031,6 +1031,12 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
 };
 
 // =================== Imprimir recibo 80mm ===================
+// Escapa texto para interpolarlo de forma segura en el HTML del recibo.
+// (Sin este helper, printReceipt lanzaba "_escHtml is not defined" y el
+//  botón Imprimir fallaba en silencio: no hacía nada.)
+const _escHtml = (s) => String(s == null ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 const printReceipt = (factura) => {
   const cfg = (window.MOCK && window.MOCK.configuracion) || {};
   const nombre = _escHtml(cfg.tienda_nombre || "Mi Tienda");
