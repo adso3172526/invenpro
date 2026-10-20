@@ -440,6 +440,10 @@ textarea {
   background-position: center center;
   background-repeat: no-repeat;
   filter: blur(2px) brightness(1.02);
+  /* Cachea el fondo borroso en su propia capa GPU: evita re-rasterizar el blur
+     en cada frame cuando las tarjetas se animan encima (causa principal del lag). */
+  transform: translateZ(0);
+  will-change: transform;
   z-index: 0;
   pointer-events: none;
 }
