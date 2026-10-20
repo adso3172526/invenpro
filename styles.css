@@ -5087,7 +5087,7 @@ table.tbl tr.item-detail td {
     flex: 1 1 0;
     min-height: 48px;
     border-radius: 12px;
-    border: 1px solid var(--border);
+    border: none;
     background: var(--surface);
     box-shadow: var(--shadow-sm);
     overflow: visible;
