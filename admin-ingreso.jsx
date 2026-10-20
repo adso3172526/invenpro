@@ -165,7 +165,7 @@ const Ingreso = () => {
               <span className="muted tw-text-xs">Hasta</span>
               <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="tw-text-xs" style={{ width: "100%" }}/>
             </div>
-            <button className="btn" onClick={() => {
+            <button className="btn btn-export" style={{ background: "#21864A", color: "#ffffff", borderColor: "#21864A" }} onClick={() => {
               const ings = MOCK.ingresos.filter(i => i.fecha >= desde && i.fecha <= hasta);
               if (ings.length === 0) { setToast("No hay ingresos en ese rango"); return; }
               const resumen = ings.map(i => ({
@@ -265,7 +265,7 @@ const Ingreso = () => {
         <Modal title={`Ingreso ${editIng.id}`} lg bottomSheet onClose={() => setVerIngreso(null)} footer={
           <>
             <button className="btn ghost" onClick={() => setVerIngreso(null)}>Cancelar</button>
-            <button className="btn" onClick={() => {
+            <button className="btn btn-export" style={{ background: "#21864A", color: "#ffffff", borderColor: "#21864A" }} onClick={() => {
               const rows = editDet.map(d => ({
                 SKU: d.sku, Producto: d.nombre, Cantidad: d.qty,
                 "Costo unit.": d.costo, Subtotal: d.qty * d.costo, Vence: d.vence || "", Nota: d.nota || "",
