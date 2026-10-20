@@ -5191,13 +5191,10 @@ table.tbl tr.item-detail td {
     z-index: 10;
   }
 
-  /* Efecto Hover Premium: Resaltar la tarjeta seleccionada y atenuar las demás */
-  .sidebar .nav-cards:hover .nav-card {
-    opacity: 0.65;
-  }
-
+  /* Hover: solo la tarjeta apuntada se trae al frente (scale, 100% GPU).
+     Se quitó el atenuar las demás (opacity sobre el fondo borroso) porque
+     obligaba a recomponer las 9 tarjetas en cada movimiento -> lag. */
   .sidebar .nav-cards .nav-card:hover {
-    opacity: 1 !important;
     transform: scale(1.08);
     box-shadow: 0 8px 24px color-mix(in oklab, var(--nav-c) 35%, transparent),
       0 2px 8px color-mix(in oklab, var(--nav-c) 15%, transparent);
