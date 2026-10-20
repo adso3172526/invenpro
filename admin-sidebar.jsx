@@ -27,17 +27,17 @@ const Sidebar = ({ active, setActive, user, onLogout }) => {
         <button className="mobile-burger" onClick={() => setOpen(o => !o)} aria-label="Menú">
           <span/><span/><span/>
         </button>
-        <img src="logo.png" alt="InvenPro" style={{ height: 26, objectFit: "contain" }}/>
+        <img src="logo.png" alt="InvenPro" style={{ height: 39, objectFit: "contain" }}/>
       </div>
 
       {/* Sidebar lateral (desktop) y menú overlay (mobile) */}
       <aside className={"sidebar" + (open ? " open" : "")}>
         <div className="mobile-menu-h">
-          <img src="logo.png" alt="InvenPro" style={{ height: 36, objectFit: "contain" }}/>
+          <img src="logo.png" alt="InvenPro" style={{ height: 77, objectFit: "contain" }}/>
           <button className="btn sm ghost" onClick={() => setOpen(false)}><Icon name="x" size={16}/></button>
         </div>
         <div className="brand" style={{ paddingTop: 4, justifyContent: "center", display: "flex" }}>
-          <img src="logo.png" alt="InvenPro" style={{ height: 40, objectFit: "contain" }}/>
+          <img src="logo.png" alt="InvenPro" style={{ height: 45, objectFit: "contain" }}/>
         </div>
         <div className="nav-cards">
           {NAV.filter(n => !n.rol || (user && user.rol === n.rol)).map(n => (

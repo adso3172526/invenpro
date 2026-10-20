@@ -8,7 +8,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 const VIBE_PALETTES = {
   azul: { // crisp corporate blue (default)
     accent: "#1E5BD9", accent2: "#4A7DE8", accentSoft: "#DCE7FB", accentInk: "#0A2A6E",
-    bg: "#F5F7FA", surface: "#FFFFFF", surface2: "#EDF1F6", surface3: "#DDE3EC",
+    bg: "#F5F7FA", surface: "#f0f3f8ff", surface2: "#EDF1F6", surface3: "#DDE3EC",
     border: "#DCE2EA", borderStrong: "#B8C2CF",
     text: "#0A0F1A", text2: "#4A5567", text3: "#7E8898",
   },
@@ -16,7 +16,7 @@ const VIBE_PALETTES = {
     accent: "#C2542A", accent2: "#D97757", accentSoft: "#F5DCCC", accentInk: "#5B2410",
     bg: "#FBF6F0", surface: "#FFFFFF", surface2: "#F2EBE2", surface3: "#E5DBCC",
     border: "#E4D9C8", borderStrong: "#C4B7A2",
-    text: "#1F1810", text2: "#5C5043", text3: "#8E8275",
+    text: "#1F1810", text2: "#ff8400ff", text3: "#8E8275",
   },
   grafito: { // monochrome graphite
     accent: "#1A1A1A", accent2: "#3A3A3A", accentSoft: "#E1E1E1", accentInk: "#000000",
@@ -29,21 +29,25 @@ const VIBE_PALETTES = {
 // Valores alineados con el tema v2 de styles.css (estos se aplican inline y
 // pisan los tokens del stylesheet, así que el default DEBE coincidir con v2).
 const DENSITY = {
-  comoda:    { fs: "15px", pad: "1.25", radius: "14px", radiusLg: "22px" },
-  regular:   { fs: "14px", pad: "1.00", radius: "12px", radiusLg: "18px" },
-  compacta:  { fs: "13px", pad: "0.80", radius: "10px", radiusLg: "14px" },
+  comoda: { fs: "15px", pad: "1.25", radius: "14px", radiusLg: "22px" },
+  regular: { fs: "14px", pad: "1.00", radius: "12px", radiusLg: "18px" },
+  compacta: { fs: "13px", pad: "0.80", radius: "10px", radiusLg: "14px" },
 };
 
 const FINISH = {
-  suave:    { shSm: "0 1px 2px rgba(16,24,40,0.06), 0 1px 3px rgba(16,24,40,0.05)",
-              shMd: "0 2px 4px rgba(16,24,40,0.05), 0 10px 28px -8px rgba(16,24,40,0.12)",
-              shLg: "0 8px 18px -8px rgba(16,24,40,0.12), 0 28px 64px -18px rgba(16,24,40,0.22)",
-              borderW: "1px" },
-  plano:    { shSm: "none", shMd: "none", shLg: "none", borderW: "1px" },
-  marcado:  { shSm: "0 2px 0 rgba(0,0,0,0.05)",
-              shMd: "0 4px 0 rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06)",
-              shLg: "0 8px 0 rgba(0,0,0,0.10), 0 0 0 1.5px rgba(0,0,0,0.10)",
-              borderW: "1.5px" },
+  suave: {
+    shSm: "0 1px 2px rgba(16,24,40,0.06), 0 1px 3px rgba(16,24,40,0.05)",
+    shMd: "0 2px 4px rgba(16,24,40,0.05), 0 10px 28px -8px rgba(16,24,40,0.12)",
+    shLg: "0 8px 18px -8px rgba(16,24,40,0.12), 0 28px 64px -18px rgba(16,24,40,0.22)",
+    borderW: "1px"
+  },
+  plano: { shSm: "none", shMd: "none", shLg: "none", borderW: "1px" },
+  marcado: {
+    shSm: "0 2px 0 rgba(0,0,0,0.05)",
+    shMd: "0 4px 0 rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06)",
+    shLg: "0 8px 0 rgba(0,0,0,0.10), 0 0 0 1.5px rgba(0,0,0,0.10)",
+    borderW: "1.5px"
+  },
 };
 
 const applyTweaks = (t) => {
@@ -87,11 +91,11 @@ const TweaksRoot = () => {
       <TweakSection label="Vibe">
         <TweakColor t={t} setTweak={setTweak} k="vibe"
           options={[
-            ["#1E5BD9","#DCE7FB","#0A2A6E"],
-            ["#C2542A","#F5DCCC","#5B2410"],
-            ["#1A1A1A","#E1E1E1","#000000"],
+            ["#1E5BD9", "#DCE7FB", "#0A2A6E"],
+            ["#C2542A", "#F5DCCC", "#5B2410"],
+            ["#1A1A1A", "#E1E1E1", "#000000"],
           ]}
-          labels={["Azul","Terracota","Grafito"]}
+          labels={["Azul", "Terracota", "Grafito"]}
         />
       </TweakSection>
       <TweakSection label="Densidad">
@@ -120,9 +124,9 @@ const TweaksRoot = () => {
 try {
   const saved = JSON.parse(localStorage.getItem("__tweaks_state") || "null");
   if (saved) applyTweaks({ ...TWEAK_DEFAULTS, ...saved });
-} catch {}
+} catch { }
 
 // Mount panel into its own root so it doesn't interfere with the app
 const __tweakHost = document.createElement("div");
 document.body.appendChild(__tweakHost);
-ReactDOM.createRoot(__tweakHost).render(<TweaksRoot/>);
+ReactDOM.createRoot(__tweakHost).render(<TweaksRoot />);
