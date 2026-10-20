@@ -435,15 +435,13 @@ textarea {
   right: -15px;
   bottom: -15px;
   min-height: calc(100% + 30px);
-  background-image: url('bg-mobile.jpg');
+  background-image: url('bg-mobile-blur.jpg');
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
-  filter: blur(2px) brightness(1.02);
-  /* Cachea el fondo borroso en su propia capa GPU: evita re-rasterizar el blur
-     en cada frame cuando las tarjetas se animan encima (causa principal del lag). */
-  transform: translateZ(0);
-  will-change: transform;
+  /* Fondo PRE-desenfocado (el blur esta horneado en la imagen): sin filter en
+     vivo, el fondo es una imagen normal = barato de componer, sin lag al animar
+     las tarjetas encima. */
   z-index: 0;
   pointer-events: none;
 }
@@ -1094,11 +1092,11 @@ textarea {
     left: -15px;
     right: -15px;
     bottom: -15px;
-    background-image: url('bg-mobile.jpg');
+    background-image: url('bg-mobile-blur.jpg');
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
-    filter: blur(2.5px) brightness(1.02);
+    /* blur horneado en la imagen; sin filter en vivo (evita lag) */
     z-index: 0;
     pointer-events: none;
   }
