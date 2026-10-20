@@ -5098,6 +5098,7 @@ table.tbl tr.item-detail td {
     outline-offset: 0 !important;
     /* Hover instantaneo (linea blanca via box-shadow): sin transiciones ni
        will-change -> cero trabajo por frame, maximo rendimiento. */
+    transition: none;
   }
 
   /* Parte superior coloreada */
@@ -5189,9 +5190,14 @@ table.tbl tr.item-detail td {
      Se quitó el atenuar las demás (opacity sobre el fondo borroso) porque
      obligaba a recomponer las 9 tarjetas en cada movimiento -> lag. */
   .sidebar .nav-cards .nav-card:hover {
-    /* Linea blanca alrededor del boton, INSTANTANEA (sin movimiento ni
-       transparencia; sin transicion = sin trabajo por frame = sin lag). */
+    /* Linea blanca alrededor del boton, INSTANTANEA. El boton NO se mueve
+       (transform:none anula el translateY/scale de las reglas base). */
     box-shadow: 0 0 0 2px #fff, var(--shadow-sm);
+    transform: none;
+  }
+  /* Tampoco se mueve al hacer click */
+  .sidebar .nav-cards .nav-card:active {
+    transform: none;
   }
 
   /* Estado Activo: borde y resplandor permanente */
