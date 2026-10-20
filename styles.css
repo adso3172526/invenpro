@@ -5094,10 +5094,12 @@ table.tbl tr.item-detail td {
     position: relative;
     outline: none !important;
     outline-offset: 0 !important;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-      box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Animar solo propiedades baratas (GPU): transform/opacity/border.
+       box-shadow se aplica al instante; animarlo causaba repintados y lag. */
+    transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
   }
 
   /* Parte superior coloreada */
