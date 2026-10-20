@@ -234,6 +234,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   const [closing, setClosing] = useState(false);
   const [toast, setToast] = useState(null);
   const [scanOpen, setScanOpen] = useState(false);
+  const [mobileCartExpanded, setMobileCartExpanded] = useState(true);
   const [shiftStats, setShiftStats] = useState({
     ventas: shift.ventas || 0,
     trans: shift.transacciones || 0,
@@ -316,6 +317,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
 
   const addToCart = (p) => {
     if (p.stock <= 0) { setToast("Sin stock disponible"); return; }
+    setMobileCartExpanded(true);
     setCart(c => {
       const i = c.findIndex(l => l.sku === p.sku);
       if (i >= 0) {
@@ -474,7 +476,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
   };
 
   return (
-    <div className="tw-h-screen tw-flex tw-flex-col tw-bg-bg tw-overflow-hidden" style={{ height: "100dvh" }}>
+    <div className="pos-shell tw-h-screen tw-flex tw-flex-col tw-bg-bg tw-overflow-hidden" style={{ height: "100dvh" }}>
       {/* height: 100dvh = alto visible real en móvil (excluye la barra del navegador);
           tw-h-screen (100vh) queda como fallback si el navegador no soporta dvh */}
       {/* Topbar — Desktop */}
@@ -494,7 +496,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
       </div>
 
       {/* Topbar — Mobile: app-style header */}
-      <div className="md:tw-hidden tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-2.5 tw-bg-surface tw-border-b tw-border-border">
+      <div className="md:tw-hidden tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-2.5 tw-bg-surface tw-border-b tw-border-border tw-shrink-0">
         <div className="tw-flex tw-items-center tw-gap-2.5">
           <div className="tw-w-8 tw-h-8 tw-rounded-full tw-bg-accent-soft tw-text-accent tw-grid tw-place-items-center">
             <Icon name="store" size={15}/>
@@ -521,7 +523,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
       </div>
 
       {/* Layout POS */}
-      <div className="pos">
+      <div className="pos tw-flex-1 tw-min-h-0 tw-overflow-hidden">
         {/* ===== Desktop: estructura original con pos-left ===== */}
         <div className="pos-left pos-desktop-view tw-hidden md:tw-flex">
           <div className="pos-search">
@@ -629,10 +631,10 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
         </div>
 
         {/* ===== Mobile: diseño tipo app nativa ===== */}
-        <div className="pos-mobile-view tw-flex tw-flex-col md:tw-hidden tw-flex-1 tw-min-h-0 tw-bg-bg">
+        <div className="pos-mobile-view tw-flex tw-flex-col md:tw-hidden tw-flex-1 tw-min-h-0 tw-h-full tw-overflow-hidden tw-bg-bg">
 
           {/* Buscador con estilo pill */}
-          <div className="pos-mobile-search tw-px-3 tw-pt-3 tw-pb-2">
+          <div className="pos-mobile-search tw-px-3 tw-pt-3 tw-pb-2 tw-shrink-0">
             <div className="tw-flex tw-items-center tw-gap-2 tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-px-3 tw-py-2.5 tw-shadow-sm">
               <Icon name="search" size={16}/>
               <input
@@ -663,7 +665,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
           </div>
 
           {/* Categorías — pills horizontales */}
-          <div className="pos-mobile-categories tw-px-3 tw-pb-2">
+          <div className="pos-mobile-categories tw-px-3 tw-pb-2 tw-shrink-0">
             <div className="tw-flex tw-gap-1.5 tw-overflow-x-auto tw-pb-0.5" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
               {cats.map(c => (
                 <button key={c}
@@ -718,45 +720,208 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
           <div className="pos-mobile-cart tw-shrink-0 tw-bg-surface tw-border-t tw-border-border tw-shadow-lg">
             {cart.length === 0 ? (
               /* Empty: barra mínima con icono */
-              <div className="tw-flex tw-items-center tw-justify-center tw-gap-2 tw-py-2.5 tw-text-txt-3">
+              <div className="pos-mobile-cart-empty tw-flex tw-items-center tw-justify-center tw-gap-2 tw-py-2.5 tw-text-txt-3">
                 <Icon name="cart" size={15}/>
                 <span className="tw-text-xs">Carrito vacío</span>
               </div>
             ) : (<>
-              {/* Items del carrito — expandible */}
-              <div className="tw-max-h-[30vh] tw-overflow-y-auto">
-                {cart.map((l, i) => (
-                  <div key={l.sku} className={"tw-flex tw-items-center tw-gap-2.5 tw-px-4 tw-py-2" + (i < cart.length - 1 ? " tw-border-b tw-border-border" : "")}>
-                    <div className="tw-w-8 tw-h-8 tw-rounded-lg tw-bg-accent-soft tw-text-accent tw-grid tw-place-items-center tw-shrink-0">
-                      <span className="tw-text-[11px] tw-font-bold">{l.q}</span>
-                    </div>
-                    <div className="tw-flex-1 tw-min-w-0">
-                      <div className="tw-text-xs tw-font-medium tw-leading-tight tw-truncate">{l.nombre}</div>
-                      <div className="mono tw-text-[10px] tw-text-txt-3">{window.fmtCOP(l.precio)} c/u</div>
-                    </div>
-                    <div className="tw-flex tw-items-center tw-gap-1.5 tw-shrink-0">
-                      <div className="tw-inline-flex tw-items-center tw-border tw-border-border tw-rounded-lg tw-overflow-hidden tw-bg-surface-2">
-                        <button className="tw-bg-transparent tw-border-0 tw-w-9 tw-h-9 tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-3 tw-transition-colors" onClick={() => setQty(l.sku, -1)}><Icon name="minus" size={12}/></button>
-                        <span className="tw-px-1 tw-tabular-nums tw-text-[11px] tw-font-semibold tw-min-w-[20px] tw-text-center">{l.q}</span>
-                        <button className="tw-bg-transparent tw-border-0 tw-w-9 tw-h-9 tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-3 tw-transition-colors" onClick={() => setQty(l.sku, +1)}><Icon name="plus" size={12}/></button>
-                      </div>
-                      <span className="mono tw-font-semibold tw-text-xs tw-tabular-nums tw-min-w-[60px] tw-text-right">{window.fmtCOP(l.q * l.precio)}</span>
-                      <button className="tw-text-txt-3 tw-bg-transparent tw-border-0 tw-p-0 tw-cursor-pointer hover:tw-text-bad tw-transition-colors" onClick={() => removeLine(l.sku)}><Icon name="x" size={14}/></button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {/* Footer: total + cobrar */}
-              <div className="tw-flex tw-items-center tw-gap-3 tw-px-4 tw-py-3 tw-border-t tw-border-border tw-bg-surface-2">
-                <button className="tw-bg-transparent tw-border tw-border-border tw-rounded-lg tw-w-9 tw-h-9 tw-grid tw-place-items-center tw-cursor-pointer tw-text-bad hover:tw-bg-bad-soft tw-transition-colors tw-shrink-0" onClick={() => setCart([])} title="Vaciar carrito">
-                  <Icon name="trash" size={14}/>
-                </button>
-                <div className="tw-flex-1">
-                  <div className="tw-text-[10px] tw-text-txt-3">{totals.items} producto{totals.items !== 1 ? "s" : ""}</div>
-                  <div className="mono tw-text-lg tw-font-bold tw-tracking-tight tw-leading-tight">{window.fmtCOP(totals.total)}</div>
+              {/* Encabezado toggle para expandir / contraer items */}
+              <div
+                className="pos-mobile-cart-header tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-1.5 tw-bg-surface-2 tw-border-b tw-border-border tw-cursor-pointer select-none"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "8px 16px",
+                  background: "var(--surface-2)",
+                  borderBottom: "1px solid var(--border)",
+                  cursor: "pointer",
+                  userSelect: "none"
+                }}
+                onClick={() => setMobileCartExpanded(v => !v)}
+              >
+                <div
+                  className="pos-mobile-cart-header-title tw-flex tw-items-center tw-gap-2 tw-text-xs tw-font-semibold tw-text-txt-2"
+                  style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "600", color: "var(--text-2)" }}
+                >
+                  <Icon name="cart" size={14}/>
+                  <span>{totals.items} ítem{totals.items !== 1 ? "s" : ""} en venta</span>
                 </div>
-                <button className="tw-bg-accent tw-text-white tw-border-0 tw-rounded-xl tw-py-2.5 tw-px-5 tw-text-sm tw-font-bold tw-cursor-pointer tw-shadow-sm active:tw-scale-[0.97] tw-transition-transform tw-flex tw-items-center tw-gap-1.5" onClick={() => setPay("modal")}>
-                  <Icon name="cart" size={15}/> Cobrar
+                <div
+                  className="pos-mobile-cart-header-action tw-flex tw-items-center tw-gap-1 tw-text-[11px] tw-text-txt-3"
+                  style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--text-3)" }}
+                >
+                  <span>{mobileCartExpanded ? "Ocultar detalle" : "Ver detalle"}</span>
+                  <Icon name={mobileCartExpanded ? "chevronDown" : "chevronUp"} size={13}/>
+                </div>
+              </div>
+
+              {/* Items del carrito — expandible y con scroll interno delimitado */}
+              {mobileCartExpanded && (
+                <div
+                  className="pos-mobile-cart-items tw-max-h-[25vh] tw-overflow-y-auto"
+                  style={{ maxHeight: "25vh", overflowY: "auto", WebkitOverflowScrolling: "touch" }}
+                >
+                  {cart.map((l, i) => (
+                    <div
+                      key={l.sku}
+                      className={"pos-mobile-cart-item tw-flex tw-items-center tw-gap-2.5 tw-px-4 tw-py-2" + (i < cart.length - 1 ? " tw-border-b tw-border-border" : "")}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "8px 16px",
+                        borderBottom: i < cart.length - 1 ? "1px solid var(--border)" : "none"
+                      }}
+                    >
+                      <div
+                        className="pos-mobile-cart-badge tw-w-8 tw-h-8 tw-rounded-lg tw-bg-accent-soft tw-text-accent tw-grid tw-place-items-center tw-shrink-0"
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "8px",
+                          background: "var(--accent-soft)",
+                          color: "var(--accent)",
+                          display: "grid",
+                          placeItems: "center",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          flexShrink: 0
+                        }}
+                      >
+                        {l.q}
+                      </div>
+                      <div className="pos-mobile-cart-info tw-flex-1 tw-min-w-0" style={{ flex: 1, minWidth: 0 }}>
+                        <div className="pos-mobile-cart-name tw-text-xs tw-font-medium tw-leading-tight tw-truncate" style={{ fontSize: "12px", fontWeight: "500", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {l.nombre}
+                        </div>
+                        <div className="pos-mobile-cart-price-unit mono tw-text-[10px] tw-text-txt-3" style={{ fontSize: "10px", color: "var(--text-3)", fontFamily: "var(--mono)" }}>
+                          {window.fmtCOP(l.precio)} c/u
+                        </div>
+                      </div>
+                      <div className="pos-mobile-cart-actions tw-flex tw-items-center tw-gap-1.5 tw-shrink-0" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                        <div
+                          className="pos-mobile-cart-qty-ctrl tw-inline-flex tw-items-center tw-border tw-border-border tw-rounded-lg tw-overflow-hidden tw-bg-surface-2"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            border: "1px solid var(--border)",
+                            borderRadius: "8px",
+                            overflow: "hidden",
+                            background: "var(--surface-2)"
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className="tw-bg-transparent tw-border-0 tw-w-8 tw-h-8 tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-3 tw-transition-colors"
+                            style={{ background: "transparent", border: 0, width: "30px", height: "30px", display: "grid", placeItems: "center", cursor: "pointer" }}
+                            onClick={() => setQty(l.sku, -1)}
+                          >
+                            <Icon name="minus" size={12}/>
+                          </button>
+                          <span
+                            className="tw-px-1 tw-tabular-nums tw-text-[11px] tw-font-semibold tw-min-w-[18px] tw-text-center"
+                            style={{ padding: "0 4px", minWidth: "18px", textAlign: "center", fontSize: "11px", fontWeight: "600" }}
+                          >
+                            {l.q}
+                          </span>
+                          <button
+                            type="button"
+                            className="tw-bg-transparent tw-border-0 tw-w-8 tw-h-8 tw-grid tw-place-items-center tw-cursor-pointer hover:tw-bg-surface-3 tw-transition-colors"
+                            style={{ background: "transparent", border: 0, width: "30px", height: "30px", display: "grid", placeItems: "center", cursor: "pointer" }}
+                            onClick={() => setQty(l.sku, +1)}
+                          >
+                            <Icon name="plus" size={12}/>
+                          </button>
+                        </div>
+                        <span
+                          className="pos-mobile-cart-line-total mono tw-font-semibold tw-text-xs tw-tabular-nums tw-min-w-[56px] tw-text-right"
+                          style={{ fontFamily: "var(--mono)", fontWeight: "600", fontSize: "12px", minWidth: "56px", textAlign: "right" }}
+                        >
+                          {window.fmtCOP(l.q * l.precio)}
+                        </span>
+                        <button
+                          type="button"
+                          className="tw-text-txt-3 tw-bg-transparent tw-border-0 tw-p-1 tw-cursor-pointer hover:tw-text-bad tw-transition-colors"
+                          style={{ background: "transparent", border: 0, padding: "4px", color: "var(--text-3)", cursor: "pointer" }}
+                          onClick={() => removeLine(l.sku)}
+                        >
+                          <Icon name="x" size={14}/>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Footer fijo: total + cobrar */}
+              <div
+                className="pos-mobile-cart-footer tw-flex tw-items-center tw-gap-3 tw-px-4 tw-py-2.5 tw-border-t tw-border-border tw-bg-surface-2 tw-shrink-0"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "10px 16px",
+                  paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))",
+                  borderTop: "1px solid var(--border)",
+                  background: "var(--surface-2)",
+                  flexShrink: 0
+                }}
+              >
+                <button
+                  type="button"
+                  className="pos-mobile-cart-btn-trash tw-bg-transparent tw-border tw-border-border tw-rounded-lg tw-w-9 tw-h-9 tw-grid tw-place-items-center tw-cursor-pointer tw-text-bad hover:tw-bg-bad-soft tw-transition-colors tw-shrink-0"
+                  style={{
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border)",
+                    background: "transparent",
+                    color: "var(--bad)",
+                    display: "grid",
+                    placeItems: "center",
+                    cursor: "pointer",
+                    flexShrink: 0
+                  }}
+                  onClick={() => setCart([])}
+                  title="Vaciar carrito"
+                >
+                  <Icon name="trash" size={15}/>
+                </button>
+                <div
+                  className="pos-mobile-cart-summary tw-flex-1 tw-cursor-pointer select-none"
+                  style={{ flex: 1, minWidth: 0, cursor: "pointer", userSelect: "none" }}
+                  onClick={() => setMobileCartExpanded(v => !v)}
+                >
+                  <div className="pos-mobile-cart-summary-count tw-text-[10px] tw-text-txt-3" style={{ fontSize: "11px", color: "var(--text-3)" }}>
+                    {totals.items} producto{totals.items !== 1 ? "s" : ""}
+                  </div>
+                  <div className="pos-mobile-cart-summary-total mono tw-text-lg tw-font-bold tw-tracking-tight tw-leading-tight tw-text-accent" style={{ fontFamily: "var(--mono)", fontSize: "18px", fontWeight: "700", color: "var(--accent)" }}>
+                    {window.fmtCOP(totals.total)}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  id="btn-cobrar-mobile"
+                  className="pos-mobile-cart-btn-cobrar tw-bg-accent tw-text-white tw-border-0 tw-rounded-xl tw-py-2.5 tw-px-5 tw-text-sm tw-font-bold tw-cursor-pointer tw-shadow-sm active:tw-scale-[0.97] tw-transition-transform tw-flex tw-items-center tw-gap-1.5 tw-shrink-0 hover:tw-brightness-110"
+                  style={{
+                    background: "var(--accent)",
+                    color: "#fff",
+                    border: "0",
+                    borderRadius: "12px",
+                    padding: "10px 18px",
+                    fontSize: "14px",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    flexShrink: 0
+                  }}
+                  onClick={() => setPay("modal")}
+                >
+                  <Icon name="cart" size={16}/> Cobrar
                 </button>
               </div>
             </>)}

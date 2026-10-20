@@ -21,6 +21,8 @@ const Icon = ({ name, size = 16 }) => {
     print: <><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></>,
     trash: <><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></>,
     arrowRight: <path d="M5 12h14M13 6l6 6-6 6"/>,
+    chevronDown: <path d="m6 9 6 6 6-6"/>,
+    chevronUp: <path d="m18 15-6-6-6 6"/>,
     arrowDown: <path d="M12 5v14M6 13l6 6 6-6"/>,
     arrowUp: <path d="M12 19V5M6 11l6-6 6 6"/>,
     download: <><path d="M12 3v12"/><path d="m6 11 6 6 6-6"/><path d="M5 21h14"/></>,
