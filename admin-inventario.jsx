@@ -139,7 +139,7 @@ const Inventario = () => {
           </div>
         </div>
 
-        <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 tw-mb-2">
+        <div className="inventario-kpis kpi-grid tw-grid tw-grid-cols-2 md:tw-grid-cols-4 tw-gap-2 tw-mb-2">
           {[
             { key: "Todos", lbl: "Productos", val: productos.length, icon: "box", c: "accent" },
             { key: "stock", lbl: "Stock total", val: totalStock.toLocaleString("es-CO"), icon: "cart", c: "good" },
@@ -148,7 +148,9 @@ const Inventario = () => {
           ].map(k => {
             const active = isFilterActive(k.key);
             return (
-              <button key={k.key}
+              <button
+                key={k.key}
+                type="button"
                 className="kpi"
                 style={{
                   textAlign: "left",
@@ -159,9 +161,15 @@ const Inventario = () => {
                 onClick={() => {
                   if (k.key === "stock") { setEstado("Todos"); setCat("Todos"); setQ(""); }
                   else setEstado(estado === k.key ? "Todos" : k.key);
-                }}>
-                <div className="label tw-text-xs tw-truncate"><span className={"chip " + k.c}><span className="dot" /></span>{k.lbl}</div>
-                <div className="val" style={{ color: k.c !== "good" && k.c !== "accent" && k.val > 0 ? `var(--${k.c})` : undefined }}>{k.val}</div>
+                }}
+              >
+                <div className="label tw-text-xs tw-truncate">
+                  <span className={"chip " + k.c}><span className="dot" /></span>
+                  <span>{k.lbl}</span>
+                </div>
+                <div className="val" style={{ color: k.c !== "good" && k.c !== "accent" && k.val > 0 ? `var(--${k.c})` : undefined }}>
+                  {k.val}
+                </div>
               </button>
             );
           })}
@@ -284,19 +292,60 @@ const Inventario = () => {
             const hasBarcode = !!p.codigoBarras;
 
             return (
-              <div key={p.sku} className={"inventario-card" + (!hasBarcode ? " sin-codigo" : "")}>
+              <div
+                key={p.sku}
+                className={"inventario-card" + (!hasBarcode ? " sin-codigo" : "")}
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius)",
+                  padding: 12,
+                  marginBottom: 10,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                  boxShadow: "var(--shadow-sm)",
+                  borderLeft: !hasBarcode ? "3px solid #D97706" : "1px solid var(--border)"
+                }}
+              >
                 {/* Header: Foto + Nombre + Chips + Botón Ver/Editar */}
-                <div className="inventario-card-head">
-                  <div className="inventario-card-thumb">
+                <div className="inventario-card-head" style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <div
+                    className="inventario-card-thumb"
+                    style={{
+                      width: 52,
+                      height: 52,
+                      minWidth: 52,
+                      minHeight: 52,
+                      maxWidth: 52,
+                      maxHeight: 52,
+                      borderRadius: 10,
+                      overflow: "hidden",
+                      background: "var(--surface-2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      border: "1px solid var(--border)",
+                      padding: 2
+                    }}
+                  >
                     {p.fotoUrl ? (
-                      <img src={p.fotoUrl} alt={p.nombre} loading="lazy" />
+                      <img
+                        src={p.fotoUrl}
+                        alt={p.nombre}
+                        loading="lazy"
+                        style={{ width: "100%", height: "100%", maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }}
+                      />
                     ) : (
-                      <span role="img" aria-label="Sin foto">📷</span>
+                      <span role="img" aria-label="Sin foto" style={{ fontSize: 20 }}>📷</span>
                     )}
                   </div>
-                  <div className="inventario-card-info">
-                    <div className="inventario-card-title">{p.nombre}</div>
-                    <div className="inventario-card-meta">
+                  <div className="inventario-card-info" style={{ flex: 1, minWidth: 0 }}>
+                    <div className="inventario-card-title" style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.35, color: "var(--text)", marginBottom: 4 }}>
+                      {p.nombre}
+                    </div>
+                    <div className="inventario-card-meta" style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
                       <span className="chip mono">{p.sku}</span>
                       <span className="chip">{p.categoria}</span>
                       {p.vence && (
@@ -306,7 +355,7 @@ const Inventario = () => {
                       )}
                     </div>
                   </div>
-                  <div className="inventario-card-action">
+                  <div className="inventario-card-action" style={{ flexShrink: 0 }}>
                     <button
                       className="btn sm ghost"
                       onClick={() => setEditing(toPlain(p))}
@@ -319,7 +368,18 @@ const Inventario = () => {
                 </div>
 
                 {/* Strip de métricas compacto: Precio y Stock */}
-                <div className="inventario-metrics-strip">
+                <div
+                  className="inventario-metrics-strip"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                    background: "var(--surface-2)",
+                    padding: "8px 12px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--border)"
+                  }}
+                >
                   <div className="inventario-metric">
                     <span className="inventario-metric-lbl">Precio</span>
                     <span className="inventario-metric-val mono" style={{ color: "var(--accent)" }}>

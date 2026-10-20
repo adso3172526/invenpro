@@ -61,6 +61,14 @@
   box-sizing: border-box;
 }
 
+img {
+  max-width: 100%;
+}
+
+.tw-hidden {
+  display: none !important;
+}
+
 html,
 body,
 #root {
@@ -2562,6 +2570,392 @@ table.tbl th.num {
 .select-pill .lbl {
   color: var(--text-3);
   font-size: 12px;
+}
+
+/* ============ Inventario Mobile Cards ============ */
+.inventario-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inventario-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.inventario-card.sin-codigo {
+  border-left: 3px solid #D97706;
+}
+
+.inventario-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.inventario-card-thumb {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  max-width: 52px;
+  max-height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  padding: 2px;
+}
+
+.inventario-card-thumb img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.inventario-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.inventario-card-title {
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text);
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.inventario-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.inventario-card-action {
+  flex-shrink: 0;
+}
+
+.inventario-metrics-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: var(--surface-2);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.inventario-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inventario-metric-lbl {
+  font-size: 10px;
+  color: var(--text-3);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.inventario-metric-val {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.inventario-progress-wrap {
+  margin-top: 4px;
+}
+
+.inventario-card-barcode {
+  border-top: 1px dashed var(--border);
+  padding-top: 6px;
+}
+
+.inventario-barcode-assign-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.inventario-barcode-assign-row input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 5px 8px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+/* ============ Inventario KPI Grid (2x2 móvil / 4 desktop) ============ */
+.inventario-kpis {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin-bottom: 10px !important;
+}
+
+@media (min-width: 768px) {
+  .inventario-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+}
+
+.inventario-kpis .kpi {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justifyContent: space-between;
+  padding: 10px 12px;
+  min-height: 70px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform .12s ease, border-color .15s ease, background-color .15s ease;
+  min-width: 0;
+  width: 100%;
+}
+
+.inventario-kpis .kpi:hover {
+  border-color: var(--accent);
+}
+
+.inventario-kpis .kpi:active {
+  transform: scale(0.98);
+}
+
+.inventario-kpis .kpi .label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inventario-kpis .kpi .val {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 4px;
+}
+
+/* ============ Proveedores Accordion List ============ */
+.prov-kpis {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin-top: 8px;
+  margin-bottom: 14px;
+}
+
+.prov-kpis .kpi {
+  padding: 10px 12px;
+  min-height: 64px;
+}
+
+.prov-view-switcher {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .prov-view-switcher {
+    display: flex !important;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface-2);
+    padding: 2px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+}
+
+.prov-accordion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prov-accordion-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.prov-accordion-item:hover {
+  border-color: var(--accent);
+}
+
+.prov-accordion-item.open {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+}
+
+.prov-accordion-item.inactivo {
+  opacity: 0.85;
+  border-left: 3px solid var(--bad);
+}
+
+.prov-accordion-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--surface);
+  transition: background-color .15s ease;
+}
+
+.prov-accordion-header:hover {
+  background: var(--surface-2);
+}
+
+.prov-accordion-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+
+.prov-accordion-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prov-accordion-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prov-accordion-chevron {
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .2s ease, color .15s ease;
+  flex-shrink: 0;
+}
+
+.prov-accordion-item.open .prov-accordion-chevron {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.prov-accordion-body {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: provFadeInDown .2s ease;
+}
+
+@keyframes provFadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.prov-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+@media (min-width: 640px) {
+  .prov-details-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .prov-details-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.prov-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.prov-detail-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.prov-detail-value {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.prov-accordion-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
 }
 
 /* ============ POS layout ============ */
