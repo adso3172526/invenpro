@@ -11,7 +11,10 @@
     }
 
     async create(cierre) {
-      return this._insert("cierres_caja", this._helpers.snakify(cierre));
+      // UPSERT por turno_id (constraint unica cierres_caja_turno_id_key): si un intento
+      // anterior ya creo la fila del cierre (y el turno quedo abierto), reintentar la
+      // ACTUALIZA en vez de fallar con "duplicate key". Hace el cierre idempotente.
+      return this._upsert("cierres_caja", this._helpers.snakify(cierre), { onConflict: "turno_id" });
     }
 
     async getAll() {
