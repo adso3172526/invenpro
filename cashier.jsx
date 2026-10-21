@@ -1179,29 +1179,14 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm, saving }) => {
   const diffColor = sinContar ? "var(--text-3)" : diff === 0 ? "var(--good)" : (diff > 0 ? "var(--warn)" : "var(--bad)");
   const diffMsg = sinContar ? "Cuenta el efectivo para ver la diferencia." : diff === 0 ? "Caja cuadra perfectamente." : diff > 0 ? "Sobrante en caja — revisar." : "Faltante — debe justificarse.";
 
-  // Elegir la variante (desktop/móvil) por JS. Antes se hacía con clases
-  // tw-hidden/sm:tw-flex, pero al combinarse con .modal (display:flex) la variante
-  // de escritorio quedaba invisible en desktop. El display inline (abajo) gana
-  // siempre sobre cualquier regla CSS, así que esto es determinista.
-  const [isDesktop, setIsDesktop] = useState(() => (typeof window !== "undefined" && window.innerWidth >= 640));
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 640px)");
-    const onCh = () => setIsDesktop(mq.matches);
-    onCh();
-    if (mq.addEventListener) mq.addEventListener("change", onCh); else mq.addListener(onCh);
-    return () => { if (mq.removeEventListener) mq.removeEventListener("change", onCh); else mq.removeListener(onCh); };
-  }, []);
-
   return (
-    <div className="modal-bg" onClick={onClose}>
-      {/* Desktop: modal clásico */}
-      <div className="modal lg tw-hidden sm:tw-flex" style={{ display: isDesktop ? "flex" : "none" }} onClick={e => e.stopPropagation()}>
-        <div className="modal-h">
-          <h3>Cerrar turno</h3>
-          <button className="x" onClick={onClose}><Icon name="x"/></button>
-        </div>
-        <div className="modal-b">
-          <div className="tw-grid tw-grid-cols-2 tw-gap-5">
+    <Modal title="Cerrar turno" lg bottomSheet onClose={onClose} footer={
+      <>
+        <button className="btn ghost" onClick={onClose}>Cancelar</button>
+        <button className="btn primary" disabled={sinContar || saving} onClick={() => onConfirm({ efectivoContado: contadoNum, observaciones })}><Icon name="check"/> {saving ? "Cerrando…" : "Confirmar cierre"}</button>
+      </>
+    }>
+          <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-4 sm:tw-gap-5">
             <div>
               <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-2">Resumen del turno</div>
               <div className="card tw-bg-surface-2">
@@ -1235,102 +1220,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm, saving }) => {
               </div>
             </div>
           </div>
-        </div>
-        <div className="modal-f">
-          <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn primary" disabled={sinContar || saving} onClick={() => onConfirm({ efectivoContado: contadoNum, observaciones })}><Icon name="check"/> {saving ? "Cerrando…" : "Confirmar cierre"}</button>
-        </div>
-      </div>
-
-      {/* Mobile: fullscreen */}
-      <div className="sm:tw-hidden tw-fixed tw-inset-0 tw-flex tw-flex-col tw-bg-surface tw-z-[101]" style={{ display: isDesktop ? "none" : "flex" }} onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-3 tw-border-b tw-border-border tw-shrink-0">
-          <div className="tw-text-base tw-font-bold">Cerrar turno</div>
-          <button className="tw-w-8 tw-h-8 tw-rounded-lg tw-border tw-border-border tw-bg-surface-2 tw-grid tw-place-items-center tw-cursor-pointer" onClick={onClose}><Icon name="x" size={16}/></button>
-        </div>
-
-        {/* Contenido scrolleable */}
-        <div className="tw-flex-1 tw-overflow-y-auto tw-min-h-0" style={{ WebkitOverflowScrolling: "touch" }}>
-          {/* Resumen del turno */}
-          <div className="tw-px-4 tw-pt-3 tw-pb-2">
-            <div className="tw-text-[10px] tw-text-txt-3 tw-uppercase tw-tracking-wider tw-mb-2">Resumen del turno</div>
-            <div className="tw-bg-surface-2 tw-rounded-xl tw-p-3 tw-flex tw-flex-col tw-gap-1.5">
-              <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-text-txt-3">Base inicial</span>
-                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(shift.base)}</span>
-              </div>
-              <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-text-txt-3">Efectivo</span>
-                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Efectivo)}</span>
-              </div>
-              <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-text-txt-3">Transferencia</span>
-                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Transferencia)}</span>
-              </div>
-              <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-text-txt-3">Nequi</span>
-                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Nequi)}</span>
-              </div>
-              <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-text-txt-3">Daviplata</span>
-                <span className="mono tw-text-xs tw-font-medium">{window.fmtCOP(pm.Daviplata)}</span>
-              </div>
-              <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-text-txt-3">Transacciones</span>
-                <span className="mono tw-text-xs tw-font-medium">{stats.trans}</span>
-              </div>
-              <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-text-txt-3">Productos</span>
-                <span className="mono tw-text-xs tw-font-medium">{stats.items}</span>
-              </div>
-              <div className="tw-border-t tw-border-border tw-pt-1.5 tw-mt-0.5">
-                <div className="tw-flex tw-justify-between tw-items-center">
-                  <span className="tw-text-sm tw-font-semibold">Esperado (efectivo)</span>
-                  <span className="mono tw-text-base tw-font-bold">{window.fmtCOP(esperado)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Conteo físico */}
-          <div className="tw-px-4 tw-pb-2">
-            <div className="tw-text-[10px] tw-text-txt-3 tw-uppercase tw-tracking-wider tw-mb-2">Conteo físico</div>
-            <div className="field tw-mb-0">
-              <label className="tw-text-xs">Efectivo contado</label>
-              <input className="mono" placeholder="Cuenta el efectivo…" value={sinContar ? "" : contadoNum.toLocaleString("es-CO")} onChange={e => setContado(e.target.value.replace(/\D/g,""))}/>
-            </div>
-          </div>
-
-          {/* Diferencia */}
-          <div className="tw-px-4 tw-pb-2">
-            <div className="tw-rounded-xl tw-p-3" style={{ background: diffBg }}>
-              <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-font-medium">Diferencia</span>
-                <span className="mono tw-text-xl tw-font-bold" style={{ color: diffColor }}>{sinContar ? "—" : (diff > 0 ? "+" : "") + window.fmtCOP(diff)}</span>
-              </div>
-              <div className="tw-text-[11px] tw-mt-1 tw-opacity-80">{diffMsg}</div>
-            </div>
-          </div>
-
-          {/* Observaciones */}
-          <div className="tw-px-4 tw-pb-3">
-            <div className="field tw-mb-0">
-              <label className="tw-text-xs">Observaciones (opcional)</label>
-              <textarea rows="2" placeholder="Ej: cliente recibió mal el cambio…" className="tw-text-sm" value={observaciones} onChange={e => setObservaciones(e.target.value)}/>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer fijo */}
-        <div className="tw-px-4 tw-py-3 tw-border-t tw-border-border tw-bg-surface-2 tw-shrink-0 tw-flex tw-gap-2">
-          <button className="tw-flex-1 tw-py-2.5 tw-rounded-xl tw-border tw-border-border tw-bg-surface tw-text-sm tw-font-medium tw-cursor-pointer" onClick={onClose}>Cancelar</button>
-          <button className="tw-flex-[2] tw-py-2.5 tw-rounded-xl tw-border-0 tw-bg-accent tw-text-white tw-text-sm tw-font-bold tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-gap-1.5 disabled:tw-opacity-40 disabled:tw-cursor-not-allowed" disabled={sinContar || saving} onClick={() => onConfirm({ efectivoContado: contadoNum, observaciones })}>
-            <Icon name="check" size={15}/> {saving ? "Cerrando…" : "Confirmar cierre"}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 
