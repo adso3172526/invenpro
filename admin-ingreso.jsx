@@ -49,13 +49,24 @@ const Ingreso = () => {
   const hace30 = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
   const [desde, setDesde] = useStateA(hace30);
   const [hasta, setHasta] = useStateA(hoy);
-  const [proveedores, setProveedores] = useStateA(() => [
-    { nombre: "Distribuidora El Sol", nit: "900.124.567-8", tel: "(4) 444 1820" },
-    { nombre: "Lácteos del Valle", nit: "830.998.221-2", tel: "(2) 660 1245" },
-    { nombre: "Frutiverduras Mayor", nit: "901.445.118-3", tel: "(1) 320 7790" },
-    { nombre: "Aseo y Hogar S.A.S", nit: "900.778.412-1", tel: "(4) 511 8900" },
-  ]);
-  const [proveedor, setProveedor] = useStateA("Distribuidora El Sol");
+  // Proveedores REALES desde la BD (antes era una lista fija de 4). Lee los activos
+  // de MOCK.proveedores y se re-sincroniza por realtime; conserva los agregados
+  // localmente (recien creados que aun no estan en MOCK).
+  const _provActivos = () => (MOCK.proveedores || [])
+    .filter(p => (p.estado || "activo") !== "inactivo")
+    .map(p => ({ nombre: p.nombre, nit: p.nit, tel: p.tel, direccion: p.direccion || p.ciudad || "" }));
+  const [proveedores, setProveedores] = useStateA(_provActivos);
+  const [proveedor, setProveedor] = useStateA(() => { const f = _provActivos()[0]; return f ? f.nombre : ""; });
+  React.useEffect(() => {
+    const sync = () => setProveedores(prev => {
+      const byName = new Map();
+      _provActivos().forEach(p => byName.set(p.nombre, p));
+      (prev || []).forEach(p => { if (p && p.nombre && !byName.has(p.nombre)) byName.set(p.nombre, p); });
+      return Array.from(byName.values());
+    });
+    sync();
+    return window.EventBus.on("realtime:proveedores", sync);
+  }, []);
   const [factura, setFactura] = useStateA("FV-" + Math.floor(Math.random()*9000+1000));
   const [vendedor, setVendedor] = useStateA("");
   const [celular, setCelular] = useStateA("");
