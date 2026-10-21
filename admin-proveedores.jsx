@@ -52,16 +52,24 @@ const Proveedores = () => {
       const error = await DB.proveedores.update(data.id, data);
       resultado = { ok: !error, message: error ? "Error al guardar: " + (error.message || "Intenta de nuevo") : "Proveedor actualizado" };
     } else {
-      const nextId = `PRV-${String((list || []).length + 1).padStart(3, "0")}`;
+      // id robusto = max(PRV-NNN existentes) + 1. Antes era length+1, que colisionaba
+      // (duplicate key) si habia huecos o al crear dos seguidos antes del realtime.
+      const base = MOCK.proveedores || list || [];
+      const nums = base.map(p => parseInt(String(p.id || "").replace(/\D/g, ""), 10)).filter(n => !isNaN(n));
+      const nextId = `PRV-${String((nums.length ? Math.max.apply(null, nums) : 0) + 1).padStart(3, "0")}`;
       const nuevo = { ...data, id: nextId, ingresos: 0, ultimoIngreso: null, estado: "activo" };
       const error = await DB.proveedores.create(nuevo);
       resultado = { ok: !error, message: error ? "Error al crear: " + (error.message || "Intenta de nuevo") : "Proveedor creado" };
+      // Optimista: mostrar el proveedor nuevo de inmediato (el realtime lo confirma luego)
+      if (!error && MOCK.proveedores && !MOCK.proveedores.some(p => p.id === nextId)) {
+        MOCK.proveedores.push(nuevo);
+      }
     }
     if (!resultado.ok) {
       setToast(resultado.message);
       return;
     }
-    setList(MOCK.proveedores || []);
+    setList((MOCK.proveedores || []).slice());
     setEditing(null);
     setToast(resultado.message);
   };
