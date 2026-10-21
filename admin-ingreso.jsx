@@ -75,7 +75,8 @@ const Ingreso = () => {
     return d.toISOString().slice(0,16);
   });
   const [showProv, setShowProv] = useStateA(false);
-  const [provDraft, setProvDraft] = useStateA({ nombre: "", nit: "", tel: "" });
+  const [provDraft, setProvDraft] = useStateA({ nombre: "", nit: "", tel: "", categoria: "" });
+  const [provGuardando, setProvGuardando] = useStateA(false);
   const [toast, setToast] = useStateA(null);
   const [guardando, setGuardando] = useStateA(false);
   // Más reciente primero: por fecha desc y, en empate, por id (ING-<timestamp>) desc
@@ -785,14 +786,27 @@ const Ingreso = () => {
         <Modal title="Crear proveedor" bottomSheet onClose={() => setShowProv(false)} footer={
           <>
             <button className="btn ghost" onClick={() => setShowProv(false)}>Cancelar</button>
-            <button className="btn primary" disabled={!provDraft.nombre || !provDraft.nit || !provDraft.tel}
-              onClick={() => {
-                setProveedores(ps => [...ps, { ...provDraft }]);
-                setProveedor(provDraft.nombre);
-                setProvDraft({ nombre: "", nit: "", tel: "" });
+            <button className="btn primary" disabled={!provDraft.nombre || !provDraft.nit || !provDraft.tel || provGuardando}
+              onClick={async () => {
+                const nombre = provDraft.nombre.trim(), nit = provDraft.nit.trim(), tel = (provDraft.tel || "").trim();
+                if (!nombre || !nit || !tel) return;
+                setProvGuardando(true);
+                // id robusto PRV-NNN = max existente + 1 (igual que el modulo Proveedores)
+                const base = MOCK.proveedores || [];
+                const nums = base.map(p => parseInt(String(p.id || "").replace(/\D/g, ""), 10)).filter(n => !isNaN(n));
+                const id = `PRV-${String((nums.length ? Math.max.apply(null, nums) : 0) + 1).padStart(3, "0")}`;
+                const nuevo = { id, nombre, nit, contacto: nombre, tel, email: "", ciudad: "", categoria: provDraft.categoria || "Otros", terminos: "30 días", estado: "activo", ingresos: 0, ultimoIngreso: null };
+                const error = await DB.proveedores.create(nuevo);
+                if (error) { setProvGuardando(false); setToast("Error al crear proveedor: " + (error.message || "Intenta de nuevo")); return; }
+                // Reflejar de inmediato (el realtime lo confirma luego)
+                if (MOCK.proveedores && !MOCK.proveedores.some(p => p.id === id)) MOCK.proveedores.push(nuevo);
+                setProveedores(ps => ps.some(p => p.nombre === nombre) ? ps : [...ps, { nombre, nit, tel, direccion: "" }]);
+                setProveedor(nombre);
+                setProvDraft({ nombre: "", nit: "", tel: "", categoria: "" });
+                setProvGuardando(false);
                 setShowProv(false);
-                setToast("Proveedor agregado");
-              }}><Icon name="check" size={14}/> Guardar</button>
+                setToast("Proveedor creado");
+              }}><Icon name="check" size={14}/> {provGuardando ? "Guardando…" : "Guardar"}</button>
           </>
         }>
           <div className="field">
@@ -808,6 +822,13 @@ const Ingreso = () => {
               <label>Teléfono</label>
               <input className="mono" value={provDraft.tel} onChange={e => setProvDraft(d => ({ ...d, tel: e.target.value.replace(/[^\d\s+()-]/g,"") }))} placeholder="(4) 444 1820"/>
             </div>
+          </div>
+          <div className="field">
+            <label>Categoría</label>
+            <select value={provDraft.categoria} onChange={e => setProvDraft(d => ({ ...d, categoria: e.target.value }))}>
+              <option value="">— Selecciona —</option>
+              {(typeof getCategoriasProveedor === "function" ? getCategoriasProveedor() : []).map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
         </Modal>
       )}
