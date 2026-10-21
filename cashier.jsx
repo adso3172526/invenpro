@@ -1179,10 +1179,23 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm, saving }) => {
   const diffColor = sinContar ? "var(--text-3)" : diff === 0 ? "var(--good)" : (diff > 0 ? "var(--warn)" : "var(--bad)");
   const diffMsg = sinContar ? "Cuenta el efectivo para ver la diferencia." : diff === 0 ? "Caja cuadra perfectamente." : diff > 0 ? "Sobrante en caja — revisar." : "Faltante — debe justificarse.";
 
+  // Elegir la variante (desktop/móvil) por JS. Antes se hacía con clases
+  // tw-hidden/sm:tw-flex, pero al combinarse con .modal (display:flex) la variante
+  // de escritorio quedaba invisible en desktop. El display inline (abajo) gana
+  // siempre sobre cualquier regla CSS, así que esto es determinista.
+  const [isDesktop, setIsDesktop] = useState(() => (typeof window !== "undefined" && window.innerWidth >= 640));
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    const onCh = () => setIsDesktop(mq.matches);
+    onCh();
+    if (mq.addEventListener) mq.addEventListener("change", onCh); else mq.addListener(onCh);
+    return () => { if (mq.removeEventListener) mq.removeEventListener("change", onCh); else mq.removeListener(onCh); };
+  }, []);
+
   return (
     <div className="modal-bg" onClick={onClose}>
       {/* Desktop: modal clásico */}
-      <div className="modal lg tw-hidden sm:tw-flex" onClick={e => e.stopPropagation()}>
+      <div className="modal lg tw-hidden sm:tw-flex" style={{ display: isDesktop ? "flex" : "none" }} onClick={e => e.stopPropagation()}>
         <div className="modal-h">
           <h3>Cerrar turno</h3>
           <button className="x" onClick={onClose}><Icon name="x"/></button>
@@ -1230,7 +1243,7 @@ const CloseShiftModal = ({ shift, stats, onClose, onConfirm, saving }) => {
       </div>
 
       {/* Mobile: fullscreen */}
-      <div className="sm:tw-hidden tw-fixed tw-inset-0 tw-flex tw-flex-col tw-bg-surface tw-z-[101]" onClick={e => e.stopPropagation()}>
+      <div className="sm:tw-hidden tw-fixed tw-inset-0 tw-flex tw-flex-col tw-bg-surface tw-z-[101]" style={{ display: isDesktop ? "none" : "flex" }} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-3 tw-border-b tw-border-border tw-shrink-0">
           <div className="tw-text-base tw-font-bold">Cerrar turno</div>
