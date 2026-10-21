@@ -1,5 +1,19 @@
 // Proveedores
 
+// Categorías de proveedor: lista editable guardada en la tabla `configuracion`
+// (clave "categorias_proveedor"), igual que las categorías de producto. Se mezcla
+// con los defaults y con las que ya usan los proveedores. Devuelve nombres (strings).
+const PROV_CAT_DEFAULT = ["Abarrotes", "Lácteos", "Frutas y verduras", "Aseo", "Bebidas", "Panadería", "Otros"];
+const getCategoriasProveedor = () => {
+  const cfg = (window.MOCK && MOCK.configuracion) || {};
+  let custom = null;
+  try { const v = JSON.parse(cfg.categorias_proveedor || "null"); if (Array.isArray(v)) custom = v.filter(Boolean).map(String); } catch {}
+  const map = new Map();
+  (custom && custom.length ? custom : PROV_CAT_DEFAULT).forEach(n => { if (n) map.set(String(n), true); });
+  (window.MOCK && MOCK.proveedores ? MOCK.proveedores : []).forEach(p => { if (p.categoria) map.set(p.categoria, true); });
+  return Array.from(map.keys());
+};
+
 const Proveedores = () => {
   const [list, setList] = useStateA(() => MOCK.proveedores || []);
   const [q, setQ] = useStateA("");
@@ -10,14 +24,20 @@ const Proveedores = () => {
   const [toast, setToast] = useStateA(null);
   const [expandedId, setExpandedId] = useStateA(null);
   const [viewMode, setViewMode] = useStateA("lista");
+  const [showCats, setShowCats] = useStateA(false);
+  const [, _catTick] = useStateA(0);
   const toggleExpand = (id) => setExpandedId(prev => prev === id ? null : id);
 
   const _modalRef = React.useRef(false);
   _modalRef.current = !!editing || !!confirmBaja;
   React.useEffect(() => {
-    return window.EventBus.on("realtime:proveedores", () => {
+    const off = window.EventBus.on("realtime:proveedores", () => {
       if (!_modalRef.current) setList(MOCK.proveedores || []);
     });
+    // Categorías de proveedor viven en config: re-render al cambiarlas (local o realtime)
+    const offCfg1 = window.EventBus.on("config:change", () => _catTick(n => n + 1));
+    const offCfg2 = window.EventBus.on("realtime:configuracion", () => _catTick(n => n + 1));
+    return () => { off(); offCfg1(); offCfg2(); };
   }, []);
 
   const categorias = useMemoA(() => ["Todas", ...Array.from(new Set(list.map(p => p.categoria)))], [list]);
@@ -93,7 +113,10 @@ const Proveedores = () => {
           <h2>Proveedores</h2>
           <p className="sub">Crea, edita o da de baja a las empresas que abastecen tu inventario.</p>
         </div>
-        <button className="btn primary tw-w-full sm:tw-w-auto" onClick={() => setEditing("new")}><Icon name="plus" size={14}/> Nuevo proveedor</button>
+        <div className="tw-flex tw-gap-2 tw-w-full sm:tw-w-auto">
+          <button className="btn sm tw-flex-1 sm:tw-flex-none" onClick={() => setShowCats(true)} title="Administrar categorías de proveedor">Categorías</button>
+          <button className="btn primary tw-flex-1 sm:tw-flex-none" onClick={() => setEditing("new")}><Icon name="plus" size={14}/> Nuevo proveedor</button>
+        </div>
       </div>
 
       <div className="prov-kpis tw-grid tw-grid-cols-3 tw-gap-2 tw-mt-2">
@@ -349,6 +372,8 @@ const Proveedores = () => {
         />
       )}
 
+      {showCats && <CategoriasProveedorModal onClose={() => setShowCats(false)}/>}
+
       {confirmBaja && (
         <Modal title={confirmBaja.estado === "activo" ? "Dar de baja proveedor" : "Reactivar proveedor"}
           onClose={() => setConfirmBaja(null)} bottomSheet
@@ -407,8 +432,7 @@ const ProveedorForm = ({ inicial, onClose, onSave }) => {
           <input className="mono" value={d.nit} onChange={e => set("nit", e.target.value)} placeholder="900.000.000-0"/></div>
         <div className="field"><label>Categoría</label>
           <select value={d.categoria} onChange={e => set("categoria", e.target.value)}>
-            <option>Abarrotes</option><option>Lácteos</option><option>Frutas y verduras</option>
-            <option>Aseo</option><option>Bebidas</option><option>Panadería</option><option>Otros</option>
+            {getCategoriasProveedor().map(c => <option key={c} value={c}>{c}</option>)}
           </select></div>
         <div className="field"><label>Términos de pago</label>
           <select value={d.terminos} onChange={e => set("terminos", e.target.value)}>
@@ -427,4 +451,85 @@ const ProveedorForm = ({ inicial, onClose, onSave }) => {
   );
 };
 
-Object.assign(window, { Proveedores, ProveedorForm });
+// Administrar categorías de proveedor (crear / renombrar / quitar). Se guardan en
+// la tabla `configuracion` (clave "categorias_proveedor"), igual que las de producto.
+const CategoriasProveedorModal = ({ onClose }) => {
+  const proveedores = (window.MOCK && MOCK.proveedores) || [];
+  const [rows, setRows] = useStateA(() => getCategoriasProveedor().map(n => ({ orig: n, nombre: n })));
+  const [nueva, setNueva] = useStateA("");
+  const [saving, setSaving] = useStateA(false);
+  const [error, setError] = useStateA("");
+
+  const countOf = (name) => proveedores.filter(p => p.categoria === name).length;
+
+  const addCat = () => {
+    const n = nueva.trim();
+    if (!n) return;
+    if (rows.some(r => r.nombre.trim().toLowerCase() === n.toLowerCase())) { setError("Esa categoría ya existe"); return; }
+    setRows(r => [...r, { orig: null, nombre: n }]);
+    setNueva(""); setError("");
+  };
+  const removeCat = (i) => setRows(rs => rs.filter((_, idx) => idx !== i));
+
+  const guardar = async () => {
+    const names = rows.map(r => r.nombre.trim()).filter(Boolean);
+    if (new Set(names.map(n => n.toLowerCase())).size !== names.length) { setError("Hay categorías repetidas"); return; }
+    if (!names.length) { setError("Debe quedar al menos una categoría"); return; }
+    setSaving(true); setError("");
+    try {
+      // Renombrados: actualizar los proveedores que usaban el nombre viejo
+      for (const r of rows) {
+        const nn = r.nombre.trim();
+        if (r.orig && nn && r.orig !== nn) {
+          for (const p of proveedores.filter(x => x.categoria === r.orig)) {
+            await DB.proveedores.update(p.id, { categoria: nn });
+            try { p.categoria = nn; } catch (e) {}
+          }
+        }
+      }
+      const error = await DB.config.save("categorias_proveedor", JSON.stringify(names));
+      if (error) throw error;
+      onClose();
+    } catch (e) {
+      setError("Error al guardar: " + (e && e.message ? e.message : ""));
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal title="Categorías de proveedor" bottomSheet onClose={onClose} footer={
+      <>
+        <button className="btn ghost" onClick={onClose} disabled={saving}>Cancelar</button>
+        <button className="btn primary" onClick={guardar} disabled={saving}>{saving ? "Guardando…" : "Guardar"}</button>
+      </>
+    }>
+      <p className="muted tw-text-xs tw-mb-3" style={{ lineHeight: 1.5 }}>
+        Crea o renombra las categorías de proveedor. Se guardan en la configuración
+        (misma tabla que las de producto). Al renombrar, se actualizan los proveedores
+        que la usaban. No puedes quitar una categoría en uso.
+      </p>
+      <div className="tw-flex tw-gap-1.5 tw-mb-3">
+        <input className="tw-flex-1" style={{ minWidth: 0 }} value={nueva} onChange={e => setNueva(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCat(); } }} placeholder="Nueva categoría…"/>
+        <button type="button" className="btn primary tw-shrink-0" onClick={addCat}><Icon name="plus" size={14}/> Agregar</button>
+      </div>
+      <div className="tw-flex tw-flex-col tw-gap-2">
+        {rows.map((r, i) => (
+          <div key={i} className="tw-flex tw-items-center tw-gap-2 tw-py-1.5 tw-px-2.5 tw-rounded-xl tw-border tw-border-border" style={{ background: "var(--surface)" }}>
+            <input className="tw-flex-1 tw-text-sm" style={{ minWidth: 0, border: "1px solid transparent", background: "transparent", color: "var(--text)", padding: "4px 6px", borderRadius: 6, fontWeight: 500 }}
+              value={r.nombre}
+              onFocus={e => { e.target.style.border = "1px solid var(--border)"; e.target.style.background = "var(--bg)"; }}
+              onBlur={e => { e.target.style.border = "1px solid transparent"; e.target.style.background = "transparent"; }}
+              onChange={e => setRows(rs => rs.map((x, idx) => idx === i ? { ...x, nombre: e.target.value } : x))}/>
+            <span className="chip tw-shrink-0">{r.orig ? countOf(r.orig) + " prov." : "nueva"}</span>
+            <button type="button" className="btn sm ghost tw-shrink-0" title={r.orig && countOf(r.orig) > 0 ? "No se puede quitar: está en uso" : "Quitar"} onClick={() => removeCat(i)} disabled={!!r.orig && countOf(r.orig) > 0}><Icon name="x" size={14}/></button>
+          </div>
+        ))}
+        {rows.length === 0 && <div className="muted tw-text-xs tw-text-center tw-py-4 tw-rounded-xl tw-border tw-border-dashed tw-border-border">Sin categorías. Agrega una arriba.</div>}
+      </div>
+      {error && <div className="tw-mt-3 tw-text-xs tw-font-medium" style={{ color: "var(--bad)" }}>{error}</div>}
+    </Modal>
+  );
+};
+
+Object.assign(window, { Proveedores, ProveedorForm, CategoriasProveedorModal });
