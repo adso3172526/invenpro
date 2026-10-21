@@ -145,7 +145,9 @@ const Ingreso = () => {
 
   const iniciarManual = () => {
     setItems([]); setVendedor(""); setCelular("");
-    setFactura(""); setProveedor("");
+    // Auto-selecciona el primer proveedor real (antes quedaba vacío y el botón
+    // "Confirmar ingreso" quedaba deshabilitado sin que fuera obvio por qué).
+    setFactura(""); setProveedor((_provActivos()[0] || {}).nombre || "");
     const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     setRecibido(d.toISOString().slice(0,16));
     setOrigen("manual");
