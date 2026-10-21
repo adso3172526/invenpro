@@ -4613,8 +4613,17 @@ table.tbl tr.item-detail td {
   }
 }
 
-/* topbar .crumb chip/sub — now Tailwind tw-hidden sm:tw-inline */
-
+/* Proveedores: columna de acciones fija y no deformable */
+.prov-table th:last-child,
+.prov-table td:last-child {
+  width: 100px;
+  min-width: 100px;
+  white-space: nowrap;
+}
+.prov-table td:last-child .btn {
+  flex-shrink: 0;
+  margin: 0;
+}
 
 /* --- 7. Tablas en pantallas angostas --- */
 @media (max-width: 768px) {

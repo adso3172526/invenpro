@@ -23,7 +23,6 @@ const Proveedores = () => {
   const [confirmBaja, setConfirmBaja] = useStateA(null);
   const [toast, setToast] = useStateA(null);
   const [expandedId, setExpandedId] = useStateA(null);
-  const [viewMode, setViewMode] = useStateA("lista");
   const [showCats, setShowCats] = useStateA(false);
   const [, _catTick] = useStateA(0);
   const toggleExpand = (id) => setExpandedId(prev => prev === id ? null : id);
@@ -151,32 +150,12 @@ const Proveedores = () => {
                 {categorias.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
-            <div className="prov-view-switcher">
-              <button
-                type="button"
-                className={"btn xs " + (viewMode === "lista" ? "primary" : "ghost")}
-                style={{ height: 26, fontSize: 11, padding: "0 8px" }}
-                onClick={() => setViewMode("lista")}
-                title="Vista en lista acordeón"
-              >
-                Lista
-              </button>
-              <button
-                type="button"
-                className={"btn xs " + (viewMode === "tabla" ? "primary" : "ghost")}
-                style={{ height: 26, fontSize: 11, padding: "0 8px" }}
-                onClick={() => setViewMode("tabla")}
-                title="Vista en tabla"
-              >
-                Tabla
-              </button>
-            </div>
             <div className="muted mono tw-text-xs tw-self-center tw-hidden sm:tw-block">{filtered.length}/{list.length}</div>
           </div>
         </div>
 
-        {/* Vista Acordeón (activa por defecto y obligatoria en móvil) */}
-        <div className={"prov-accordion-list " + (viewMode === "tabla" ? "md:tw-hidden" : "")}>
+        {/* Vista Acordeón (solo en móvil) */}
+        <div className="prov-accordion-list md:tw-hidden">
           {pagProv.slice.map(p => {
             const isExpanded = expandedId === p.id;
             return (
@@ -303,64 +282,82 @@ const Proveedores = () => {
           )}
         </div>
 
-        {/* Vista Tabla clásica (solo en desktop cuando viewMode === "tabla") */}
-        {viewMode === "tabla" && (
-          <div className="tbl-wrap tw-hidden md:tw-block">
-            <table className="tbl prov-table">
-              <thead>
-                <tr>
-                  <th>Proveedor</th><th>NIT</th><th>Categoría</th><th>Contacto</th>
-                  <th>Términos</th><th>Estado</th><th className="num">Ingresos</th><th>Último</th><th></th>
+        {/* Vista Tabla clásica (única en escritorio) */}
+        <div className="tbl-wrap tw-hidden md:tw-block">
+          <table className="tbl prov-table">
+            <thead>
+              <tr>
+                <th>Proveedor</th><th>NIT</th><th>Categoría</th><th>Contacto</th>
+                <th>Términos</th><th>Estado</th><th className="num">Ingresos</th><th>Último</th>
+                <th className="num" style={{ width: "100px", minWidth: "100px" }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {pagProv.slice.map(p => (
+                <tr key={p.id} className="row-hover">
+                  <td>
+                    <div className="row">
+                      <div className="tw-w-8 tw-h-8 tw-rounded-lg tw-bg-accent-soft tw-grid tw-place-items-center tw-font-semibold tw-text-xs" style={{ color: "var(--accent-ink)" }}>
+                        {p.nombre.split(" ").map(x => x[0]).slice(0,2).join("").toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="tw-font-medium">{p.nombre}</div>
+                        <div className="muted mono tw-text-[11px]">{p.id} · {p.ciudad}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="mono">{p.nit}</td>
+                  <td><span className="chip">{p.categoria}</span></td>
+                  <td>
+                    <div className="tw-text-[13px]">{p.contacto}</div>
+                    <div className="muted mono tw-text-[11px]">{p.tel}</div>
+                  </td>
+                  <td className="mono tw-text-xs">{p.terminos}</td>
+                  <td>
+                    <span className={"chip " + (p.estado === "activo" ? "good" : "bad")}>
+                      <span className="dot"/>{p.estado}
+                    </span>
+                  </td>
+                  <td className="num mono">{p.ingresos}</td>
+                  <td className="mono muted tw-text-xs">{p.ultimoIngreso || "—"}</td>
+                  <td className="num tw-whitespace-nowrap" style={{ width: "100px", minWidth: "100px" }}>
+                    <div
+                      className="tw-flex tw-items-center tw-justify-end tw-gap-3"
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
+                        gap: "12px",
+                        flexWrap: "nowrap"
+                      }}
+                    >
+                      <button
+                        className="btn sm ghost"
+                        style={{ margin: 0, flexShrink: 0 }}
+                        title="Editar"
+                        onClick={() => setEditing(p)}
+                      >
+                        <Icon name="edit" size={13}/>
+                      </button>
+                      <button
+                        className="btn sm ghost"
+                        style={{ margin: 0, flexShrink: 0 }}
+                        title={p.estado === "activo" ? "Dar de baja" : "Reactivar"}
+                        onClick={() => setConfirmBaja(p)}
+                      >
+                        <Icon name={p.estado === "activo" ? "trash" : "check"} size={13}/>
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {pagProv.slice.map(p => (
-                  <tr key={p.id} className="row-hover">
-                    <td>
-                      <div className="row">
-                        <div className="tw-w-8 tw-h-8 tw-rounded-lg tw-bg-accent-soft tw-grid tw-place-items-center tw-font-semibold tw-text-xs" style={{ color: "var(--accent-ink)" }}>
-                          {p.nombre.split(" ").map(x => x[0]).slice(0,2).join("").toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="tw-font-medium">{p.nombre}</div>
-                          <div className="muted mono tw-text-[11px]">{p.id} · {p.ciudad}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="mono">{p.nit}</td>
-                    <td><span className="chip">{p.categoria}</span></td>
-                    <td>
-                      <div className="tw-text-[13px]">{p.contacto}</div>
-                      <div className="muted mono tw-text-[11px]">{p.tel}</div>
-                    </td>
-                    <td className="mono tw-text-xs">{p.terminos}</td>
-                    <td>
-                      <span className={"chip " + (p.estado === "activo" ? "good" : "bad")}>
-                        <span className="dot"/>{p.estado}
-                      </span>
-                    </td>
-                    <td className="num mono">{p.ingresos}</td>
-                    <td className="mono muted tw-text-xs">{p.ultimoIngreso || "—"}</td>
-                    <td className="num">
-                      <div className="tw-flex tw-justify-end tw-gap-1">
-                        <button className="btn sm ghost" title="Editar" onClick={() => setEditing(p)}>
-                          <Icon name="edit" size={13}/>
-                        </button>
-                        <button className="btn sm ghost" title={p.estado === "activo" ? "Dar de baja" : "Reactivar"}
-                          onClick={() => setConfirmBaja(p)}>
-                          <Icon name={p.estado === "activo" ? "trash" : "check"} size={13}/>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr><td colSpan="9" className="muted tw-text-center tw-py-8">Sin resultados con los filtros aplicados</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan="9" className="muted tw-text-center tw-py-8">Sin resultados con los filtros aplicados</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
         <Pagination {...pagProv} label="proveedores"/>
       </div>
 
