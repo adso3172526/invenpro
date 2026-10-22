@@ -618,7 +618,7 @@ const Ingreso = () => {
                         const stockActual = getStock(it.sku);
                         const _pFoto = (MOCK.productos || []).find(x => x.sku === it.sku); const itFoto = _pFoto && _pFoto.fotoUrl;
                         const lbl = { fontSize: 10, color: "var(--text-3)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".3px" };
-                        const cats = [...new Set(MOCK.productos.map(p => p.categoria))].sort();
+                        const cats = getCategorias();
                         return (
                         <React.Fragment key={i}>
                         <tr className={"item-main" + (it.nuevo ? " row-nuevo" : "")}>
@@ -748,7 +748,7 @@ const Ingreso = () => {
                     {it.nuevo && (
                       <div className="tw-flex tw-gap-2 tw-mt-2 tw-pt-2" style={{ borderTop: "1px dashed var(--border)" }}>
                         <select value={it.categoria || "General"} onChange={e => actualizarItem(i, "categoria", e.target.value)} style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", fontSize: 12, flex: 1 }}>
-                          {[...new Set(MOCK.productos.map(p => p.categoria))].sort().map(c => <option key={c} value={c}>{c}</option>)}
+                          {getCategorias().map(c => <option key={c} value={c}>{c}</option>)}
                           <option value="General">General</option>
                         </select>
                         <div className="tw-flex tw-items-center tw-gap-1">
