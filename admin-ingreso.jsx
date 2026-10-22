@@ -461,10 +461,23 @@ const Ingreso = () => {
                 const existentes = items.filter(it => !it.nuevo);
                 const total = items.reduce((s, i) => s + i.qty * i.costo, 0);
                 
+                const bumpSku = (s) => { const m = /^P-(\d+)$/.exec(s); return m ? "P-" + String(parseInt(m[1], 10) + 1).padStart(5, "0") : "P-" + String(Date.now()).slice(-6); };
+                const existeSku = (s) => (MOCK.productos || []).some(p => p.sku === s);
+                const crearProd = (it, sku) => DB.productos.create({ sku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || Math.round((it.costo || 0) * 1.3), costo: it.costo, stock: it.qty, vence: it.vence || null, codigoBarras: it.codigoBarras || null, unidad: "und", min: 0 });
                 for (const it of nuevos) {
-                  const sku = it.sku || nextSku();
-                  const error = await DB.productos.create({ sku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || Math.round((it.costo || 0) * 1.3), costo: it.costo, stock: it.qty, vence: it.vence || null, codigoBarras: it.codigoBarras || null, unidad: "und", min: 0 });
-                  if (error) { setToast("Error creando producto: " + (it.nombre || sku)); setGuardando(false); return; }
+                  // SKU libre garantizado: si el autogenerado ya existe (sesion desactualizada)
+                  // sube al siguiente; y si la BD lo rechaza por duplicado, reintenta subiendo.
+                  let sku = it.sku || nextSku();
+                  while (existeSku(sku)) sku = bumpSku(sku);
+                  let error = await crearProd(it, sku);
+                  let intentos = 0;
+                  while (error && /duplicat/i.test(error.message || "") && intentos < 30) {
+                    sku = bumpSku(sku);
+                    error = await crearProd(it, sku);
+                    intentos++;
+                  }
+                  if (error) { setToast("Error creando producto: " + (it.nombre || sku) + " — " + (error.message || "revisa la conexión")); setGuardando(false); return; }
+                  it.sku = sku; // que el ingreso_detalle apunte al SKU realmente creado
                   MOCK.productos.push({ sku, nombre: it.nombre, categoria: it.categoria || "General", precio: it.precio || 0, costo: it.costo, stock: it.qty, min: 0, unidad: "und", vence: it.vence || null, codigoBarras: it.codigoBarras || null });
                 }
                 
