@@ -49,7 +49,7 @@ const Toast = ({ msg, onDone }) => {
 };
 
 const Modal = ({ title, onClose, children, footer, lg, bottomSheet }) => (
-  <div className="modal-bg" onClick={onClose}>
+  <div className="modal-bg">
     <div className={"modal" + (lg ? " lg" : "") + (bottomSheet ? " bottom-sheet" : "")} onClick={e => e.stopPropagation()}>
       <div className="modal-h">
         <h3>{title}</h3>

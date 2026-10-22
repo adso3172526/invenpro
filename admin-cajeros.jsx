@@ -5,7 +5,7 @@ const CierreDetalleModal = ({ turno, cierre, onClose }) => {
   const c = cierre || {};
   const difColor = c.diferencia === 0 ? "var(--good)" : c.diferencia > 0 ? "var(--warn)" : "var(--bad)";
   return (
-    <div className="modal-bg" onClick={onClose}>
+    <div className="modal-bg">
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-h">
           <h3>Cierre de caja · {turno.cajero}</h3>
