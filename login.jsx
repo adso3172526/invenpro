@@ -21,6 +21,10 @@ const Login = ({ onLogin }) => {
       setError("No se pudo conectar. Revisa tu conexión e intenta de nuevo.");
       setShake(true); setTimeout(() => setShake(false), 400); return;
     }
+    if (u && u.inactivo) {
+      setError("Este usuario está inactivo. Contacta al administrador.");
+      setShake(true); setTimeout(() => setShake(false), 400); return;
+    }
     if (!u) {
       setError("Usuario o contraseña incorrectos.");
       setShake(true); setTimeout(() => setShake(false), 400); return;

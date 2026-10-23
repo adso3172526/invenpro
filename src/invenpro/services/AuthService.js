@@ -34,7 +34,13 @@
         p_sha: hashed,
         p_md5: legacyMd5,
       });
-      if (result.error) { console.error("[login]", result.error); return null; }
+      if (result.error) {
+        // fn_login lanza 'USUARIO_INACTIVO' cuando el cajero está inactivo (con
+        // credenciales correctas). Lo señalizamos distinto de "credenciales malas".
+        if (/USUARIO_INACTIVO/i.test(result.error.message || "")) return { inactivo: true };
+        console.error("[login]", result.error);
+        return null;
+      }
 
       var rows = result.data;
       var user = Array.isArray(rows) ? rows[0] : rows;
