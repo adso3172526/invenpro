@@ -5359,21 +5359,21 @@ table.tbl tr.item-detail td {
   }
 
   .dash-kpi-card .kpi-label {
-    font-size: 11px;
-    gap: 4px;
+    font-size: 14px;
+    gap: 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .dash-kpi-card .kpi-val {
-    font-size: 16px;
-    margin: 2px 0 1px 0;
+    font-size: 26px;
+    margin: 4px 0 2px 0;
   }
 
   .dash-kpi-card .kpi-sub {
-    font-size: 9px;
-    line-height: 1.15;
+    font-size: 12px;
+    line-height: 1.2;
   }
 
   .dash-header {
