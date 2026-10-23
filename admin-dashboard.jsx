@@ -402,7 +402,7 @@ const Dashboard = ({ go, user }) => {
           </div>
         </div>
         <div style={{ padding: "0 14px 4px 14px" }}>
-          <div style={{ position: "relative", width: "100%", height: "140px" }}>
+          <div style={{ position: "relative", width: "100%", height: "200px" }}>
             <ChartCanvas
               type="bar"
               data={{

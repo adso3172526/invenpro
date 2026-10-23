@@ -5352,8 +5352,8 @@ table.tbl tr.item-detail td {
   }
 
   .dash-kpi-card {
-    padding: 8px 10px;
-    min-height: 62px;
+    padding: 16px 16px;
+    min-height: 92px;
     border-radius: 10px;
   }
 
