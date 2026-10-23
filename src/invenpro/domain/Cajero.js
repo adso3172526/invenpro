@@ -20,7 +20,7 @@
       this.#rol = data.rol || "Cajero";
       this.#estado = data.estado || "inactivo";
       this.#turnoActivo = Boolean(data.turnoActivo);
-      this.#ingreso = Number(data.ingreso || 0);
+      this.#ingreso = data.ingreso || "";  // fecha de ingreso (string YYYY-MM-DD), NO número
       this.#ventas30d = Number(data.ventas30d || 0);
     }
 
@@ -43,7 +43,7 @@
     set turnoActivo(v) { this.#turnoActivo = Boolean(v); }
 
     get ingreso() { return this.#ingreso; }
-    set ingreso(v) { this.#ingreso = Number(v || 0); }
+    set ingreso(v) { this.#ingreso = v || ""; }
 
     get ventas30d() { return this.#ventas30d; }
     set ventas30d(v) { this.#ventas30d = Number(v || 0); }
