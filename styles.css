@@ -1072,7 +1072,7 @@ textarea {
     box-shadow: none;
     flex-direction: column;
     padding: 20px 16px 36px;
-    background-color: transparent;
+    background-color: #7FB3E3;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
@@ -1084,35 +1084,10 @@ textarea {
     transform: translateX(0);
   }
 
-  /* Fondo con la segunda imagen (supermercado) más clara y luminosa */
-  .sidebar::before {
-    content: "";
-    position: fixed;
-    top: -15px;
-    left: -15px;
-    right: -15px;
-    bottom: -15px;
-    background-image: url('bg-mobile-blur.jpg');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    /* blur horneado en la imagen; sin filter en vivo (evita lag) */
-    z-index: 0;
-    pointer-events: none;
-  }
+  /* Fondo sólido del menú móvil (#7FB3E3): se ocultan la imagen y el overlay */
+  .sidebar::before { display: none; }
 
-  /* Overlay sutil y transparente para mantener legibilidad sin oscurecer la imagen */
-  .sidebar::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(180deg,
-        rgba(0, 76, 255, 0.16) 0%,
-        rgba(15, 23, 42, 0.20) 50%,
-        rgba(15, 23, 42, 0.28) 100%);
-    z-index: 1;
-    pointer-events: none;
-  }
+  .sidebar::after { display: none; }
 
   /* Elementos hijos por encima del fondo y overlay */
   .sidebar>* {
@@ -2190,6 +2165,12 @@ textarea {
 .dash {
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Desktop: un respiro arriba + tarjetas de la fila inferior más altas (llenan el espacio) */
+@media (min-width: 901px) {
+  .dash { padding-top: 24px; }
+  .dash-bottom-grid > .dash-card { min-height: 280px; }
 }
 
 .dash-h {
@@ -5372,28 +5353,33 @@ table.tbl tr.item-detail td {
   }
 
   .dash-kpi-card {
-    padding: 8px 10px;
-    min-height: 62px;
+    padding: 16px 16px;
+    min-height: 92px;
     border-radius: 10px;
   }
 
   .dash-kpi-card .kpi-label {
-    font-size: 11px;
-    gap: 4px;
+    font-size: 14px;
+    gap: 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .dash-kpi-card .kpi-val {
+<<<<<<< HEAD
     font-size: 16px;
     margin: 2px 0 1px 0;
     font-variant-numeric: tabular-nums;
+=======
+    font-size: 26px;
+    margin: 4px 0 2px 0;
+>>>>>>> 415821b66ccbba061bb569da6300bfd6e93b6bd2
   }
 
   .dash-kpi-card .kpi-sub {
-    font-size: 9px;
-    line-height: 1.15;
+    font-size: 12px;
+    line-height: 1.2;
   }
 
   .dash-header {
@@ -5558,7 +5544,7 @@ table.tbl tr.item-detail td {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 7px 14px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5621,18 +5607,18 @@ table.tbl tr.item-detail td {
 }
 
 .dash-metric-card .metric-label {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--text-2);
 }
 
 .dash-metric-card .metric-val {
-  font-size: 18px;
+  font-size: 23px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.02em;
-  margin: 1px 0;
-  line-height: 1.15;
+  margin: 5px 0;
+  line-height: 1.2;
 }
 
 .dash-metric-card .metric-trend {

@@ -402,7 +402,7 @@ const Dashboard = ({ go, user }) => {
           </div>
         </div>
         <div style={{ padding: "0 14px 4px 14px" }}>
-          <div style={{ position: "relative", width: "100%", height: "140px" }}>
+          <div style={{ position: "relative", width: "100%", height: "200px" }}>
             <ChartCanvas
               type="bar"
               data={{
@@ -438,6 +438,7 @@ const Dashboard = ({ go, user }) => {
                       color: "var(--text-3, #7E8898)",
                       font: { size: 9, family: "inherit" },
                       maxRotation: 0,
+<<<<<<< HEAD
                       autoSkip: false,
                       callback: function(val, index) {
                         const lbl = (this.getLabelForValue && typeof this.getLabelForValue === "function") 
@@ -450,6 +451,10 @@ const Dashboard = ({ go, user }) => {
                         const step = w < 370 ? 3 : (w < 600 ? 2 : 1);
                         return (index % step === 0) ? lbl : "";
                       }
+=======
+                      autoSkip: true,
+                      autoSkipPadding: 8
+>>>>>>> 415821b66ccbba061bb569da6300bfd6e93b6bd2
                     }
                   },
                   y: {

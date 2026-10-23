@@ -81,7 +81,7 @@ const Cajeros = () => {
       } catch (e) { console.error("refrescar turnos/cierres al entrar:", e); }
     })();
   }, []);
-  const pagCaj = usePagination(MOCK.cajeros, 2);
+  const pagCaj = usePagination(MOCK.cajeros, 10);
   // Turnos del más reciente al más antiguo (por el número del id). Los turnos con
   // cierre son los recientes (ids tipo "T-<timestamp>"), así salen primero y se ve
   // su botón "Detalle"; los viejos "T-20xx" (sin cierre) quedan al final.
