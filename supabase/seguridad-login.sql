@@ -34,7 +34,9 @@ begin
     select 1 from cajeros c
     where lower(c.nombre) = lower(v.nombre) and c.estado = 'inactivo'
   ) then
-    return;  -- cajero inactivo -> login denegado
+    -- cajero inactivo (con credenciales correctas): lanza error identificable para
+    -- que la app muestre "usuario inactivo" en vez de "contraseña incorrecta".
+    raise exception 'USUARIO_INACTIVO';
   end if;
 
   -- migra un hash viejo (md5) a sha-256 si aplica
