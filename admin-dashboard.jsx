@@ -438,23 +438,8 @@ const Dashboard = ({ go, user }) => {
                       color: "var(--text-3, #7E8898)",
                       font: { size: 9, family: "inherit" },
                       maxRotation: 0,
-<<<<<<< HEAD
-                      autoSkip: false,
-                      callback: function(val, index) {
-                        const lbl = (this.getLabelForValue && typeof this.getLabelForValue === "function") 
-                          ? this.getLabelForValue(val) 
-                          : (horasLabels[index] || val);
-                        const w = (this.chart && this.chart.width) ? this.chart.width : (typeof window !== "undefined" ? window.innerWidth : 800);
-                        // Pantallas muy angostas (< 370px): cada 3 horas (6:00, 9:00, 12:00, 15:00, 18:00, 21:00)
-                        // Móviles estándar (< 600px): cada 2 horas (6:00, 8:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00)
-                        // Tablets / Desktop (>= 600px): todas las horas
-                        const step = w < 370 ? 3 : (w < 600 ? 2 : 1);
-                        return (index % step === 0) ? lbl : "";
-                      }
-=======
                       autoSkip: true,
                       autoSkipPadding: 8
->>>>>>> 415821b66ccbba061bb569da6300bfd6e93b6bd2
                     }
                   },
                   y: {
@@ -468,9 +453,9 @@ const Dashboard = ({ go, user }) => {
                       maxTicksLimit: 4,
                       callback: (v) => {
                         if (v === 0) return "0k";
-                        if (v >= 1000000) return (v / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-                        if (v >= 1000) return (v / 1000).toFixed(0) + "k";
-                        return v;
+                        if (v >= 1000000) return (v / 1000000) + "M";
+                        if (v >= 1000) return (v / 1000) + "k";
+                        return (v / 1000).toFixed(4) + "k";
                       }
                     }
                   }

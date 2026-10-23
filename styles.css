@@ -5367,14 +5367,8 @@ table.tbl tr.item-detail td {
   }
 
   .dash-kpi-card .kpi-val {
-<<<<<<< HEAD
-    font-size: 16px;
-    margin: 2px 0 1px 0;
-    font-variant-numeric: tabular-nums;
-=======
     font-size: 26px;
     margin: 4px 0 2px 0;
->>>>>>> 415821b66ccbba061bb569da6300bfd6e93b6bd2
   }
 
   .dash-kpi-card .kpi-sub {
@@ -5387,73 +5381,9 @@ table.tbl tr.item-detail td {
     align-items: flex-start;
   }
 
-  .dash-header .dash-btn-export,
   .dash-header .btn-export {
     width: 100%;
     margin-top: 6px;
-  }
-
-  /* Tarjetas intermedias de métricas */
-  .dash-metric-card {
-    padding: 8px 12px;
-  }
-
-  .dash-metric-card .metric-val {
-    font-size: clamp(15px, 4.5vw, 17px);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .dash-metric-card .metric-trend {
-    font-size: 10px;
-  }
-
-  /* Productos más vendidos: ajuste de columnas y alineación de cantidades */
-  .dash-product-item {
-    grid-template-columns: minmax(75px, 1.2fr) minmax(50px, 1fr) auto;
-    gap: 8px;
-  }
-
-  .dash-product-qty {
-    font-size: 11.5px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    min-width: 28px;
-    text-align: right;
-  }
-
-  /* Tabla de stock bajo: números de stock nítidos sin cortes */
-  .dash-stock-tbl th,
-  .dash-stock-tbl td {
-    padding: 5px 4px;
-  }
-
-  .dash-stock-prod-name {
-    max-width: 95px;
-    font-size: 10.5px;
-  }
-
-  .dash-stock-tbl td:nth-child(2) {
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-    font-size: 11px;
-  }
-
-  .dash-badge {
-    padding: 2px 4px;
-    font-size: 9px;
-  }
-
-  /* Detalle de cajeros: valores monetarios y transacciones */
-  .dash-cajero-row {
-    gap: 6px;
-  }
-
-  .dash-cajero-val {
-    flex-shrink: 0;
-    min-width: 55px;
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
   }
 }
 
