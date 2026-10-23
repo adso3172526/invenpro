@@ -307,7 +307,9 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
       (!ql || p.nombre.toLowerCase().includes(ql) || p.sku.toLowerCase().includes(ql) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(ql)))
     );
   }, [productos, cat, q]);
-  const pagProd = usePagination(filtered, 12);
+  // El grid de productos hace scroll (overflow-y:auto) y llena el alto (flex:1), así
+  // que NO se pagina: se muestran todos los de la categoría y se scrollea. Paginar a
+  // 12 dejaba huecos y mandaba productos a otra "página" sin necesidad.
 
   const totals = useMemo(() => {
     const sub = cart.reduce((s, l) => s + l.q * l.precio, 0);
@@ -574,7 +576,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
             ))}
           </div>
           <div className="product-grid">
-            {pagProd.slice.map(p => (
+            {filtered.map(p => (
               <button key={p.sku} className="product" onClick={() => addToCart(p)} disabled={p.stock <= 0}>
                 <div className="thumb" style={{ height: "auto", aspectRatio: "1 / 1", overflow: "hidden" }}>{p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}/> : <Icon name="box" size={22}/>}</div>
                 <div className="name">{p.nombre}</div>
@@ -592,7 +594,6 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
               </div>
             )}
           </div>
-          <Pagination {...pagProd} label="productos"/>
         </div>
 
         {/* Desktop cart — columna derecha, idéntico al original */}
@@ -701,7 +702,7 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
           {/* Productos — grid con tarjetas bonitas */}
           <div className="pos-mobile-products tw-flex-1 tw-overflow-y-auto tw-px-3 tw-pb-3 tw-min-h-0" style={{ WebkitOverflowScrolling: "touch" }}>
             <div className="pos-mobile-product-grid tw-grid tw-grid-cols-2 min-[400px]:tw-grid-cols-3 tw-gap-2">
-              {pagProd.slice.map(p => {
+              {filtered.map(p => {
                 const inCart = cart.find(l => l.sku === p.sku);
                 return (
                   <button key={p.sku}
@@ -733,7 +734,6 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
                 <div className="tw-text-xs tw-text-txt-3">No encontramos "{q}"</div>
               </div>
             )}
-            {filtered.length > 0 && <Pagination {...pagProd} label="productos"/>}
           </div>
 
           {/* Carrito flotante / bottom bar */}
