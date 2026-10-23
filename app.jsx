@@ -140,7 +140,7 @@ const App = () => {
           <Sidebar active={adminPage} setActive={setAdminPage} user={user} onLogout={onLogout}/>
           <div className="main">
             <div className="page">
-              {adminPage === "dashboard" && <Dashboard go={setAdminPage}/>}
+              {adminPage === "dashboard" && <Dashboard go={setAdminPage} user={user}/>}
               {adminPage === "inventory" && <Inventario/>}
               {adminPage === "ingreso" && <Ingreso/>}
               {adminPage === "vence" && <Vencimientos/>}
