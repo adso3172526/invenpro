@@ -438,38 +438,58 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
       return;
     }
 
-    // Persistir cierre en Supabase. Si algo falla, el turno queda ABIERTO y se avisa
-    // (antes los errores se tragaban con .catch y mostraba "Turno cerrado" en falso).
+    // Cierre ATÓMICO e idempotente vía RPC fn_cerrar_turno: marca el turno 'cerrado'
+    // y registra el arqueo en UNA sola transacción (con bloqueo de fila). Evita el
+    // estado a medias "arqueo creado pero turno abierto" y los dobles cierres cuando
+    // el mismo cajero tiene el turno abierto en dos equipos. Si la función aún no
+    // existe en la BD, cae al método de 2 pasos (fallback) para no romper nada.
+    const fechaFin = now.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
+    let cerrado = false;
     try {
-      const errTurno = await DB.turnos.close(turnoId, {
-        fechaFin: now.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }),
-        estado: "cerrado",
-        ventas: shiftStats.ventas,
-        transacciones: shiftStats.trans,
+      const { status, error } = await DB.cierres.cerrarTurno({
+        p_turno_id: turnoId, p_fecha_fin: fechaFin,
+        p_ventas: shiftStats.ventas, p_transacciones: shiftStats.trans, p_por_metodo: pm,
+        p_base_inicial: shift.base || 0,
+        p_ventas_efectivo: pm.Efectivo || 0, p_ventas_transferencia: pm.Transferencia || 0,
+        p_ventas_nequi: pm.Nequi || 0, p_ventas_daviplata: pm.Daviplata || 0,
+        p_total_ventas: shiftStats.ventas,
+        p_esperado_efectivo: esperado, p_efectivo_contado: contado, p_diferencia: contado - esperado,
+        p_observaciones: (datos && datos.observaciones) || null,
       });
-      if (errTurno) throw errTurno;
-
-      // Arqueo + desglose por medio de pago (tabla cierres_caja)
-      const errCierre = await DB.cierres.create({
-        turnoId: turnoId,
-        baseInicial: shift.base || 0,
-        ventasEfectivo: pm.Efectivo || 0,
-        ventasTransferencia: pm.Transferencia || 0,
-        ventasNequi: pm.Nequi || 0,
-        ventasDaviplata: pm.Daviplata || 0,
-        totalVentas: shiftStats.ventas,
-        transacciones: shiftStats.trans,
-        esperadoEfectivo: esperado,
-        efectivoContado: contado,
-        diferencia: contado - esperado,
-        observaciones: (datos && datos.observaciones) || null,
-      });
-      if (errCierre) throw errCierre;
+      if (error) {
+        const noExisteFn = /PGRST202|does not exist|could not find the function|schema cache/i.test((error.message || "") + " " + (error.code || "") + " " + (error.hint || ""));
+        if (!noExisteFn) throw error; // error real -> abortar; "función inexistente" -> fallback
+      } else {
+        if (status === "no_existe") { setCerrando(false); setToast("No se encontró el turno para cerrar. Recarga la página e intenta."); return; }
+        cerrado = true; // 'ok' o 'ya_cerrado' (otro equipo ya lo cerró) -> el turno quedó cerrado
+      }
     } catch (err) {
-      console.error("closeShift:", err);
+      console.error("closeShift (rpc):", err);
       setCerrando(false);
       setToast("No se pudo guardar el cierre: " + ((err && err.message) || "error de conexión") + ". El turno sigue abierto; reintenta.");
-      return;  // NO avanzar a "Turno cerrado" si no se guardó
+      return;
+    }
+
+    if (!cerrado) {
+      // Fallback (BD sin fn_cerrar_turno aún): método de 2 pasos de antes.
+      try {
+        const errTurno = await DB.turnos.close(turnoId, { fechaFin, estado: "cerrado", ventas: shiftStats.ventas, transacciones: shiftStats.trans });
+        if (errTurno) throw errTurno;
+        const errCierre = await DB.cierres.create({
+          turnoId: turnoId, baseInicial: shift.base || 0,
+          ventasEfectivo: pm.Efectivo || 0, ventasTransferencia: pm.Transferencia || 0,
+          ventasNequi: pm.Nequi || 0, ventasDaviplata: pm.Daviplata || 0,
+          totalVentas: shiftStats.ventas, transacciones: shiftStats.trans,
+          esperadoEfectivo: esperado, efectivoContado: contado, diferencia: contado - esperado,
+          observaciones: (datos && datos.observaciones) || null,
+        });
+        if (errCierre) throw errCierre;
+      } catch (err) {
+        console.error("closeShift (fallback):", err);
+        setCerrando(false);
+        setToast("No se pudo guardar el cierre: " + ((err && err.message) || "error de conexión") + ". El turno sigue abierto; reintenta.");
+        return;
+      }
     }
     setCerrando(false);
     onCloseShift(summary);

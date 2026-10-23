@@ -17,6 +17,15 @@
       return this._upsert("cierres_caja", this._helpers.snakify(cierre), { onConflict: "turno_id" });
     }
 
+    // Cierre ATÓMICO e idempotente via RPC fn_cerrar_turno (marca turno cerrado +
+    // registra arqueo en una sola transacción). Devuelve { status, error }, donde
+    // status = 'ok' | 'ya_cerrado' | 'no_existe'. Se usa getDb().rpc directo porque
+    // BaseService._rpc descarta el data (y aquí necesitamos el status).
+    async cerrarTurno(params) {
+      var result = await this.getDb().rpc("fn_cerrar_turno", params);
+      return { status: result.data, error: result.error };
+    }
+
     async getAll() {
       var data = await this._findAll("cierres_caja");
       return this._helpers.camelize(data);
