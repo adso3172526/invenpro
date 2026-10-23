@@ -438,7 +438,8 @@ const Dashboard = ({ go, user }) => {
                       color: "var(--text-3, #7E8898)",
                       font: { size: 9, family: "inherit" },
                       maxRotation: 0,
-                      autoSkip: false
+                      autoSkip: true,
+                      autoSkipPadding: 8
                     }
                   },
                   y: {
