@@ -1072,7 +1072,7 @@ textarea {
     box-shadow: none;
     flex-direction: column;
     padding: 20px 16px 36px;
-    background-color: transparent;
+    background-color: #7FB3E3;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
@@ -1084,35 +1084,10 @@ textarea {
     transform: translateX(0);
   }
 
-  /* Fondo con la segunda imagen (supermercado) más clara y luminosa */
-  .sidebar::before {
-    content: "";
-    position: fixed;
-    top: -15px;
-    left: -15px;
-    right: -15px;
-    bottom: -15px;
-    background-image: url('bg-mobile-blur.jpg');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    /* blur horneado en la imagen; sin filter en vivo (evita lag) */
-    z-index: 0;
-    pointer-events: none;
-  }
+  /* Fondo sólido del menú móvil (#7FB3E3): se ocultan la imagen y el overlay */
+  .sidebar::before { display: none; }
 
-  /* Overlay sutil y transparente para mantener legibilidad sin oscurecer la imagen */
-  .sidebar::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(180deg,
-        rgba(0, 76, 255, 0.16) 0%,
-        rgba(15, 23, 42, 0.20) 50%,
-        rgba(15, 23, 42, 0.28) 100%);
-    z-index: 1;
-    pointer-events: none;
-  }
+  .sidebar::after { display: none; }
 
   /* Elementos hijos por encima del fondo y overlay */
   .sidebar>* {
