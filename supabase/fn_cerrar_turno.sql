@@ -94,3 +94,6 @@ grant execute on function fn_cerrar_turno(
   text, text, numeric, integer, jsonb, numeric, numeric, numeric, numeric,
   numeric, numeric, numeric, numeric, numeric, text
 ) to anon, authenticated;
+
+-- Recargar la caché de la API para exponer la función nueva por RPC
+NOTIFY pgrst, 'reload schema';
