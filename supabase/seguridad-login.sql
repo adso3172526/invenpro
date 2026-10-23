@@ -27,6 +27,16 @@ begin
     return;
   end if;
 
+  -- BLOQUEO por estado: si el usuario corresponde a un CAJERO inactivo, no se permite
+  -- el login (el estado vive en la tabla cajeros; se enlaza por nombre). Los usuarios
+  -- que no son cajeros (admin/supervisor sin fila en cajeros) no se ven afectados.
+  if exists (
+    select 1 from cajeros c
+    where lower(c.nombre) = lower(v.nombre) and c.estado = 'inactivo'
+  ) then
+    return;  -- cajero inactivo -> login denegado
+  end if;
+
   -- migra un hash viejo (md5) a sha-256 si aplica
   if p_md5 <> '' and v.pass = p_md5 and p_md5 is distinct from p_sha then
     update usuarios_sistema us set pass = p_sha where us.usuario = v.usuario;
