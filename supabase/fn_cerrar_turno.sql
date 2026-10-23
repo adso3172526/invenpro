@@ -57,27 +57,33 @@ begin
          por_metodo = coalesce(p_por_metodo, por_metodo)
    where id = p_turno_id;
 
-  insert into cierres_caja (
-    turno_id, base_inicial, ventas_efectivo, ventas_transferencia, ventas_nequi,
-    ventas_daviplata, total_ventas, transacciones, esperado_efectivo,
-    efectivo_contado, diferencia, observaciones
-  ) values (
-    p_turno_id, p_base_inicial, p_ventas_efectivo, p_ventas_transferencia, p_ventas_nequi,
-    p_ventas_daviplata, p_total_ventas, p_transacciones, p_esperado_efectivo,
-    p_efectivo_contado, p_diferencia, p_observaciones
-  )
-  on conflict (turno_id) do update set
-    base_inicial         = excluded.base_inicial,
-    ventas_efectivo      = excluded.ventas_efectivo,
-    ventas_transferencia = excluded.ventas_transferencia,
-    ventas_nequi         = excluded.ventas_nequi,
-    ventas_daviplata     = excluded.ventas_daviplata,
-    total_ventas         = excluded.total_ventas,
-    transacciones        = excluded.transacciones,
-    esperado_efectivo    = excluded.esperado_efectivo,
-    efectivo_contado     = excluded.efectivo_contado,
-    diferencia           = excluded.diferencia,
-    observaciones        = excluded.observaciones;
+  -- Upsert manual (sin ON CONFLICT): si ya hay arqueo para el turno lo actualiza,
+  -- si no, lo inserta. Evita depender de la inferencia del indice unico al crear.
+  if exists (select 1 from cierres_caja where turno_id = p_turno_id) then
+    update cierres_caja set
+      base_inicial         = p_base_inicial,
+      ventas_efectivo      = p_ventas_efectivo,
+      ventas_transferencia = p_ventas_transferencia,
+      ventas_nequi         = p_ventas_nequi,
+      ventas_daviplata     = p_ventas_daviplata,
+      total_ventas         = p_total_ventas,
+      transacciones        = p_transacciones,
+      esperado_efectivo    = p_esperado_efectivo,
+      efectivo_contado     = p_efectivo_contado,
+      diferencia           = p_diferencia,
+      observaciones        = p_observaciones
+    where turno_id = p_turno_id;
+  else
+    insert into cierres_caja (
+      turno_id, base_inicial, ventas_efectivo, ventas_transferencia, ventas_nequi,
+      ventas_daviplata, total_ventas, transacciones, esperado_efectivo,
+      efectivo_contado, diferencia, observaciones
+    ) values (
+      p_turno_id, p_base_inicial, p_ventas_efectivo, p_ventas_transferencia, p_ventas_nequi,
+      p_ventas_daviplata, p_total_ventas, p_transacciones, p_esperado_efectivo,
+      p_efectivo_contado, p_diferencia, p_observaciones
+    );
+  end if;
 
   return 'ok';
 end;
