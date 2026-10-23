@@ -163,7 +163,7 @@ const ChartCanvas = ({ type, data, options }) => {
       options: { responsive: true, maintainAspectRatio: false, ..._resolveChartTokens(options || {}, css) },
     });
     return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
-  }, [type, dataKey, theme]);
+  }, [type, dataKey, theme, options]);
 
   return <canvas ref={ref}/>;
 };
