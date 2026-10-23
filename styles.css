@@ -2167,9 +2167,10 @@ textarea {
   box-sizing: border-box;
 }
 
-/* Desktop: un respiro arriba para que las tarjetas no queden pegadas al borde superior */
+/* Desktop: un respiro arriba + tarjetas de la fila inferior más altas (llenan el espacio) */
 @media (min-width: 901px) {
   .dash { padding-top: 24px; }
+  .dash-bottom-grid > .dash-card { min-height: 280px; }
 }
 
 .dash-h {
