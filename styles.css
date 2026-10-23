@@ -2401,17 +2401,21 @@ textarea {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 8px;
   }
+
   .kpi {
     padding: 10px 8px;
   }
+
   .kpi .val,
   .dash-kpi .kpi .val {
     font-size: 16px;
   }
+
   .kpi .label,
   .dash-kpi .kpi .label {
     font-size: 10.5px;
   }
+
   .kpi .delta,
   .dash-kpi .kpi .delta {
     font-size: 9.5px;
@@ -2729,6 +2733,7 @@ table.tbl th.num {
 }
 
 @media (min-width: 768px) {
+
   .inventario-kpis,
   .vencimientos-kpis {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
@@ -2919,6 +2924,7 @@ table.tbl th.num {
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -4620,6 +4626,7 @@ table.tbl tr.item-detail td {
   min-width: 100px;
   white-space: nowrap;
 }
+
 .prov-table td:last-child .btn {
   flex-shrink: 0;
   margin: 0;
@@ -5210,6 +5217,7 @@ table.tbl tr.item-detail td {
     box-shadow: 0 0 0 2px #fff, var(--shadow-sm);
     transform: none;
   }
+
   /* Tampoco se mueve al hacer click */
   .sidebar .nav-cards .nav-card:active {
     transform: none;
@@ -5345,6 +5353,7 @@ table.tbl tr.item-detail td {
   .dash-kpis-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .dash-bottom-grid {
     grid-template-columns: 1fr;
   }
@@ -5361,11 +5370,13 @@ table.tbl tr.item-detail td {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
   }
+
   .dash-kpi-card {
     padding: 8px 10px;
     min-height: 62px;
     border-radius: 10px;
   }
+
   .dash-kpi-card .kpi-label {
     font-size: 11px;
     gap: 4px;
@@ -5373,18 +5384,22 @@ table.tbl tr.item-detail td {
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   .dash-kpi-card .kpi-val {
     font-size: 16px;
     margin: 2px 0 1px 0;
   }
+
   .dash-kpi-card .kpi-sub {
     font-size: 9px;
     line-height: 1.15;
   }
+
   .dash-header {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .dash-header .btn-export {
     width: 100%;
     margin-top: 6px;
@@ -5523,10 +5538,12 @@ table.tbl tr.item-detail td {
   background: rgba(30, 107, 230, 0.18);
   color: #60A5FA;
 }
+
 [data-theme="dark"] .dash-metric-card .icon-box.green {
   background: rgba(22, 163, 74, 0.18);
   color: #4ADE80;
 }
+
 [data-theme="dark"] .dash-metric-card .icon-box.purple {
   background: rgba(147, 51, 234, 0.18);
   color: #C084FC;
@@ -5584,9 +5601,11 @@ table.tbl tr.item-detail td {
   padding: 5px 0;
   border-bottom: 1px solid var(--border);
 }
+
 .dash-product-item:last-child {
   border-bottom: none;
 }
+
 .dash-product-name {
   font-size: 11.5px;
   font-weight: 500;
@@ -5596,6 +5615,7 @@ table.tbl tr.item-detail td {
   text-overflow: ellipsis;
   min-width: 0;
 }
+
 .dash-bar-track {
   width: 100%;
   height: 8px;
@@ -5604,18 +5624,22 @@ table.tbl tr.item-detail td {
   overflow: hidden;
   display: flex;
 }
+
 [data-theme="dark"] .dash-bar-track {
   background: rgba(255, 255, 255, 0.08);
 }
+
 .dash-bar-fill {
   height: 100%;
   background: #1877F2;
   border-radius: 999px;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .dash-product-item:hover .dash-bar-fill {
   background: #1263CC;
 }
+
 .dash-product-qty {
   font-size: 11.5px;
   font-weight: 700;
@@ -5629,6 +5653,7 @@ table.tbl tr.item-detail td {
   width: 100%;
   border-collapse: collapse;
 }
+
 .dash-stock-tbl th {
   font-size: 10px;
   font-weight: 600;
@@ -5637,19 +5662,23 @@ table.tbl tr.item-detail td {
   padding: 4px 6px;
   background: var(--surface-2);
 }
+
 .dash-stock-tbl th:first-child {
   border-top-left-radius: 6px;
   border-bottom-left-radius: 6px;
 }
+
 .dash-stock-tbl th:last-child {
   border-top-right-radius: 6px;
   border-bottom-right-radius: 6px;
 }
+
 .dash-stock-tbl td {
   padding: 4px 6px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
+
 .dash-stock-tbl tr:last-child td {
   border-bottom: none;
 }
@@ -5702,18 +5731,22 @@ table.tbl tr.item-detail td {
   border-radius: 5px;
   white-space: nowrap;
 }
+
 .dash-badge.warn-low {
   background: #FEE2E2;
   color: #DC2626;
 }
+
 .dash-badge.warn-crit {
   background: #FEF3C7;
   color: #D97706;
 }
+
 [data-theme="dark"] .dash-badge.warn-low {
   background: rgba(220, 38, 38, 0.2);
   color: #F87171;
 }
+
 [data-theme="dark"] .dash-badge.warn-crit {
   background: rgba(217, 119, 6, 0.2);
   color: #FBBF24;
@@ -5727,19 +5760,23 @@ table.tbl tr.item-detail td {
   padding: 4px 0;
   border-bottom: 1px solid var(--border);
 }
+
 .dash-cajero-row:last-child {
   border-bottom: none;
 }
+
 .dash-cajero-idx {
   font-size: 11px;
   font-weight: 500;
   color: var(--text-3);
   width: 12px;
 }
+
 .dash-cajero-body {
   flex: 1;
   min-width: 0;
 }
+
 .dash-cajero-meta {
   display: flex;
   align-items: center;
@@ -5749,23 +5786,27 @@ table.tbl tr.item-detail td {
   color: var(--text);
   margin-bottom: 2px;
 }
+
 .dash-cajero-sub {
   font-size: 10px;
   font-weight: 400;
   color: var(--text-3);
 }
+
 .dash-cajero-bar-track {
   height: 5px;
   background: var(--surface-2);
   border-radius: 999px;
   overflow: hidden;
 }
+
 .dash-cajero-bar-fill {
   height: 100%;
   background: #1877F2;
   border-radius: 999px;
   transition: width 0.4s ease;
 }
+
 .dash-cajero-val {
   font-size: 11.5px;
   font-weight: 700;
@@ -5773,4 +5814,8 @@ table.tbl tr.item-detail td {
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.class1 {
+  height: 93% !important;
 }
