@@ -960,93 +960,873 @@ const POS = ({ shift, cajero, onCloseShift, onLogout }) => {
 };
 
 // =================== Modal de pago ===================
+const METODOS_PAGO = [
+  {
+    id: "Efectivo",
+    label: "Efectivo",
+    sub: "Billetes y monedas (admite cambio)",
+    icon: "banknote",
+    color: "var(--good)",
+    badge: "Admite cambio",
+    isCash: true,
+  },
+  {
+    id: "Transferencia",
+    label: "Transferencia",
+    sub: "Bancolombia, Tarjeta, PSE",
+    icon: "creditCard",
+    color: "var(--accent)",
+    badge: "Monto exacto",
+    isCash: false,
+  },
+  {
+    id: "Nequi",
+    label: "Nequi",
+    sub: "Transferencia QR o celular Nequi",
+    icon: "smartphone",
+    color: "#9333EA",
+    badge: "Monto exacto",
+    isCash: false,
+  },
+  {
+    id: "Daviplata",
+    label: "Daviplata",
+    sub: "Transferencia app Daviplata",
+    icon: "smartphone",
+    color: "#E11D48",
+    badge: "Monto exacto",
+    isCash: false,
+  },
+];
+
 const PaymentModal = ({ total, items, onClose, onPay }) => {
   const [montos, setMontos] = useState({ Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 });
-  const [activo, setActivo] = useState("Efectivo"); // medio al que apuntan los atajos
-  const set1 = (m, v) => setMontos(x => ({ ...x, [m]: v }));
+  const [activo, setActivo] = useState("Efectivo"); // medio al que apuntan el teclado y los atajos
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [tecladoAbierto, setTecladoAbierto] = useState(false); // se abre automáticamente al hacer clic en los inputs en móvil
+  const getIsMobile = () => {
+    if (typeof window === "undefined") return false;
+    const isSmall = window.innerWidth < 768;
+    const isTouch = "ontouchstart" in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || "");
+    return isSmall || isMobileUA || (isTouch && window.innerWidth < 1024);
+  };
 
-  const noEfectivo = montos.Transferencia + montos.Nequi + montos.Daviplata; // medios exactos
-  const restoEfectivo = Math.max(0, total - noEfectivo);        // lo que falta cubrir en efectivo
-  const efectivoAplicado = Math.min(montos.Efectivo, restoEfectivo);
+  const [isMobile, setIsMobile] = useState(getIsMobile);
+  const inputRefs = React.useRef({});
+
+  useEffect(() => {
+    // Desenfocar cualquier elemento activo (como el buscador de productos) para que no persista el teclado nativo del móvil
+    if (document.activeElement && typeof document.activeElement.blur === "function") {
+      document.activeElement.blur();
+    }
+    const onResize = () => setIsMobile(getIsMobile());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const set1 = (m, v) => {
+    const val = Math.max(0, Math.min(parseInt(v, 10) || 0, 999999999));
+    setMontos(x => ({ ...x, [m]: val }));
+  };
+
+  const noEfectivo = (montos.Transferencia || 0) + (montos.Nequi || 0) + (montos.Daviplata || 0); // medios exactos
+  const restoEfectivo = Math.max(0, total - noEfectivo);                                          // falta cubrir en efectivo
+  const efectivoAplicado = Math.min(montos.Efectivo || 0, restoEfectivo);
   const restante = Math.max(0, total - noEfectivo - efectivoAplicado);
-  const cambio = Math.max(0, montos.Efectivo - restoEfectivo);
-  const excede = noEfectivo > total;                            // no se puede sobrepagar con no-efectivo
+  const cambio = Math.max(0, (montos.Efectivo || 0) - restoEfectivo);
+  const excede = noEfectivo > total;                                                              // medios exactos no pueden sobrepagar
   const cubierto = restante === 0 && !excede;
+  const totalRecibido = noEfectivo + (montos.Efectivo || 0);
 
-  const iconMetodo = (m) => m === "Efectivo" ? "cart" : m === "Transferencia" ? "settings" : "pkg";
+  // Operaciones del teclado numérico
+  const handleDigit = (d) => {
+    const cur = montos[activo] || 0;
+    const s = cur === 0 ? String(d) : String(cur) + String(d);
+    if (s.length <= 10) {
+      set1(activo, parseInt(s, 10) || 0);
+    }
+  };
+
+  const handleDoubleZero = () => {
+    const cur = montos[activo] || 0;
+    if (cur > 0) {
+      const s = String(cur) + "00";
+      if (s.length <= 10) set1(activo, parseInt(s, 10) || 0);
+    }
+  };
+
+  const handleTripleZero = () => {
+    const cur = montos[activo] || 0;
+    if (cur > 0) {
+      const s = String(cur) + "000";
+      if (s.length <= 10) set1(activo, parseInt(s, 10) || 0);
+    }
+  };
+
+  const handleDecimal = () => {
+    // Los precios en COP son enteros sin decimales; mantenemos formato limpio
+  };
+
+  const handleBackspace = () => {
+    const cur = montos[activo] || 0;
+    const s = String(cur);
+    if (s.length > 1) {
+      set1(activo, parseInt(s.slice(0, -1), 10) || 0);
+    } else {
+      set1(activo, 0);
+    }
+  };
+
+  const handleClear = () => {
+    set1(activo, 0);
+  };
+
+  const handleCompletar = (targetMetodo) => {
+    const target = targetMetodo || activo;
+    const otros = ["Efectivo", "Transferencia", "Nequi", "Daviplata"].reduce(
+      (s, k) => (k === target ? s : s + (montos[k] || 0)),
+      0
+    );
+    set1(target, Math.max(0, total - otros));
+    setActivo(target);
+  };
+
+  const handleQuickBill = (amount) => {
+    set1(activo, amount);
+  };
 
   const confirmar = () => {
-    if (!cubierto) return;
-    const pagos = [];
-    ["Transferencia", "Nequi", "Daviplata"].forEach(m => { if (montos[m] > 0) pagos.push({ metodo: m, monto: montos[m] }); });
-    if (efectivoAplicado > 0) pagos.push({ metodo: "Efectivo", monto: efectivoAplicado });
-    const metodo = pagos.length === 1 ? pagos[0].metodo : (pagos.length === 0 ? "Efectivo" : "Mixto");
-    onPay({ metodo, pagos, recibido: noEfectivo + montos.Efectivo, cambio });
+    if (!cubierto || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const pagos = [];
+      ["Transferencia", "Nequi", "Daviplata"].forEach(m => {
+        if ((montos[m] || 0) > 0) pagos.push({ metodo: m, monto: montos[m] });
+      });
+      if (efectivoAplicado > 0) pagos.push({ metodo: "Efectivo", monto: efectivoAplicado });
+      const metodo = pagos.length === 1 ? pagos[0].metodo : (pagos.length === 0 ? "Efectivo" : "Mixto");
+      onPay({
+        metodo,
+        pagos,
+        recibido: noEfectivo + (montos.Efectivo || 0),
+        cambio,
+      });
+    } catch (err) {
+      console.error("Error al procesar el pago:", err);
+      setIsProcessing(false);
+    }
   };
+
+  // Soporte de teclado físico (0-9, Backspace, C, Enter, Esc)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const isInput = e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA");
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (cubierto && !isProcessing) {
+          confirmar();
+        }
+        return;
+      }
+
+      // Si no estamos dentro del campo nativo de texto, el teclado numérico visual recibe las teclas
+      if (!isInput) {
+        if (/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+          handleDigit(e.key);
+        } else if (e.key === "Backspace") {
+          e.preventDefault();
+          handleBackspace();
+        } else if (e.key === "c" || e.key === "C" || e.key === "Delete") {
+          e.preventDefault();
+          handleClear();
+        } else if (e.key === "." || e.key === ",") {
+          e.preventDefault();
+          handleDecimal();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activo, montos, cubierto, isProcessing, total]);
+
+  const activeMeta = METODOS_PAGO.find(x => x.id === activo) || METODOS_PAGO[0];
 
   return (
     <div className="modal-bg">
-      <div className="modal lg bottom-sheet" onClick={e => e.stopPropagation()}>
-        <div className="modal-h">
-          <h3>Cobrar venta</h3>
-          <button className="x" onClick={onClose}><Icon name="x"/></button>
-        </div>
-        <div className="modal-b">
-          <div className="card tw-bg-surface-2 tw-mb-3"><div className="card-b">
-            <div className="row spaced">
-              <span className="muted">{items} ítem{items !== 1 ? "s" : ""}</span>
-              <span className="mono tw-text-[22px] tw-font-semibold">{window.fmtCOP(total)}</span>
+      <div className="modal modal-payment bottom-sheet" onClick={e => e.stopPropagation()}>
+        {/* Encabezado */}
+        <div className="modal-h tw-flex tw-items-center tw-justify-between tw-py-3.5 tw-px-5 tw-border-b tw-border-border">
+          <div className="tw-flex tw-items-center tw-gap-2.5">
+            <div className="tw-w-8 tw-h-8 tw-rounded-xl tw-bg-accent-soft tw-text-accent tw-grid tw-place-items-center">
+              <Icon name="calculator" size={17}/>
             </div>
-          </div></div>
+            <div>
+              <h3 className="tw-m-0 tw-text-base tw-font-bold tw-leading-tight">Cobrar venta</h3>
+              <div className="tw-text-[11px] tw-text-txt-3">POS · Cobro rápido multimoneda</div>
+            </div>
+          </div>
+          <div className="tw-flex tw-items-center tw-gap-2">
+            <span className="chip accent tw-text-xs tw-font-medium">
+              <Icon name="cart" size={12}/> {items} ítem{items !== 1 ? "s" : ""}
+            </span>
+            <button className="x tw-w-8 tw-h-8 tw-rounded-lg tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-transition-colors" onClick={onClose} title="Cerrar (Esc)">
+              <Icon name="x" size={16}/>
+            </button>
+          </div>
+        </div>
 
-          <div className="muted tw-text-[11px] tw-uppercase tw-tracking-wider tw-mb-2">Reparte el pago entre los medios</div>
-          <div className="tw-flex tw-flex-col tw-gap-2">
-            {["Efectivo", "Transferencia", "Nequi", "Daviplata"].map(m => (
-              <div key={m} className="tw-flex tw-items-center tw-gap-2.5">
-                <span className="tw-w-7 tw-h-7 tw-rounded-lg tw-bg-surface-2 tw-text-accent tw-grid tw-place-items-center tw-shrink-0"><Icon name={iconMetodo(m)} size={14}/></span>
-                <span className="tw-text-sm tw-flex-1">{m === "Efectivo" ? "Efectivo recibido" : m}</span>
-                <input className="mono tw-border tw-border-border tw-rounded-lg tw-px-2.5 tw-py-1.5 tw-text-right tw-bg-surface tw-w-[44%]"
-                  inputMode="numeric" placeholder="0"
-                  style={activo === m ? { borderColor: "var(--accent)", boxShadow: "0 0 0 2px color-mix(in oklab, var(--accent) 35%, transparent)" } : undefined}
-                  value={montos[m] ? montos[m].toLocaleString("es-CO") : ""}
-                  onFocus={() => setActivo(m)}
-                  onChange={e => set1(m, parseInt(e.target.value.replace(/\D/g, "")) || 0)}/>
+        {/* Cuerpo del Modal */}
+        <div className="modal-b tw-p-4 md:tw-p-5 tw-overflow-y-auto">
+          <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-12 tw-gap-4">
+            {/* Columna Izquierda: Resumen, Selector de Medios y Estado */}
+            <div className="md:tw-col-span-7 tw-flex tw-flex-col tw-gap-3.5">
+              {/* Tarjeta de Total a Pagar */}
+              <div className="tw-bg-gradient-to-r tw-from-surface-2 tw-to-surface tw-border tw-border-border tw-rounded-2xl tw-p-3.5 tw-shadow-sm">
+                <div className="tw-flex tw-items-center tw-justify-between tw-mb-1">
+                  <span className="tw-text-[11px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">Total a cobrar</span>
+                  <span className="tw-text-[11px] tw-text-txt-2 tw-bg-surface-3/50 tw-px-2 tw-py-0.5 tw-rounded-md mono">
+                    Ticket actual
+                  </span>
+                </div>
+                <div className="tw-flex tw-items-baseline tw-justify-between">
+                  <div className="mono tw-text-2xl md:tw-text-3xl tw-font-extrabold tw-tracking-tight tw-text-txt">
+                    {window.fmtCOP(total)}
+                  </div>
+                  <div className="tw-text-xs tw-text-txt-3 mono">
+                    {items} {items === 1 ? "producto" : "productos"}
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
 
-          {/* Atajos: cargan al medio seleccionado (el que tocaste de último) */}
-          <div className="muted tw-text-[11px] tw-mt-2.5 tw-mb-1.5">Atajos para <span className="tw-font-semibold tw-text-accent">{activo === "Efectivo" ? "Efectivo" : activo}</span></div>
-          <div className="cash-suggestions tw-flex tw-flex-wrap tw-gap-1.5">
-            <button type="button" onClick={() => {
-              // Fija el medio activo al faltante exacto (total - lo aportado por los demás).
-              // Si el campo excedía el total, lo baja al valor correcto.
-              const otros = ["Efectivo", "Transferencia", "Nequi", "Daviplata"].reduce((s, k) => k === activo ? s : s + montos[k], 0);
-              set1(activo, Math.max(0, total - otros));
-            }}>Completar</button>
-            {[20000, 50000, 100000].map((v, i) => (
-              <button key={i} type="button" onClick={() => set1(activo, v)}>${v.toLocaleString("es-CO")}</button>
-            ))}
-          </div>
+              {/* Lista de Medios de Pago */}
+              <div className="tw-flex tw-flex-col tw-gap-2">
+                <div className="tw-flex tw-items-center tw-justify-between tw-px-0.5">
+                  <span className="tw-text-[11px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
+                    Reparte el pago entre los medios
+                  </span>
+                  <span className="tw-text-[10px] tw-text-txt-3 tw-hidden sm:tw-inline">
+                    Haz clic para ingresar el valor
+                  </span>
+                </div>
 
-          <div className="card tw-mt-3" style={{ background: cubierto ? "var(--good-soft)" : "var(--surface-2)" }}><div className="card-b">
-            <div className="row spaced">
-              <span className="muted">Restante</span>
-              <span className="mono tw-font-semibold" style={{ color: restante > 0 || excede ? "var(--bad)" : "var(--good)" }}>{window.fmtCOP(restante)}</span>
+                {METODOS_PAGO.map(m => {
+                  const isAct = activo === m.id;
+                  const val = montos[m.id] || 0;
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => {
+                        if (document.activeElement && typeof document.activeElement.blur === "function") {
+                          document.activeElement.blur();
+                        }
+                        setActivo(m.id);
+                        setTecladoAbierto(true);
+                        if (!getIsMobile() && inputRefs.current[m.id]) {
+                          inputRefs.current[m.id].focus();
+                        }
+                      }}
+                      className={`payment-method-card tw-p-2.5 tw-flex tw-items-center tw-gap-2.5 sm:tw-gap-3 ${isAct ? "is-active" : ""}`}
+                    >
+                      {/* Icono del medio */}
+                      <div
+                        className="tw-w-9 tw-h-9 tw-rounded-xl tw-grid tw-place-items-center tw-shrink-0 tw-transition-colors"
+                        style={{
+                          background: isAct ? "var(--accent)" : "var(--surface-2)",
+                          color: isAct ? "#fff" : m.color,
+                        }}
+                      >
+                        <Icon name={m.icon} size={18}/>
+                      </div>
+
+                      {/* Nombre y descripción */}
+                      <div className="tw-flex-1 tw-min-w-0">
+                        <div className="tw-flex tw-items-center tw-gap-1.5">
+                          <span className="tw-text-xs tw-font-semibold tw-text-txt tw-whitespace-nowrap">{m.label}</span>
+                          {isAct && (
+                            <span className="tw-text-[9px] tw-font-bold tw-bg-accent tw-text-white tw-px-1.5 tw-py-0.2 tw-rounded-full tw-whitespace-nowrap tw-shrink-0">
+                              Editando
+                            </span>
+                          )}
+                        </div>
+                        <div className="tw-text-[10px] tw-text-txt-3 tw-truncate">{m.sub}</div>
+                      </div>
+
+                      {/* Monto: Visor táctil en móvil (sin input nativo) vs Input editable en desktop */}
+                      <div className="tw-flex tw-items-center tw-gap-1.5 tw-shrink-0">
+                        {/* 1. MÓVIL (md:tw-hidden): Visor táctil 100% libre de teclado nativo del celular */}
+                        <div
+                          role="button"
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (document.activeElement && typeof document.activeElement.blur === "function") {
+                              document.activeElement.blur();
+                            }
+                            setActivo(m.id);
+                            setTecladoAbierto(true);
+                          }}
+                          className={`mono tw-relative tw-w-28 sm:tw-w-32 tw-border tw-rounded-lg tw-pl-6 tw-pr-2.5 tw-py-1.5 tw-text-right tw-text-sm tw-font-semibold tw-bg-surface tw-text-txt tw-select-none tw-cursor-pointer md:tw-hidden tw-transition-all ${
+                            isAct
+                              ? "tw-border-accent tw-ring-2 tw-ring-accent/30"
+                              : "tw-border-border"
+                          }`}
+                        >
+                          <span className="tw-absolute tw-left-2.5 tw-top-1/2 tw--translate-y-1/2 tw-text-xs tw-font-semibold tw-text-txt-3 pointer-events-none select-none">
+                            $
+                          </span>
+                          <span className={val ? "tw-text-txt" : "tw-text-txt-3"}>
+                            {val ? val.toLocaleString("es-CO") : "0"}
+                          </span>
+                        </div>
+
+                        {/* 2. ESCRITORIO (tw-hidden md:tw-block): Input real para teclado físico de computadores */}
+                        <div className="tw-relative tw-w-36 tw-hidden md:tw-block">
+                          <span className="tw-absolute tw-left-2.5 tw-top-1/2 tw--translate-y-1/2 tw-text-xs tw-font-semibold tw-text-txt-3 pointer-events-none select-none">
+                            $
+                          </span>
+                          <input
+                            id={`input-pago-desktop-${m.id}`}
+                            ref={el => { inputRefs.current[m.id] = el; }}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck="false"
+                            className="mono tw-w-full tw-border tw-border-border tw-rounded-lg tw-pl-6 tw-pr-2.5 tw-py-1.5 tw-text-right tw-text-sm tw-font-semibold tw-bg-surface tw-text-txt focus:tw-outline-none"
+                            placeholder="0"
+                            style={
+                              isAct
+                                ? {
+                                    borderColor: "var(--accent)",
+                                    boxShadow: "0 0 0 2px color-mix(in oklab, var(--accent) 35%, transparent)",
+                                  }
+                                : undefined
+                            }
+                            value={val ? val.toLocaleString("es-CO") : ""}
+                            onFocus={e => {
+                              setActivo(m.id);
+                              e.target.select();
+                            }}
+                            onClick={() => setActivo(m.id)}
+                            onChange={e => set1(m.id, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0)}
+                          />
+                        </div>
+
+                        {/* Botón rápido para fijar faltante (solo visible en computadores/desktop) */}
+                        <button
+                          type="button"
+                          title={`Fijar faltante exacto en ${m.label}`}
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleCompletar(m.id);
+                          }}
+                          className="tw-hidden md:tw-inline-flex tw-text-[10px] tw-font-semibold tw-py-1.5 tw-px-2 tw-rounded-lg tw-border tw-border-border tw-bg-surface-2 hover:tw-bg-accent-soft hover:tw-text-accent hover:tw-border-accent tw-transition-colors"
+                        >
+                          Fijar
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Atajos de Billetes en Móvil (conserva la opción de escoger el valor del billete) */}
+              <div className="md:tw-hidden tw-flex tw-flex-col tw-gap-1.5 tw-p-2.5 tw-rounded-xl tw-bg-surface-2 tw-border tw-border-border">
+                <div className="tw-flex tw-items-center tw-justify-between">
+                  <span className="tw-text-[11px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
+                    Billetes para <span className="tw-text-accent tw-font-semibold">{activo}</span>
+                  </span>
+                  <div className="tw-flex tw-items-center tw-gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTecladoAbierto(true)}
+                      className="tw-text-accent tw-text-[11px] tw-font-bold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0 tw-flex tw-items-center tw-gap-1"
+                    >
+                      <Icon name="calculator" size={13}/> Teclado táctil
+                    </button>
+                    {(montos[activo] || 0) > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClear}
+                        className="tw-text-bad tw-text-[10px] tw-font-semibold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0"
+                      >
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="tw-flex tw-flex-wrap tw-gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleCompletar(activo)}
+                    className="payment-shortcut-pill tw-py-1.5 tw-px-3 tw-bg-accent-soft tw-text-accent tw-border-accent/40 tw-font-bold hover:tw-bg-accent hover:tw-text-white"
+                    title="Fijar exactamente el valor restante a pagar"
+                  >
+                    Completar
+                  </button>
+                  {[10000, 20000, 50000, 100000].map(v => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => handleQuickBill(v)}
+                      className="payment-shortcut-pill tw-py-1.5 tw-px-2.5"
+                    >
+                      ${v.toLocaleString("es-CO")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+
+
+              {/* Indicador de Estado en Vivo (Restante, Cambio, Exceso) */}
+              <div className="tw-mt-auto">
+                {excede ? (
+                  <div className="tw-p-3 tw-rounded-xl tw-border tw-border-bad/30 tw-bg-bad-soft tw-flex tw-items-start tw-gap-2.5">
+                    <span className="tw-text-bad tw-shrink-0 tw-mt-0.5"><Icon name="alert" size={16}/></span>
+                    <div>
+                      <div className="tw-text-xs tw-font-bold tw-text-bad">Transferencias exceden el total</div>
+                      <div className="tw-text-[11px] tw-text-bad/90 tw-mt-0.5">
+                        Los medios electrónicos deben ser exactos. Solo el efectivo permite recibir más dinero y entregar cambio.
+                      </div>
+                    </div>
+                  </div>
+                ) : restante > 0 ? (
+                  <div className="tw-p-3.5 tw-rounded-xl tw-border tw-border-bad/30 tw-bg-bad-soft/40 tw-flex tw-flex-col tw-gap-1">
+                    <div className="tw-flex tw-items-center tw-justify-between">
+                      <div className="tw-flex tw-items-center tw-gap-2 tw-text-bad">
+                        <Icon name="clock" size={16}/>
+                        <span className="tw-text-xs tw-font-bold">Saldo restante por pagar:</span>
+                      </div>
+                      <span className="mono tw-text-base md:tw-text-lg tw-font-extrabold tw-text-bad">
+                        {window.fmtCOP(restante)}
+                      </span>
+                    </div>
+                    <div className="tw-text-[11px] tw-text-txt-3">
+                      Ingresa el valor recibido para completar la venta.
+                    </div>
+                  </div>
+                ) : cambio > 0 ? (
+                  <div className="tw-p-3.5 tw-rounded-xl tw-border tw-border-good/40 tw-bg-good-soft/70 tw-flex tw-flex-col tw-gap-1.5 tw-shadow-sm">
+                    <div className="tw-flex tw-items-center tw-justify-between">
+                      <div className="tw-flex tw-items-center tw-gap-2 tw-text-good">
+                        <Icon name="coins" size={18}/>
+                        <span className="tw-text-xs md:tw-text-sm tw-font-extrabold tw-uppercase tw-tracking-wide">
+                          Cambio a devolver al cliente:
+                        </span>
+                      </div>
+                      <span className="mono tw-text-xl md:tw-text-2xl tw-font-black tw-text-good">
+                        {window.fmtCOP(cambio)}
+                      </span>
+                    </div>
+                    <div className="tw-flex tw-items-center tw-justify-between tw-pt-1.5 tw-border-t tw-border-good/20 tw-text-[11px] tw-text-good">
+                      <span>Total recibido: <b>{window.fmtCOP(totalRecibido)}</b></span>
+                      <span>Total venta: <b>{window.fmtCOP(total)}</b></span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="tw-p-3.5 tw-rounded-xl tw-border tw-border-good/40 tw-bg-good-soft/60 tw-flex tw-items-center tw-justify-between">
+                    <div className="tw-flex tw-items-center tw-gap-2 tw-text-good">
+                      <Icon name="checkCircle" size={17}/>
+                      <div>
+                        <div className="tw-text-xs tw-font-bold">Pago exacto cubierto</div>
+                        <div className="tw-text-[10px] tw-text-good/80">No hay cambio pendiente por entregar</div>
+                      </div>
+                    </div>
+                    <span className="mono tw-text-base tw-font-bold tw-text-good">
+                      {window.fmtCOP(total)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            {cambio > 0 && (
-              <div className="row spaced"><span className="muted">Cambio</span><span className="mono tw-font-semibold tw-text-good">{window.fmtCOP(cambio)}</span></div>
-            )}
-            {excede && <div className="tw-text-xs tw-text-bad tw-mt-1">Los medios distintos de efectivo superan el total.</div>}
-          </div></div>
+
+            {/* Columna Derecha: Teclado Numérico y Atajos de Billetes (solo visible en pantallas md+) */}
+            <div className="tw-hidden md:tw-flex md:tw-col-span-5 tw-flex-col tw-gap-3 tw-bg-surface-2 tw-p-3.5 tw-rounded-2xl tw-border tw-border-border">
+              {/* Encabezado del Teclado */}
+              <div className="tw-flex tw-items-center tw-justify-between">
+                <div className="tw-flex tw-items-center tw-gap-1.5 tw-text-txt-2">
+                  <Icon name="calculator" size={14}/>
+                  <span className="tw-text-[11px] tw-font-bold tw-uppercase tw-tracking-wider">Teclado Numérico</span>
+                </div>
+                <div className="tw-flex tw-items-center tw-gap-1.5 tw-bg-surface tw-border tw-border-border tw-rounded-full tw-px-2.5 tw-py-0.5">
+                  <span className="tw-w-2 tw-h-2 tw-rounded-full" style={{ background: activeMeta.color }}/>
+                  <span className="tw-text-[11px] tw-font-semibold tw-text-txt">{activo}</span>
+                </div>
+              </div>
+
+              {/* Visor Digital del Monto Activo */}
+              <div className="payment-display-box tw-p-2.5 tw-bg-surface">
+                <div className="tw-flex tw-items-center tw-justify-between tw-text-[10px] tw-text-txt-3 tw-mb-0.5">
+                  <span>Monto recibido ({activo})</span>
+                  {(montos[activo] || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClear}
+                      className="tw-text-bad tw-text-[10px] tw-font-medium hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+                <div className="tw-flex tw-items-baseline tw-justify-end tw-gap-1">
+                  <span className="tw-text-sm tw-font-semibold tw-text-txt-3 mono">$</span>
+                  <span className="mono tw-text-2xl tw-font-extrabold tw-tracking-tight tw-text-txt">
+                    {(montos[activo] || 0).toLocaleString("es-CO")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Atajos de Billetes de Colombia */}
+              <div className="tw-flex tw-flex-col tw-gap-1.5">
+                <div className="tw-text-[10px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
+                  Atajos rápidos para {activo}
+                </div>
+                <div className="tw-flex tw-flex-wrap tw-gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleCompletar(activo)}
+                    className="payment-shortcut-pill tw-py-1.5 tw-px-3 tw-bg-accent-soft tw-text-accent tw-border-accent/40 tw-font-bold hover:tw-bg-accent hover:tw-text-white"
+                    title="Fijar exactamente el valor restante a pagar"
+                  >
+                    Completar
+                  </button>
+                  {[10000, 20000, 50000, 100000].map(v => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => handleQuickBill(v)}
+                      className="payment-shortcut-pill tw-py-1.5 tw-px-2.5"
+                    >
+                      ${v.toLocaleString("es-CO")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Botonera del Teclado Numérico */}
+              <div className="tw-grid tw-grid-cols-3 tw-gap-1.5 tw-pt-1">
+                {["7", "8", "9", "4", "5", "6", "1", "2", "3"].map(d => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => handleDigit(d)}
+                    className="payment-keypad-btn tw-h-12 tw-text-lg tw-font-bold"
+                  >
+                    {d}
+                  </button>
+                ))}
+
+                {/* Fila 4: C, 0, Backspace */}
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="payment-keypad-btn action-clear tw-h-12 tw-text-base tw-font-bold"
+                  title="Limpiar valor (C)"
+                >
+                  C
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDigit("0")}
+                  className="payment-keypad-btn tw-h-12 tw-text-lg tw-font-bold"
+                >
+                  0
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBackspace}
+                  className="payment-keypad-btn action-backspace tw-h-12"
+                  title="Borrar último dígito (Backspace)"
+                >
+                  <Icon name="backspace" size={20}/>
+                </button>
+
+                {/* Fila 5: 00, 000, . */}
+                <button
+                  type="button"
+                  onClick={handleDoubleZero}
+                  className="payment-keypad-btn tw-h-11 tw-text-sm tw-font-bold"
+                  title="Agregar 00"
+                >
+                  00
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTripleZero}
+                  className="payment-keypad-btn tw-h-11 tw-text-sm tw-font-bold"
+                  title="Agregar 000 (miles)"
+                >
+                  000
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDecimal}
+                  className="payment-keypad-btn tw-h-11 tw-text-sm tw-font-bold"
+                  title="Separador decimal"
+                >
+                  .
+                </button>
+              </div>
+
+              {/* Tip informativo */}
+              <div className="tw-text-center tw-text-[10px] tw-text-txt-3 tw-pt-0.5">
+                ⌨️ Soporta teclado físico (0-9, Backspace, C, Enter, Esc)
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="modal-f">
-          <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn accent" disabled={!cubierto} onClick={confirmar}>
-            <Icon name="check"/> Confirmar pago
+
+        {/* Pie del Modal con Acciones */}
+        <div className="modal-f tw-flex tw-items-center tw-justify-between tw-py-3 tw-px-5 tw-border-t tw-border-border tw-bg-surface-2">
+          <button
+            type="button"
+            className="btn ghost tw-px-4 tw-py-2 tw-text-sm tw-font-medium"
+            onClick={onClose}
+            disabled={isProcessing}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            id="btn-confirmar-pago"
+            className={`btn accent tw-px-6 tw-py-2.5 tw-text-sm tw-font-bold tw-flex tw-items-center tw-gap-2 tw-shadow-md tw-transition-all ${
+              cubierto && !isProcessing
+                ? "tw-scale-100 hover:tw-brightness-110 active:tw-scale-[0.98]"
+                : "tw-opacity-50 tw-cursor-not-allowed"
+            }`}
+            disabled={!cubierto || isProcessing}
+            onClick={confirmar}
+          >
+            {isProcessing ? (
+              <>
+                <span className="dot tw-animate-ping"/>
+                <span>Procesando pago...</span>
+              </>
+            ) : cubierto ? (
+              <>
+                <Icon name="checkCircle" size={17}/>
+                <span>Confirmar pago ({window.fmtCOP(total)})</span>
+              </>
+            ) : (
+              <>
+                <Icon name="check" size={16}/>
+                <span>Faltan {window.fmtCOP(restante)}</span>
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Teclado Numérico Flotante / Drawer para Móvil (se abre automáticamente al hacer clic en cualquiera de los inputs) */}
+      {isMobile && tecladoAbierto && (
+        <div
+          className="md:tw-hidden tw-fixed tw-inset-0 tw-z-[120] tw-flex tw-flex-col tw-justify-end"
+          onClick={() => setTecladoAbierto(false)}
+        >
+          {/* Fondo semi-transparente */}
+          <div className="tw-absolute tw-inset-0 tw-bg-black/40 tw-backdrop-blur-[1px] tw-transition-opacity" />
+
+          {/* Cajón táctil deslizable */}
+          <div
+            className="payment-mobile-drawer tw-relative tw-z-10 tw-w-full tw-max-w-md tw-mx-auto tw-p-3.5 sm:tw-p-4 tw-flex tw-flex-col tw-gap-2.5"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Manija táctil superior */}
+            <div className="tw-w-10 tw-h-1 tw-bg-border-strong tw-rounded-full tw-mx-auto tw--mt-1 tw-mb-0.5 tw-opacity-60" />
+
+            {/* Selector de Medios de Pago rápidos */}
+            <div className="tw-flex tw-items-center tw-gap-1.5 tw-overflow-x-auto no-scrollbar tw-pb-0.5">
+              {METODOS_PAGO.map(m => {
+                const isAct = activo === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setActivo(m.id)}
+                    className={`tw-flex tw-items-center tw-gap-1.5 tw-px-2.5 tw-py-1 tw-rounded-lg tw-text-xs tw-font-semibold tw-border tw-transition-all tw-shrink-0 ${
+                      isAct
+                        ? "tw-bg-accent tw-text-white tw-border-accent tw-shadow-sm"
+                        : "tw-bg-surface tw-text-txt-2 tw-border-border hover:tw-bg-surface-2"
+                    }`}
+                  >
+                    <span
+                      className="tw-w-2 tw-h-2 tw-rounded-full"
+                      style={{ background: isAct ? "#fff" : m.color }}
+                    />
+                    <span>{m.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Visor digital del monto activo y botón Listo */}
+            <div className="tw-flex tw-items-center tw-justify-between tw-gap-2 tw-bg-surface tw-p-2.5 tw-rounded-xl tw-border tw-border-border tw-shadow-sm">
+              <div className="tw-flex tw-items-center tw-gap-2 tw-min-w-0">
+                <div
+                  className="tw-w-8 tw-h-8 tw-rounded-lg tw-grid tw-place-items-center tw-shrink-0 tw-text-white tw-text-xs"
+                  style={{ background: activeMeta.color }}
+                >
+                  <Icon name={activeMeta.icon} size={16}/>
+                </div>
+                <div className="tw-min-w-0">
+                  <div className="tw-text-[10px] tw-font-bold tw-text-txt-3 tw-uppercase tw-tracking-wide">
+                    Monto {activeMeta.label}
+                  </div>
+                  <div className="mono tw-text-xl tw-font-extrabold tw-text-txt tw-leading-tight">
+                    ${(montos[activo] || 0).toLocaleString("es-CO")}
+                  </div>
+                </div>
+              </div>
+
+              <div className="tw-flex tw-items-center tw-gap-2 tw-shrink-0">
+                {(montos[activo] || 0) > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="tw-text-bad tw-text-xs tw-font-bold tw-px-2 tw-py-1 tw-rounded-lg hover:tw-bg-bad-soft tw-transition-colors"
+                  >
+                    Limpiar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setTecladoAbierto(false)}
+                  className="tw-bg-accent tw-text-white tw-text-xs tw-font-bold tw-px-3.5 tw-py-1.5 tw-rounded-lg tw-shadow-sm hover:tw-brightness-110 active:tw-scale-95 tw-transition-all tw-flex tw-items-center tw-gap-1"
+                >
+                  <Icon name="check" size={13}/>
+                  <span>Listo</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Atajos de Billetes en el teclado */}
+            <div className="tw-flex tw-items-center tw-gap-1.5 tw-overflow-x-auto no-scrollbar tw-py-0.5">
+              <button
+                type="button"
+                onClick={() => handleCompletar(activo)}
+                className="payment-shortcut-pill tw-py-1.5 tw-px-3 tw-bg-accent-soft tw-text-accent tw-border-accent/40 tw-font-bold hover:tw-bg-accent hover:tw-text-white tw-shrink-0 tw-text-xs"
+                title="Fijar exactamente el valor restante a pagar"
+              >
+                Completar
+              </button>
+              {[10000, 20000, 50000, 100000].map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => handleQuickBill(v)}
+                  className="payment-shortcut-pill tw-py-1.5 tw-px-2.5 tw-shrink-0 tw-text-xs"
+                >
+                  ${v.toLocaleString("es-CO")}
+                </button>
+              ))}
+            </div>
+
+            {/* Teclado numérico idéntico a la imagen (5 filas x 3 columnas) */}
+            <div className="tw-grid tw-grid-cols-3 tw-gap-2">
+              {/* Fila 1: 7, 8, 9 */}
+              {["7", "8", "9"].map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => handleDigit(d)}
+                  className="payment-keypad-btn tw-h-12 sm:tw-h-13 tw-text-xl tw-font-bold"
+                >
+                  {d}
+                </button>
+              ))}
+
+              {/* Fila 2: 4, 5, 6 */}
+              {["4", "5", "6"].map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => handleDigit(d)}
+                  className="payment-keypad-btn tw-h-12 sm:tw-h-13 tw-text-xl tw-font-bold"
+                >
+                  {d}
+                </button>
+              ))}
+
+              {/* Fila 3: 1, 2, 3 */}
+              {["1", "2", "3"].map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => handleDigit(d)}
+                  className="payment-keypad-btn tw-h-12 sm:tw-h-13 tw-text-xl tw-font-bold"
+                >
+                  {d}
+                </button>
+              ))}
+
+              {/* Fila 4: C, 0, ⌫ */}
+              <button
+                type="button"
+                onClick={handleClear}
+                className="payment-keypad-btn action-clear tw-h-12 sm:tw-h-13 tw-text-lg tw-font-bold"
+                title="Limpiar valor (C)"
+              >
+                C
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDigit("0")}
+                className="payment-keypad-btn tw-h-12 sm:tw-h-13 tw-text-xl tw-font-bold"
+              >
+                0
+              </button>
+              <button
+                type="button"
+                onClick={handleBackspace}
+                className="payment-keypad-btn action-backspace tw-h-12 sm:tw-h-13"
+                title="Borrar último dígito (Backspace)"
+              >
+                <Icon name="backspace" size={20}/>
+              </button>
+
+              {/* Fila 5: 00, 000, . */}
+              <button
+                type="button"
+                onClick={handleDoubleZero}
+                className="payment-keypad-btn tw-h-11 tw-text-sm tw-font-bold"
+                title="Agregar 00"
+              >
+                00
+              </button>
+              <button
+                type="button"
+                onClick={handleTripleZero}
+                className="payment-keypad-btn tw-h-11 tw-text-sm tw-font-bold"
+                title="Agregar 000 (miles)"
+              >
+                000
+              </button>
+              <button
+                type="button"
+                onClick={handleDecimal}
+                className="payment-keypad-btn tw-h-11 tw-text-lg tw-font-bold"
+                title="Punto decimal"
+              >
+                .
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

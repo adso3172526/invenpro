@@ -5800,3 +5800,177 @@ table.tbl tr.item-detail td {
 .class1 {
   height: 93% !important;
 }
+
+/* ============ Modal de Pagos POS Rediseñado ============ */
+.modal.modal-payment {
+  width: min(96vw, 920px);
+  max-width: 920px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-lg);
+}
+
+@media (min-width: 768px) {
+  .modal.modal-payment {
+    width: min(96vw, 920px);
+    max-height: 90vh;
+  }
+}
+
+.payment-method-card {
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.payment-method-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+.payment-method-card.is-active {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 7%, var(--surface));
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 30%, transparent), var(--shadow-sm);
+}
+
+.payment-keypad-btn {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid #dce4ec;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: var(--mono);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="dark"] .payment-keypad-btn {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.payment-keypad-btn:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+[data-theme="dark"] .payment-keypad-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+.payment-keypad-btn:active {
+  transform: scale(0.94);
+  background: #e2e8f0;
+}
+
+[data-theme="dark"] .payment-keypad-btn:active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.payment-keypad-btn.action-clear {
+  background: #fbebeb;
+  color: #b91c1c;
+  border-color: #f2c7ca;
+}
+
+[data-theme="dark"] .payment-keypad-btn.action-clear {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.payment-keypad-btn.action-clear:hover {
+  background: #f7dcdb;
+}
+
+.payment-keypad-btn.action-backspace {
+  background: #ede7de;
+  color: #854d0e;
+  border-color: #dfd6c8;
+}
+
+[data-theme="dark"] .payment-keypad-btn.action-backspace {
+  background: rgba(217, 119, 6, 0.2);
+  color: #fcd34d;
+  border-color: rgba(217, 119, 6, 0.35);
+}
+
+.payment-keypad-btn.action-backspace:hover {
+  background: #e4dcce;
+}
+
+.payment-shortcut-pill {
+  user-select: none;
+  transition: all 0.15s ease;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 9999px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.payment-shortcut-pill:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.payment-shortcut-pill:active {
+  transform: scale(0.95);
+}
+
+.payment-display-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.payment-display-box:focus-within,
+.payment-display-box.is-focused {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 25%, transparent);
+}
+
+.payment-mobile-drawer {
+  background: #edf2f7;
+  border-top: 1.5px solid #cbd5e1;
+  box-shadow: 0 -12px 36px -4px rgba(0, 0, 0, 0.4);
+  border-radius: 22px 22px 0 0;
+  animation: slide-up-drawer 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .payment-mobile-drawer {
+  background: var(--surface-2);
+  border-top-color: var(--border);
+}
+
+@keyframes slide-up-drawer {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
