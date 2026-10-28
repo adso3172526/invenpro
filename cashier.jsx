@@ -1164,53 +1164,42 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
     <div className="modal-bg">
       <div className="modal modal-payment bottom-sheet" onClick={e => e.stopPropagation()}>
         {/* Encabezado */}
-        <div className="modal-h tw-flex tw-items-center tw-justify-between tw-py-3.5 tw-px-5 tw-border-b tw-border-border">
-          <div className="tw-flex tw-items-center tw-gap-2.5">
-            <div className="tw-w-8 tw-h-8 tw-rounded-xl tw-bg-accent-soft tw-text-accent tw-grid tw-place-items-center">
-              <Icon name="calculator" size={17}/>
-            </div>
-            <div>
-              <h3 className="tw-m-0 tw-text-base tw-font-bold tw-leading-tight">Cobrar venta</h3>
-              <div className="tw-text-[11px] tw-text-txt-3">POS · Cobro rápido multimoneda</div>
-            </div>
-          </div>
-          <div className="tw-flex tw-items-center tw-gap-2">
-            <span className="chip accent tw-text-xs tw-font-medium">
-              <Icon name="cart" size={12}/> {items} ítem{items !== 1 ? "s" : ""}
-            </span>
-            <button className="x tw-w-8 tw-h-8 tw-rounded-lg tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-transition-colors" onClick={onClose} title="Cerrar (Esc)">
-              <Icon name="x" size={16}/>
-            </button>
-          </div>
+        <div className="modal-h payment-modal-header tw-flex tw-items-center tw-justify-between tw-py-2.5 tw-px-4 sm:tw-px-5 tw-border-b tw-border-border">
+          <h3 className="payment-modal-title tw-m-0 tw-text-base tw-font-bold tw-tracking-wider">
+            COBRAR VENTA
+          </h3>
+          <button className="payment-modal-close-btn x tw-w-8 tw-h-8 tw-rounded-lg tw-grid tw-place-items-center hover:tw-bg-surface-2 tw-transition-colors" onClick={onClose} title="Cerrar (Esc)">
+            <Icon name="x" size={16}/>
+          </button>
         </div>
 
         {/* Cuerpo del Modal */}
-        <div className="modal-b tw-p-4 md:tw-p-5 tw-overflow-y-auto">
-          <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-12 tw-gap-4">
+        <div className="modal-b tw-p-3.5 sm:tw-p-4 tw-overflow-y-auto">
+          <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-12 tw-gap-3 sm:tw-gap-3.5">
             {/* Columna Izquierda: Resumen, Selector de Medios y Estado */}
-            <div className="md:tw-col-span-7 tw-flex tw-flex-col tw-gap-3.5">
+            <div className="md:tw-col-span-7 tw-flex tw-flex-col tw-gap-2.5">
               {/* Tarjeta de Total a Pagar */}
-              <div className="tw-bg-gradient-to-r tw-from-surface-2 tw-to-surface tw-border tw-border-border tw-rounded-2xl tw-p-3.5 tw-shadow-sm">
-                <div className="tw-flex tw-items-center tw-justify-between tw-mb-1">
-                  <span className="tw-text-[11px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">Total a cobrar</span>
-                  <span className="tw-text-[11px] tw-text-txt-2 tw-bg-surface-3/50 tw-px-2 tw-py-0.5 tw-rounded-md mono">
+              <div className="tw-bg-gradient-to-r tw-from-surface-2 tw-to-surface tw-border tw-border-border tw-rounded-xl tw-p-2.5 tw-px-3.5 tw-shadow-sm">
+                <div className="tw-flex tw-items-center tw-justify-between tw-mb-0.5">
+                  <span className="tw-text-[10px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">Total a cobrar</span>
+                  <span className="tw-text-[10px] tw-text-txt-2 tw-bg-surface-3/50 tw-px-2 tw-py-0.2 tw-rounded-md mono">
                     Ticket actual
                   </span>
                 </div>
                 <div className="tw-flex tw-items-baseline tw-justify-between">
-                  <div className="mono tw-text-2xl md:tw-text-3xl tw-font-extrabold tw-tracking-tight tw-text-txt">
+                  <div className="mono tw-text-2xl tw-font-extrabold tw-tracking-tight tw-text-txt">
                     {window.fmtCOP(total)}
                   </div>
-                  <div className="tw-text-xs tw-text-txt-3 mono">
+                  <div className="tw-text-[11px] tw-text-txt-3 mono">
                     {items} {items === 1 ? "producto" : "productos"}
                   </div>
                 </div>
               </div>
 
               {/* Lista de Medios de Pago */}
-              <div className="tw-flex tw-flex-col tw-gap-2">
+              <div className="tw-flex tw-flex-col tw-gap-1.5">
                 <div className="tw-flex tw-items-center tw-justify-between tw-px-0.5">
-                  <span className="tw-text-[11px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
+                  <span className="tw-text-[10px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
                     Reparte el pago entre los medios
                   </span>
                   <span className="tw-text-[10px] tw-text-txt-3 tw-hidden sm:tw-inline">
@@ -1234,17 +1223,17 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                           inputRefs.current[m.id].focus();
                         }
                       }}
-                      className={`payment-method-card tw-p-2.5 tw-flex tw-items-center tw-gap-2.5 sm:tw-gap-3 ${isAct ? "is-active" : ""}`}
+                      className={`payment-method-card tw-py-2 tw-px-2.5 sm:tw-px-3 tw-flex tw-items-center tw-gap-2.5 ${isAct ? "is-active" : ""}`}
                     >
                       {/* Icono del medio */}
                       <div
-                        className="tw-w-9 tw-h-9 tw-rounded-xl tw-grid tw-place-items-center tw-shrink-0 tw-transition-colors"
+                        className="tw-w-8 tw-h-8 tw-rounded-lg tw-grid tw-place-items-center tw-shrink-0 tw-transition-colors"
                         style={{
                           background: isAct ? "var(--accent)" : "var(--surface-2)",
                           color: isAct ? "#fff" : m.color,
                         }}
                       >
-                        <Icon name={m.icon} size={18}/>
+                        <Icon name={m.icon} size={16}/>
                       </div>
 
                       {/* Nombre y descripción */}
@@ -1290,7 +1279,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                         </div>
 
                         {/* 2. ESCRITORIO (tw-hidden md:tw-block): Input real para teclado físico de computadores */}
-                        <div className="tw-relative tw-w-36 tw-hidden md:tw-block">
+                        <div className="tw-relative tw-w-32 tw-hidden md:tw-block">
                           <span className="tw-absolute tw-left-2.5 tw-top-1/2 tw--translate-y-1/2 tw-text-xs tw-font-semibold tw-text-txt-3 pointer-events-none select-none">
                             $
                           </span>
@@ -1304,7 +1293,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                             autoCorrect="off"
                             autoCapitalize="off"
                             spellCheck="false"
-                            className="mono tw-w-full tw-border tw-border-border tw-rounded-lg tw-pl-6 tw-pr-2.5 tw-py-1.5 tw-text-right tw-text-sm tw-font-semibold tw-bg-surface tw-text-txt focus:tw-outline-none"
+                            className="mono tw-w-full tw-border tw-border-border tw-rounded-lg tw-pl-5 tw-pr-2 tw-py-1 tw-text-right tw-text-xs sm:tw-text-sm tw-font-semibold tw-bg-surface tw-text-txt focus:tw-outline-none"
                             placeholder="0"
                             style={
                               isAct
@@ -1323,19 +1312,6 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                             onChange={e => set1(m.id, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0)}
                           />
                         </div>
-
-                        {/* Botón rápido para fijar faltante (solo visible en computadores/desktop) */}
-                        <button
-                          type="button"
-                          title={`Fijar faltante exacto en ${m.label}`}
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleCompletar(m.id);
-                          }}
-                          className="tw-hidden md:tw-inline-flex tw-text-[10px] tw-font-semibold tw-py-1.5 tw-px-2 tw-rounded-lg tw-border tw-border-border tw-bg-surface-2 hover:tw-bg-accent-soft hover:tw-text-accent hover:tw-border-accent tw-transition-colors"
-                        >
-                          Fijar
-                        </button>
                       </div>
                     </div>
                   );
@@ -1389,57 +1365,50 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 </div>
               </div>
 
-
-
               {/* Indicador de Estado en Vivo (Restante, Cambio, Exceso) */}
-              <div className="tw-mt-auto">
+              <div className="tw-mt-1 md:tw-mt-auto">
                 {excede ? (
-                  <div className="tw-p-3 tw-rounded-xl tw-border tw-border-bad/30 tw-bg-bad-soft tw-flex tw-items-start tw-gap-2.5">
-                    <span className="tw-text-bad tw-shrink-0 tw-mt-0.5"><Icon name="alert" size={16}/></span>
+                  <div className="tw-p-2.5 tw-rounded-xl tw-border tw-border-bad/30 tw-bg-bad-soft tw-flex tw-items-start tw-gap-2">
+                    <span className="tw-text-bad tw-shrink-0 tw-mt-0.5"><Icon name="alert" size={15}/></span>
                     <div>
                       <div className="tw-text-xs tw-font-bold tw-text-bad">Transferencias exceden el total</div>
-                      <div className="tw-text-[11px] tw-text-bad/90 tw-mt-0.5">
-                        Los medios electrónicos deben ser exactos. Solo el efectivo permite recibir más dinero y entregar cambio.
+                      <div className="tw-text-[10.5px] tw-text-bad/90 tw-mt-0.5">
+                        Los medios electrónicos deben ser exactos. Solo el efectivo permite recibir más dinero y dar cambio.
                       </div>
                     </div>
                   </div>
                 ) : restante > 0 ? (
-                  <div className="tw-p-3.5 tw-rounded-xl tw-border tw-border-bad/30 tw-bg-bad-soft/40 tw-flex tw-flex-col tw-gap-1">
-                    <div className="tw-flex tw-items-center tw-justify-between">
-                      <div className="tw-flex tw-items-center tw-gap-2 tw-text-bad">
-                        <Icon name="clock" size={16}/>
-                        <span className="tw-text-xs tw-font-bold">Saldo restante por pagar:</span>
-                      </div>
-                      <span className="mono tw-text-base md:tw-text-lg tw-font-extrabold tw-text-bad">
-                        {window.fmtCOP(restante)}
-                      </span>
+                  <div className="tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-bad/30 tw-bg-bad-soft/40 tw-flex tw-items-center tw-justify-between">
+                    <div className="tw-flex tw-items-center tw-gap-2 tw-text-bad">
+                      <Icon name="clock" size={15}/>
+                      <span className="tw-text-xs tw-font-bold">Saldo restante por pagar:</span>
                     </div>
-                    <div className="tw-text-[11px] tw-text-txt-3">
-                      Ingresa el valor recibido para completar la venta.
-                    </div>
+                    <span className="mono tw-text-base md:tw-text-lg tw-font-extrabold tw-text-bad">
+                      {window.fmtCOP(restante)}
+                    </span>
                   </div>
                 ) : cambio > 0 ? (
-                  <div className="tw-p-3.5 tw-rounded-xl tw-border tw-border-good/40 tw-bg-good-soft/70 tw-flex tw-flex-col tw-gap-1.5 tw-shadow-sm">
+                  <div className="tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-good/40 tw-bg-good-soft/70 tw-flex tw-flex-col tw-gap-1 tw-shadow-sm">
                     <div className="tw-flex tw-items-center tw-justify-between">
                       <div className="tw-flex tw-items-center tw-gap-2 tw-text-good">
-                        <Icon name="coins" size={18}/>
+                        <Icon name="coins" size={16}/>
                         <span className="tw-text-xs md:tw-text-sm tw-font-extrabold tw-uppercase tw-tracking-wide">
                           Cambio a devolver al cliente:
                         </span>
                       </div>
-                      <span className="mono tw-text-xl md:tw-text-2xl tw-font-black tw-text-good">
+                      <span className="mono tw-text-lg md:tw-text-xl tw-font-black tw-text-good">
                         {window.fmtCOP(cambio)}
                       </span>
                     </div>
-                    <div className="tw-flex tw-items-center tw-justify-between tw-pt-1.5 tw-border-t tw-border-good/20 tw-text-[11px] tw-text-good">
+                    <div className="tw-flex tw-items-center tw-justify-between tw-pt-1 tw-border-t tw-border-good/20 tw-text-[10.5px] tw-text-good">
                       <span>Total recibido: <b>{window.fmtCOP(totalRecibido)}</b></span>
                       <span>Total venta: <b>{window.fmtCOP(total)}</b></span>
                     </div>
                   </div>
                 ) : (
-                  <div className="tw-p-3.5 tw-rounded-xl tw-border tw-border-good/40 tw-bg-good-soft/60 tw-flex tw-items-center tw-justify-between">
+                  <div className="tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-good/40 tw-bg-good-soft/60 tw-flex tw-items-center tw-justify-between">
                     <div className="tw-flex tw-items-center tw-gap-2 tw-text-good">
-                      <Icon name="checkCircle" size={17}/>
+                      <Icon name="checkCircle" size={16}/>
                       <div>
                         <div className="tw-text-xs tw-font-bold">Pago exacto cubierto</div>
                         <div className="tw-text-[10px] tw-text-good/80">No hay cambio pendiente por entregar</div>
@@ -1454,22 +1423,22 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
             </div>
 
             {/* Columna Derecha: Teclado Numérico y Atajos de Billetes (solo visible en pantallas md+) */}
-            <div className="tw-hidden md:tw-flex md:tw-col-span-5 tw-flex-col tw-gap-3 tw-bg-surface-2 tw-p-3.5 tw-rounded-2xl tw-border tw-border-border">
+            <div className="tw-hidden md:tw-flex md:tw-col-span-5 tw-flex-col tw-gap-2 tw-bg-surface-2 tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-border">
               {/* Encabezado del Teclado */}
               <div className="tw-flex tw-items-center tw-justify-between">
                 <div className="tw-flex tw-items-center tw-gap-1.5 tw-text-txt-2">
-                  <Icon name="calculator" size={14}/>
-                  <span className="tw-text-[11px] tw-font-bold tw-uppercase tw-tracking-wider">Teclado Numérico</span>
+                  <Icon name="calculator" size={13}/>
+                  <span className="tw-text-[10px] tw-font-bold tw-uppercase tw-tracking-wider">Teclado Numérico</span>
                 </div>
-                <div className="tw-flex tw-items-center tw-gap-1.5 tw-bg-surface tw-border tw-border-border tw-rounded-full tw-px-2.5 tw-py-0.5">
+                <div className="tw-flex tw-items-center tw-gap-1.5 tw-bg-surface tw-border tw-border-border tw-rounded-full tw-px-2 tw-py-0.5">
                   <span className="tw-w-2 tw-h-2 tw-rounded-full" style={{ background: activeMeta.color }}/>
-                  <span className="tw-text-[11px] tw-font-semibold tw-text-txt">{activo}</span>
+                  <span className="tw-text-[10px] tw-font-bold tw-text-txt">{activo}</span>
                 </div>
               </div>
 
               {/* Visor Digital del Monto Activo */}
-              <div className="payment-display-box tw-p-2.5 tw-bg-surface">
-                <div className="tw-flex tw-items-center tw-justify-between tw-text-[10px] tw-text-txt-3 tw-mb-0.5">
+              <div className="payment-display-box tw-py-1.5 tw-px-2.5 tw-bg-surface tw-rounded-lg">
+                <div className="tw-flex tw-items-center tw-justify-between tw-text-[10px] tw-text-txt-3">
                   <span>Monto recibido ({activo})</span>
                   {(montos[activo] || 0) > 0 && (
                     <button
@@ -1482,33 +1451,35 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                   )}
                 </div>
                 <div className="tw-flex tw-items-baseline tw-justify-end tw-gap-1">
-                  <span className="tw-text-sm tw-font-semibold tw-text-txt-3 mono">$</span>
-                  <span className="mono tw-text-2xl tw-font-extrabold tw-tracking-tight tw-text-txt">
+                  <span className="tw-text-xs tw-font-semibold tw-text-txt-3 mono">$</span>
+                  <span className="mono tw-text-xl tw-font-black tw-tracking-tight tw-text-txt">
                     {(montos[activo] || 0).toLocaleString("es-CO")}
                   </span>
                 </div>
               </div>
 
-              {/* Atajos de Billetes de Colombia */}
-              <div className="tw-flex tw-flex-col tw-gap-1.5">
-                <div className="tw-text-[10px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
-                  Atajos rápidos para {activo}
-                </div>
-                <div className="tw-flex tw-flex-wrap tw-gap-1.5">
+              {/* Atajos de Billetes */}
+              <div className="tw-flex tw-flex-col tw-gap-1">
+                <div className="tw-flex tw-items-center tw-justify-between">
+                  <span className="tw-text-[9.5px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
+                    Atajos rápidos ({activo})
+                  </span>
                   <button
                     type="button"
                     onClick={() => handleCompletar(activo)}
-                    className="payment-shortcut-pill tw-py-1.5 tw-px-3 tw-bg-accent-soft tw-text-accent tw-border-accent/40 tw-font-bold hover:tw-bg-accent hover:tw-text-white"
+                    className="tw-text-accent tw-text-[10px] tw-font-bold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0"
                     title="Fijar exactamente el valor restante a pagar"
                   >
-                    Completar
+                    ⚡ Completar
                   </button>
+                </div>
+                <div className="tw-grid tw-grid-cols-4 tw-gap-1">
                   {[10000, 20000, 50000, 100000].map(v => (
                     <button
                       key={v}
                       type="button"
                       onClick={() => handleQuickBill(v)}
-                      className="payment-shortcut-pill tw-py-1.5 tw-px-2.5"
+                      className="payment-shortcut-pill tw-py-1 tw-px-0.5 tw-text-center tw-text-[10.5px] tw-font-bold"
                     >
                       ${v.toLocaleString("es-CO")}
                     </button>
@@ -1517,13 +1488,13 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
               </div>
 
               {/* Botonera del Teclado Numérico */}
-              <div className="tw-grid tw-grid-cols-3 tw-gap-1.5 tw-pt-1">
+              <div className="tw-grid tw-grid-cols-3 tw-gap-1.5">
                 {["7", "8", "9", "4", "5", "6", "1", "2", "3"].map(d => (
                   <button
                     key={d}
                     type="button"
                     onClick={() => handleDigit(d)}
-                    className="payment-keypad-btn tw-h-12 tw-text-lg tw-font-bold"
+                    className="payment-keypad-btn tw-h-[38px] tw-text-base tw-font-bold"
                   >
                     {d}
                   </button>
@@ -1533,7 +1504,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="payment-keypad-btn action-clear tw-h-12 tw-text-base tw-font-bold"
+                  className="payment-keypad-btn action-clear tw-h-[38px] tw-text-base tw-font-bold"
                   title="Limpiar valor (C)"
                 >
                   C
@@ -1541,24 +1512,24 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 <button
                   type="button"
                   onClick={() => handleDigit("0")}
-                  className="payment-keypad-btn tw-h-12 tw-text-lg tw-font-bold"
+                  className="payment-keypad-btn tw-h-[38px] tw-text-base tw-font-bold"
                 >
                   0
                 </button>
                 <button
                   type="button"
                   onClick={handleBackspace}
-                  className="payment-keypad-btn action-backspace tw-h-12"
+                  className="payment-keypad-btn action-backspace tw-h-[38px]"
                   title="Borrar último dígito (Backspace)"
                 >
-                  <Icon name="backspace" size={20}/>
+                  <Icon name="backspace" size={17}/>
                 </button>
 
-                {/* Fila 5: 00, 000, . */}
+                {/* Fila 5: 00, 000, . (Dimensiones 100% uniformes) */}
                 <button
                   type="button"
                   onClick={handleDoubleZero}
-                  className="payment-keypad-btn tw-h-11 tw-text-sm tw-font-bold"
+                  className="payment-keypad-btn tw-h-[38px] tw-text-sm tw-font-bold"
                   title="Agregar 00"
                 >
                   00
@@ -1566,7 +1537,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 <button
                   type="button"
                   onClick={handleTripleZero}
-                  className="payment-keypad-btn tw-h-11 tw-text-sm tw-font-bold"
+                  className="payment-keypad-btn tw-h-[38px] tw-text-sm tw-font-bold"
                   title="Agregar 000 (miles)"
                 >
                   000
@@ -1574,7 +1545,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 <button
                   type="button"
                   onClick={handleDecimal}
-                  className="payment-keypad-btn tw-h-11 tw-text-sm tw-font-bold"
+                  className="payment-keypad-btn tw-h-[38px] tw-text-base tw-font-bold"
                   title="Separador decimal"
                 >
                   .
@@ -1582,18 +1553,18 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
               </div>
 
               {/* Tip informativo */}
-              <div className="tw-text-center tw-text-[10px] tw-text-txt-3 tw-pt-0.5">
-                ⌨️ Soporta teclado físico (0-9, Backspace, C, Enter, Esc)
+              <div className="tw-text-center tw-text-[9.5px] tw-text-txt-3">
+                ⌨️ Teclado físico habilitado (0-9, Backspace, Esc, Enter)
               </div>
             </div>
           </div>
         </div>
 
         {/* Pie del Modal con Acciones */}
-        <div className="modal-f tw-flex tw-items-center tw-justify-between tw-py-3 tw-px-5 tw-border-t tw-border-border tw-bg-surface-2">
+        <div className="modal-f tw-flex tw-items-center tw-justify-between tw-py-2.5 tw-px-4 sm:tw-px-5 tw-border-t tw-border-border tw-bg-surface-2">
           <button
             type="button"
-            className="btn ghost tw-px-4 tw-py-2 tw-text-sm tw-font-medium"
+            className="btn ghost tw-px-3.5 tw-py-1.5 tw-text-sm tw-font-medium"
             onClick={onClose}
             disabled={isProcessing}
           >
@@ -1603,7 +1574,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
           <button
             type="button"
             id="btn-confirmar-pago"
-            className={`btn accent tw-px-6 tw-py-2.5 tw-text-sm tw-font-bold tw-flex tw-items-center tw-gap-2 tw-shadow-md tw-transition-all ${
+            className={`btn accent tw-px-5 tw-py-2 tw-text-sm tw-font-bold tw-flex tw-items-center tw-gap-2 tw-shadow-md tw-transition-all ${
               cubierto && !isProcessing
                 ? "tw-scale-100 hover:tw-brightness-110 active:tw-scale-[0.98]"
                 : "tw-opacity-50 tw-cursor-not-allowed"
@@ -1802,7 +1773,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
               <button
                 type="button"
                 onClick={handleDoubleZero}
-                className="payment-keypad-btn tw-h-11 tw-text-sm tw-font-bold"
+                className="payment-keypad-btn tw-h-12 sm:tw-h-13 tw-text-sm tw-font-bold"
                 title="Agregar 00"
               >
                 00
@@ -1810,7 +1781,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
               <button
                 type="button"
                 onClick={handleTripleZero}
-                className="payment-keypad-btn tw-h-11 tw-text-sm tw-font-bold"
+                className="payment-keypad-btn tw-h-12 sm:tw-h-13 tw-text-sm tw-font-bold"
                 title="Agregar 000 (miles)"
               >
                 000
@@ -1818,7 +1789,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
               <button
                 type="button"
                 onClick={handleDecimal}
-                className="payment-keypad-btn tw-h-11 tw-text-lg tw-font-bold"
+                className="payment-keypad-btn tw-h-12 sm:tw-h-13 tw-text-lg tw-font-bold"
                 title="Punto decimal"
               >
                 .

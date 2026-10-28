@@ -5803,8 +5803,8 @@ table.tbl tr.item-detail td {
 
 /* ============ Modal de Pagos POS Rediseñado ============ */
 .modal.modal-payment {
-  width: min(96vw, 920px);
-  max-width: 920px;
+  width: min(94vw, 760px);
+  max-width: 760px;
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-lg);
@@ -5813,8 +5813,69 @@ table.tbl tr.item-detail td {
 
 @media (min-width: 768px) {
   .modal.modal-payment {
-    width: min(96vw, 920px);
-    max-height: 90vh;
+    width: min(94vw, 760px);
+    max-width: 760px;
+    max-height: 88vh;
+  }
+
+  .modal.modal-payment .modal-b {
+    padding: 14px 16px;
+    overflow-y: auto;
+  }
+
+  .modal.modal-payment .modal-h {
+    padding: 12px 18px;
+    background: linear-gradient(135deg, #1344A8 0%, #1E5BD9 52%, #2B6EF2 100%);
+    border-bottom: 1px solid rgba(19, 68, 168, 0.45);
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(30, 91, 217, 0.16);
+  }
+
+  [data-theme="dark"] .modal.modal-payment .modal-h {
+    background: linear-gradient(135deg, #0e1e3d 0%, #173264 55%, #1d4080 100%);
+    border-bottom: 1px solid rgba(92, 138, 240, 0.28);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  }
+
+  .modal.modal-payment .modal-h .payment-modal-icon-badge {
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(4px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 4px rgba(10, 30, 80, 0.15);
+  }
+
+  .modal.modal-payment .modal-h .payment-modal-title {
+    color: #ffffff !important;
+    letter-spacing: 0.04em;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .modal.modal-payment .modal-h .payment-modal-sub {
+    color: rgba(235, 243, 255, 0.85) !important;
+  }
+
+  .modal.modal-payment .modal-h .payment-modal-chip {
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(4px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  .modal.modal-payment .modal-h .payment-modal-close-btn {
+    color: rgba(255, 255, 255, 0.85) !important;
+    background: transparent;
+  }
+
+  .modal.modal-payment .modal-h .payment-modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+  }
+
+  .modal.modal-payment .modal-f {
+    padding: 12px 18px;
   }
 }
 
@@ -5837,82 +5898,190 @@ table.tbl tr.item-detail td {
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 30%, transparent), var(--shadow-sm);
 }
 
+/* ============ Botonera Numérica con Relieve 3D y Profundidad ============ */
 .payment-keypad-btn {
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
-  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.08s cubic-bezier(0.2, 0, 0, 1),
+              background 0.15s ease,
+              border-color 0.15s ease,
+              box-shadow 0.15s ease,
+              color 0.12s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  border: 1px solid #dce4ec;
-  background: #f8fafc;
-  color: #0f172a;
+  border-radius: 10px;
+  border: 1px solid #c4d4e8;
+  background: linear-gradient(180deg, #ffffff 0%, #edf3fc 100%);
+  color: #0c234c;
   font-family: var(--mono);
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-[data-theme="dark"] .payment-keypad-btn {
-  border-color: var(--border);
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  position: relative;
+  /* Relieve 3D táctil: brillo de borde superior + bisel inferior rígido + sombra ambiental difuminada */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95),
+              0 2.5px 0 #b2c6e2,
+              0 4px 6px -1px rgba(16, 42, 92, 0.08);
 }
 
 .payment-keypad-btn:hover {
-  background: #ffffff;
-  border-color: #cbd5e1;
-}
-
-[data-theme="dark"] .payment-keypad-btn:hover {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
+  background: linear-gradient(180deg, #ffffff 0%, #e5f0fc 100%);
+  border-color: #9cbfe8;
+  color: #1e5bd9;
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 #ffffff,
+              0 3.5px 0 #90b3df,
+              0 7px 14px -2px rgba(30, 91, 217, 0.18);
 }
 
 .payment-keypad-btn:active {
-  transform: scale(0.94);
-  background: #e2e8f0;
+  transform: translateY(2px);
+  background: linear-gradient(180deg, #e2effc 0%, #d4e5f9 100%);
+  border-color: #8bb3e6;
+  color: #1344a8;
+  box-shadow: inset 0 1.5px 2px rgba(11, 31, 68, 0.15),
+              0 0.5px 0 #90b3df,
+              0 1px 2px rgba(16, 42, 92, 0.08);
 }
 
-[data-theme="dark"] .payment-keypad-btn:active {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: var(--accent);
+.payment-keypad-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
+/* Tecla C (Limpiar) con relieve coral/rojo moderno */
 .payment-keypad-btn.action-clear {
-  background: #fbebeb;
-  color: #b91c1c;
-  border-color: #f2c7ca;
-}
-
-[data-theme="dark"] .payment-keypad-btn.action-clear {
-  background: rgba(239, 68, 68, 0.18);
-  color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.35);
+  background: linear-gradient(180deg, #fff8f8 0%, #fee4e4 100%);
+  color: #dc2626;
+  border-color: #fca5a5;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95),
+              0 2.5px 0 #f87171,
+              0 4px 6px -1px rgba(220, 38, 38, 0.12);
 }
 
 .payment-keypad-btn.action-clear:hover {
-  background: #f7dcdb;
+  background: linear-gradient(180deg, #ffffff 0%, #fedcdc 100%);
+  border-color: #f87171;
+  color: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 #ffffff,
+              0 3.5px 0 #ef4444,
+              0 7px 14px -2px rgba(220, 38, 38, 0.22);
 }
 
+.payment-keypad-btn.action-clear:active {
+  transform: translateY(2px);
+  background: #fcd5d5;
+  box-shadow: inset 0 1.5px 2px rgba(185, 28, 28, 0.18),
+              0 0.5px 0 #ef4444;
+}
+
+/* Tecla Backspace (Borrar dígito) con relieve ámbar/dorado */
 .payment-keypad-btn.action-backspace {
-  background: #ede7de;
-  color: #854d0e;
-  border-color: #dfd6c8;
-}
-
-[data-theme="dark"] .payment-keypad-btn.action-backspace {
-  background: rgba(217, 119, 6, 0.2);
-  color: #fcd34d;
-  border-color: rgba(217, 119, 6, 0.35);
+  background: linear-gradient(180deg, #fffef7 0%, #fef0c7 100%);
+  color: #b45309;
+  border-color: #fcd34d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95),
+              0 2.5px 0 #f59e0b,
+              0 4px 6px -1px rgba(217, 119, 6, 0.12);
 }
 
 .payment-keypad-btn.action-backspace:hover {
-  background: #e4dcce;
+  background: linear-gradient(180deg, #ffffff 0%, #fee9a8 100%);
+  border-color: #f59e0b;
+  color: #92400e;
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 #ffffff,
+              0 3.5px 0 #d97706,
+              0 7px 14px -2px rgba(217, 119, 6, 0.22);
+}
+
+.payment-keypad-btn.action-backspace:active {
+  transform: translateY(2px);
+  background: #fde047;
+  box-shadow: inset 0 1.5px 2px rgba(180, 83, 9, 0.18),
+              0 0.5px 0 #d97706;
+}
+
+/* Modo oscuro con relieve */
+[data-theme="dark"] .payment-keypad-btn {
+  background: linear-gradient(180deg, #1f2738 0%, #141b27 100%);
+  border-color: #2e3a52;
+  color: #e2e8f0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+              0 2.5px 0 #090e17,
+              0 4px 8px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .payment-keypad-btn:hover {
+  background: linear-gradient(180deg, #27334a 0%, #1a2333 100%);
+  border-color: #495e86;
+  color: #7ba1f4;
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18),
+              0 3.5px 0 #070b12,
+              0 7px 14px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .payment-keypad-btn:active {
+  transform: translateY(2px);
+  background: #111722;
+  color: #5c8af0;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.6),
+              0 0.5px 0 #070b12;
+}
+
+[data-theme="dark"] .payment-keypad-btn.action-clear {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.24) 0%, rgba(185, 28, 28, 0.3) 100%);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14),
+              0 2.5px 0 #3b0707,
+              0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .payment-keypad-btn.action-clear:hover {
+  background: rgba(239, 68, 68, 0.38);
+  border-color: #ef4444;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2),
+              0 3.5px 0 #2a0505,
+              0 7px 14px rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .payment-keypad-btn.action-clear:active {
+  transform: translateY(2px);
+  background: #3b0707;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.6),
+              0 0.5px 0 #2a0505;
+}
+
+[data-theme="dark"] .payment-keypad-btn.action-backspace {
+  background: linear-gradient(180deg, rgba(217, 119, 6, 0.24) 0%, rgba(180, 83, 9, 0.3) 100%);
+  border-color: rgba(217, 119, 6, 0.5);
+  color: #fcd34d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14),
+              0 2.5px 0 #381502,
+              0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .payment-keypad-btn.action-backspace:hover {
+  background: rgba(217, 119, 6, 0.38);
+  border-color: #f59e0b;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2),
+              0 3.5px 0 #250e01,
+              0 7px 14px rgba(217, 119, 6, 0.3);
+}
+
+[data-theme="dark"] .payment-keypad-btn.action-backspace:active {
+  transform: translateY(2px);
+  background: #381502;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.6),
+              0 0.5px 0 #250e01;
 }
 
 .payment-shortcut-pill {
@@ -5921,11 +6090,11 @@ table.tbl tr.item-detail td {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  border-radius: 9999px;
+  border-radius: var(--radius-sm, 7px);
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .payment-shortcut-pill:hover {
