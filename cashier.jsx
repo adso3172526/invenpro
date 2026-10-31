@@ -1424,40 +1424,6 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
 
             {/* Columna Derecha: Teclado Numérico y Atajos de Billetes (solo visible en pantallas md+) */}
             <div className="tw-hidden md:tw-flex md:tw-col-span-5 tw-flex-col tw-gap-2 tw-bg-surface-2 tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-border">
-              {/* Encabezado del Teclado */}
-              <div className="tw-flex tw-items-center tw-justify-between">
-                <div className="tw-flex tw-items-center tw-gap-1.5 tw-text-txt-2">
-                  <Icon name="calculator" size={13}/>
-                  <span className="tw-text-[10px] tw-font-bold tw-uppercase tw-tracking-wider">Teclado Numérico</span>
-                </div>
-                <div className="tw-flex tw-items-center tw-gap-1.5 tw-bg-surface tw-border tw-border-border tw-rounded-full tw-px-2 tw-py-0.5">
-                  <span className="tw-w-2 tw-h-2 tw-rounded-full" style={{ background: activeMeta.color }}/>
-                  <span className="tw-text-[10px] tw-font-bold tw-text-txt">{activo}</span>
-                </div>
-              </div>
-
-              {/* Visor Digital del Monto Activo */}
-              <div className="payment-display-box tw-py-1.5 tw-px-2.5 tw-bg-surface tw-rounded-lg">
-                <div className="tw-flex tw-items-center tw-justify-between tw-text-[10px] tw-text-txt-3">
-                  <span>Monto recibido ({activo})</span>
-                  {(montos[activo] || 0) > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleClear}
-                      className="tw-text-bad tw-text-[10px] tw-font-medium hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0"
-                    >
-                      Limpiar
-                    </button>
-                  )}
-                </div>
-                <div className="tw-flex tw-items-baseline tw-justify-end tw-gap-1">
-                  <span className="tw-text-xs tw-font-semibold tw-text-txt-3 mono">$</span>
-                  <span className="mono tw-text-xl tw-font-black tw-tracking-tight tw-text-txt">
-                    {(montos[activo] || 0).toLocaleString("es-CO")}
-                  </span>
-                </div>
-              </div>
-
               {/* Atajos de Billetes */}
               <div className="tw-flex tw-flex-col tw-gap-1">
                 <div className="tw-flex tw-items-center tw-justify-between">
@@ -1550,11 +1516,6 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 >
                   .
                 </button>
-              </div>
-
-              {/* Tip informativo */}
-              <div className="tw-text-center tw-text-[9.5px] tw-text-txt-3">
-                ⌨️ Teclado físico habilitado (0-9, Backspace, Esc, Enter)
               </div>
             </div>
           </div>
