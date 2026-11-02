@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 76" width="140" height="76">
+  <defs>
+    <linearGradient id="bg100" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064E3B" />
+      <stop offset="35%" stop-color="#0D9488" />
+      <stop offset="70%" stop-color="#14B8A6" />
+      <stop offset="100%" stop-color="#042F2E" />
+    </linearGradient>
+    <linearGradient id="strip100" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" stop-opacity="0.95" />
+      <stop offset="30%" stop-color="#38BDF8" stop-opacity="0.9" />
+      <stop offset="60%" stop-color="#FBBF24" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0.9" />
+    </linearGradient>
+    <pattern id="pattern100" width="8" height="8" patternUnits="userSpaceOnUse">
+      <path d="M4 0 L8 4 L4 8 L0 4 Z" fill="none" stroke="#CCFBF1" stroke-width="0.3" opacity="0.25" />
+    </pattern>
+    <filter id="shadow100" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Cuerpo del billete -->
+  <rect x="2" y="2" width="136" height="72" rx="5" fill="url(#bg100)" stroke="#99F6E4" stroke-width="0.8" filter="url(#shadow100)" />
+  <rect x="2" y="2" width="136" height="72" rx="5" fill="url(#pattern100)" />
+
+  <!-- Marco interior de seguridad -->
+  <rect x="5" y="5" width="130" height="66" rx="3.5" fill="none" stroke="#F0FDFA" stroke-width="0.6" stroke-dasharray="2.5 1" opacity="0.6" />
+
+  <!-- Franja holográfica vertical de seguridad -->
+  <rect x="42" y="3" width="7" height="70" fill="url(#strip100)" opacity="0.85" />
+  <line x1="45.5" y1="3" x2="45.5" y2="73" stroke="#FFF" stroke-width="0.5" stroke-dasharray="1.5 1.5" opacity="0.7" />
+
+  <!-- Marca de agua circular / retrato -->
+  <circle cx="23" cy="38" r="15" fill="#022C22" opacity="0.5" stroke="#99F6E4" stroke-width="0.5" stroke-dasharray="1 1" />
+  <circle cx="23" cy="38" r="11" fill="none" stroke="#F0FDFA" stroke-width="0.4" opacity="0.35" />
+  <circle cx="23" cy="34" r="5" fill="#F0FDFA" opacity="0.4" />
+  <path d="M15 48 C16 42, 30 42, 31 48" fill="#F0FDFA" opacity="0.4" />
+
+  <!-- Encabezado oficial -->
+  <text x="54" y="14" fill="#F0FDFA" font-family="system-ui, sans-serif" font-size="5" font-weight="700" letter-spacing="0.5" opacity="0.85">BANCO DE LA REPÚBLICA</text>
+  <text x="54" y="21" fill="#99F6E4" font-family="system-ui, sans-serif" font-size="4" font-weight="600" opacity="0.75">COLOMBIA</text>
+
+  <!-- Palma de Cera del Quindío (Símbolo patrio del billete de 100 mil) -->
+  <g transform="translate(63, 39) scale(0.65)" opacity="0.9">
+    <!-- Tronco alto y esbelto -->
+    <line x1="0" y1="14" x2="0" y2="-4" stroke="#CCFBF1" stroke-width="1.2" stroke-linecap="round" />
+    <!-- Hojas de la corona de la palma -->
+    <path d="M0 -4 Q-6 -10 -10 -7" fill="none" stroke="#F0FDFA" stroke-width="0.9" stroke-linecap="round" />
+    <path d="M0 -4 Q6 -10 10 -7" fill="none" stroke="#F0FDFA" stroke-width="0.9" stroke-linecap="round" />
+    <path d="M0 -4 Q-4 -12 -5 -13" fill="none" stroke="#F0FDFA" stroke-width="0.8" stroke-linecap="round" />
+    <path d="M0 -4 Q4 -12 5 -13" fill="none" stroke="#F0FDFA" stroke-width="0.8" stroke-linecap="round" />
+    <path d="M0 -4 Q0 -13 0 -15" fill="none" stroke="#FFF" stroke-width="0.9" stroke-linecap="round" />
+  </g>
+
+  <!-- Denominación principal destacada -->
+  <text x="130" y="34" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="900" text-anchor="end" letter-spacing="-0.5">100</text>
+  <text x="130" y="44" fill="#F0FDFA" font-family="system-ui, -apple-system, sans-serif" font-size="7" font-weight="800" text-anchor="end" letter-spacing="0.4">MIL</text>
+  <text x="130" y="52" fill="#99F6E4" font-family="system-ui, sans-serif" font-size="5" font-weight="700" text-anchor="end">PESOS</text>
+
+  <!-- Valor numérico en esquina inferior izquierda -->
+  <rect x="7" y="55" width="30" height="12" rx="2.5" fill="#022C22" opacity="0.8" stroke="#99F6E4" stroke-width="0.5" />
+  <text x="22" y="64" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="6.5" font-weight="800" text-anchor="middle">100 MIL</text>
+</svg>
+

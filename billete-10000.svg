@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 76" width="140" height="76">
+  <defs>
+    <linearGradient id="bg10" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#991B1B" />
+      <stop offset="35%" stop-color="#DC2626" />
+      <stop offset="70%" stop-color="#EF4444" />
+      <stop offset="100%" stop-color="#7F1D1D" />
+    </linearGradient>
+    <linearGradient id="strip10" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.9" />
+      <stop offset="25%" stop-color="#FBBF24" stop-opacity="1" />
+      <stop offset="50%" stop-color="#34D399" stop-opacity="0.9" />
+      <stop offset="75%" stop-color="#F59E0B" stop-opacity="1" />
+      <stop offset="100%" stop-color="#D97706" stop-opacity="0.9" />
+    </linearGradient>
+    <pattern id="pattern10" width="8" height="8" patternUnits="userSpaceOnUse">
+      <path d="M0 4 Q4 0 8 4 T16 4" fill="none" stroke="#FEE2E2" stroke-width="0.35" opacity="0.25" />
+    </pattern>
+    <filter id="shadow10" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Cuerpo del billete con sombra y esquinas redondeadas -->
+  <rect x="2" y="2" width="136" height="72" rx="5" fill="url(#bg10)" stroke="#FCA5A5" stroke-width="0.8" filter="url(#shadow10)" />
+  <rect x="2" y="2" width="136" height="72" rx="5" fill="url(#pattern10)" />
+
+  <!-- Marco interior de seguridad -->
+  <rect x="5" y="5" width="130" height="66" rx="3.5" fill="none" stroke="#FEE2E2" stroke-width="0.6" stroke-dasharray="2.5 1" opacity="0.6" />
+
+  <!-- Franja holográfica vertical de seguridad -->
+  <rect x="42" y="3" width="7" height="70" fill="url(#strip10)" opacity="0.85" />
+  <line x1="45.5" y1="3" x2="45.5" y2="73" stroke="#FFF" stroke-width="0.5" stroke-dasharray="1.5 1.5" opacity="0.7" />
+
+  <!-- Marca de agua circular / retrato -->
+  <circle cx="23" cy="38" r="15" fill="#7F1D1D" opacity="0.5" stroke="#FCA5A5" stroke-width="0.5" stroke-dasharray="1 1" />
+  <circle cx="23" cy="38" r="11" fill="none" stroke="#FEF2F2" stroke-width="0.4" opacity="0.35" />
+  <!-- Silueta de rostro estilizada -->
+  <circle cx="23" cy="34" r="5" fill="#FEF2F2" opacity="0.4" />
+  <path d="M15 48 C16 42, 30 42, 31 48" fill="#FEF2F2" opacity="0.4" />
+
+  <!-- Encabezado oficial -->
+  <text x="54" y="14" fill="#FEF2F2" font-family="system-ui, sans-serif" font-size="5" font-weight="700" letter-spacing="0.5" opacity="0.85">BANCO DE LA REPÚBLICA</text>
+  <text x="54" y="21" fill="#FCA5A5" font-family="system-ui, sans-serif" font-size="4" font-weight="600" opacity="0.75">COLOMBIA</text>
+
+  <!-- Flor Victoria Regia (Símbolo de la Amazonía del billete de 10 mil) -->
+  <g transform="translate(62, 36) scale(0.7)" opacity="0.85">
+    <ellipse cx="0" cy="0" rx="9" ry="4" fill="#FCA5A5" opacity="0.4" />
+    <circle cx="0" cy="0" r="3.5" fill="#FEF2F2" />
+    <path d="M-8 0 C-4 -6, 4 -6, 8 0 C4 6, -4 6, -8 0 Z" fill="none" stroke="#FFF" stroke-width="0.6" />
+  </g>
+
+  <!-- Denominación principal destacada -->
+  <text x="130" y="34" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="900" text-anchor="end" letter-spacing="-0.5">10</text>
+  <text x="130" y="44" fill="#FEF2F2" font-family="system-ui, -apple-system, sans-serif" font-size="7" font-weight="800" text-anchor="end" letter-spacing="0.4">MIL</text>
+  <text x="130" y="52" fill="#FCA5A5" font-family="system-ui, sans-serif" font-size="5" font-weight="700" text-anchor="end">PESOS</text>
+
+  <!-- Valor numérico en esquina inferior izquierda -->
+  <rect x="7" y="55" width="28" height="12" rx="2.5" fill="#7F1D1D" opacity="0.8" stroke="#FCA5A5" stroke-width="0.5" />
+  <text x="21" y="64" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="7" font-weight="800" text-anchor="middle">10 MIL</text>
+</svg>
+

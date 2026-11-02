@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 76" width="140" height="76">
+  <defs>
+    <linearGradient id="bg20" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C2410C" />
+      <stop offset="35%" stop-color="#EA580C" />
+      <stop offset="70%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#9A3412" />
+    </linearGradient>
+    <linearGradient id="strip20" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.9" />
+      <stop offset="30%" stop-color="#FBBF24" stop-opacity="1" />
+      <stop offset="60%" stop-color="#34D399" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#EAB308" stop-opacity="0.9" />
+    </linearGradient>
+    <pattern id="pattern20" width="8" height="8" patternUnits="userSpaceOnUse">
+      <path d="M0 0 L4 4 L0 8 M4 0 L8 4 L4 8" fill="none" stroke="#FFEDD5" stroke-width="0.35" opacity="0.25" />
+    </pattern>
+    <filter id="shadow20" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Cuerpo del billete -->
+  <rect x="2" y="2" width="136" height="72" rx="5" fill="url(#bg20)" stroke="#FDBA74" stroke-width="0.8" filter="url(#shadow20)" />
+  <rect x="2" y="2" width="136" height="72" rx="5" fill="url(#pattern20)" />
+
+  <!-- Marco interior de seguridad -->
+  <rect x="5" y="5" width="130" height="66" rx="3.5" fill="none" stroke="#FFF7ED" stroke-width="0.6" stroke-dasharray="2.5 1" opacity="0.6" />
+
+  <!-- Franja holográfica vertical de seguridad -->
+  <rect x="42" y="3" width="7" height="70" fill="url(#strip20)" opacity="0.85" />
+  <line x1="45.5" y1="3" x2="45.5" y2="73" stroke="#FFF" stroke-width="0.5" stroke-dasharray="1.5 1.5" opacity="0.7" />
+
+  <!-- Marca de agua circular / retrato -->
+  <circle cx="23" cy="38" r="15" fill="#7C2D12" opacity="0.45" stroke="#FDBA74" stroke-width="0.5" stroke-dasharray="1 1" />
+  <circle cx="23" cy="38" r="11" fill="none" stroke="#FFF7ED" stroke-width="0.4" opacity="0.35" />
+  <circle cx="23" cy="34" r="5" fill="#FFF7ED" opacity="0.4" />
+  <path d="M15 48 C16 42, 30 42, 31 48" fill="#FFF7ED" opacity="0.4" />
+
+  <!-- Encabezado oficial -->
+  <text x="54" y="14" fill="#FFF7ED" font-family="system-ui, sans-serif" font-size="5" font-weight="700" letter-spacing="0.5" opacity="0.85">BANCO DE LA REPÚBLICA</text>
+  <text x="54" y="21" fill="#FED7AA" font-family="system-ui, sans-serif" font-size="4" font-weight="600" opacity="0.75">COLOMBIA</text>
+
+  <!-- Sombrero Vueltiao (Símbolo icónico del billete de 20 mil) -->
+  <g transform="translate(62, 37) scale(0.65)" opacity="0.85">
+    <ellipse cx="0" cy="2" rx="14" ry="4" fill="#7C2D12" opacity="0.6" />
+    <path d="M-10 1 Q0 -8 10 1" fill="#FEF3C7" stroke="#9A3412" stroke-width="0.8" />
+    <ellipse cx="0" cy="1" rx="12" ry="3" fill="#FFFBEB" stroke="#9A3412" stroke-width="0.6" />
+    <ellipse cx="0" cy="-2" rx="6" ry="3" fill="#FEF3C7" stroke="#9A3412" stroke-width="0.6" />
+    <path d="M-12 1 Q0 5 12 1" fill="none" stroke="#9A3412" stroke-width="0.8" />
+  </g>
+
+  <!-- Denominación principal destacada -->
+  <text x="130" y="34" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="900" text-anchor="end" letter-spacing="-0.5">20</text>
+  <text x="130" y="44" fill="#FFF7ED" font-family="system-ui, -apple-system, sans-serif" font-size="7" font-weight="800" text-anchor="end" letter-spacing="0.4">MIL</text>
+  <text x="130" y="52" fill="#FED7AA" font-family="system-ui, sans-serif" font-size="5" font-weight="700" text-anchor="end">PESOS</text>
+
+  <!-- Valor numérico en esquina inferior izquierda -->
+  <rect x="7" y="55" width="28" height="12" rx="2.5" fill="#7C2D12" opacity="0.8" stroke="#FDBA74" stroke-width="0.5" />
+  <text x="21" y="64" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="7" font-weight="800" text-anchor="middle">20 MIL</text>
+</svg>
+

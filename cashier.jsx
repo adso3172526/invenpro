@@ -999,6 +999,13 @@ const METODOS_PAGO = [
   },
 ];
 
+const BILLETES_CONFIG = [
+  { valor: 10000, label: "$10.000", img: "billete-10000.png" },
+  { valor: 20000, label: "$20.000", img: "billete-20000.png" },
+  { valor: 50000, label: "$50.000", img: "billete-50000.png" },
+  { valor: 100000, label: "$100.000", img: "billete-100000.jpg" },
+];
+
 const PaymentModal = ({ total, items, onClose, onPay }) => {
   const [montos, setMontos] = useState({ Efectivo: 0, Transferencia: 0, Nequi: 0, Daviplata: 0 });
   const [activo, setActivo] = useState("Efectivo"); // medio al que apuntan el teclado y los atajos
@@ -1093,7 +1100,8 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
   };
 
   const handleQuickBill = (amount) => {
-    set1(activo, amount);
+    if (activo !== "Efectivo") return;
+    set1("Efectivo", amount);
   };
 
   const confirmar = () => {
@@ -1161,8 +1169,8 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
   const activeMeta = METODOS_PAGO.find(x => x.id === activo) || METODOS_PAGO[0];
 
   return (
-    <div className="modal-bg">
-      <div className="modal modal-payment bottom-sheet" onClick={e => e.stopPropagation()}>
+    <div className="modal-bg tw-flex tw-items-center tw-justify-center" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="modal modal-payment" style={{ margin: "auto", justifySelf: "center", alignSelf: "center" }} onClick={e => e.stopPropagation()}>
         {/* Encabezado */}
         <div className="modal-h payment-modal-header tw-flex tw-items-center tw-justify-between tw-py-2.5 tw-px-4 sm:tw-px-5 tw-border-b tw-border-border">
           <h3 className="payment-modal-title tw-m-0 tw-text-base tw-font-bold tw-tracking-wider">
@@ -1240,11 +1248,6 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                       <div className="tw-flex-1 tw-min-w-0">
                         <div className="tw-flex tw-items-center tw-gap-1.5">
                           <span className="tw-text-xs tw-font-semibold tw-text-txt tw-whitespace-nowrap">{m.label}</span>
-                          {isAct && (
-                            <span className="tw-text-[9px] tw-font-bold tw-bg-accent tw-text-white tw-px-1.5 tw-py-0.2 tw-rounded-full tw-whitespace-nowrap tw-shrink-0">
-                              Editando
-                            </span>
-                          )}
                         </div>
                         <div className="tw-text-[10px] tw-text-txt-3 tw-truncate">{m.sub}</div>
                       </div>
@@ -1318,52 +1321,63 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 })}
               </div>
 
-              {/* Atajos de Billetes en Móvil (conserva la opción de escoger el valor del billete) */}
-              <div className="md:tw-hidden tw-flex tw-flex-col tw-gap-1.5 tw-p-2.5 tw-rounded-xl tw-bg-surface-2 tw-border tw-border-border">
-                <div className="tw-flex tw-items-center tw-justify-between">
-                  <span className="tw-text-[11px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
-                    Billetes para <span className="tw-text-accent tw-font-semibold">{activo}</span>
-                  </span>
-                  <div className="tw-flex tw-items-center tw-gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setTecladoAbierto(true)}
-                      className="tw-text-accent tw-text-[11px] tw-font-bold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0 tw-flex tw-items-center tw-gap-1"
-                    >
-                      <Icon name="calculator" size={13}/> Teclado táctil
-                    </button>
-                    {(montos[activo] || 0) > 0 && (
+              {/* Atajos de Billetes en Móvil (solo visible para Efectivo) */}
+              {activo === "Efectivo" && (
+                <div className="md:tw-hidden tw-flex tw-flex-col tw-gap-1.5 tw-p-2.5 tw-rounded-xl tw-bg-surface-2 tw-border tw-border-border">
+                  <div className="tw-flex tw-items-center tw-justify-between tw-gap-1">
+                    <span className="tw-text-[11px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
+                      Billetes para <span className="tw-text-accent tw-font-semibold">Efectivo</span>
+                    </span>
+                    <div className="tw-flex tw-items-center tw-gap-2">
                       <button
                         type="button"
-                        onClick={handleClear}
-                        className="tw-text-bad tw-text-[10px] tw-font-semibold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0"
+                        onClick={() => handleCompletar("Efectivo")}
+                        className="tw-text-accent tw-text-[11px] tw-font-bold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0"
+                        title="Fijar exactamente el valor restante a pagar"
                       >
-                        Limpiar
+                        ⚡ Completar
                       </button>
-                    )}
+                      <button
+                        type="button"
+                        onClick={() => setTecladoAbierto(true)}
+                        className="tw-text-txt-2 hover:tw-text-accent tw-text-[11px] tw-font-bold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0 tw-flex tw-items-center tw-gap-1"
+                      >
+                        <Icon name="calculator" size={13}/> Teclado táctil
+                      </button>
+                      {(montos.Efectivo || 0) > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleClear}
+                          className="tw-text-bad tw-text-[10px] tw-font-semibold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0"
+                        >
+                          Limpiar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="tw-grid tw-grid-cols-4 tw-gap-1.5">
+                    {BILLETES_CONFIG.map(b => (
+                      <button
+                        key={b.valor}
+                        type="button"
+                        onClick={() => handleQuickBill(b.valor)}
+                        className="payment-shortcut-pill tw-p-1 sm:tw-p-1.5 tw-flex tw-flex-col tw-items-center tw-justify-center tw-gap-1 tw-rounded-lg active:tw-scale-[0.96] tw-transition-all"
+                        title={`Pagar con billete de ${b.label}`}
+                      >
+                        <img
+                          src={b.img}
+                          alt={`Billete de ${b.label}`}
+                          className="tw-w-full tw-h-auto tw-max-h-7.5 sm:tw-max-h-8 tw-object-contain tw-rounded-xs tw-shadow-xs"
+                          loading="lazy"
+                        />
+                        <span className="tw-text-[10px] sm:tw-text-[11px] tw-font-bold tw-tracking-tight tw-leading-none tw-text-txt mono">
+                          {b.label}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <div className="tw-flex tw-flex-wrap tw-gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleCompletar(activo)}
-                    className="payment-shortcut-pill tw-py-1.5 tw-px-3 tw-bg-accent-soft tw-text-accent tw-border-accent/40 tw-font-bold hover:tw-bg-accent hover:tw-text-white"
-                    title="Fijar exactamente el valor restante a pagar"
-                  >
-                    Completar
-                  </button>
-                  {[10000, 20000, 50000, 100000].map(v => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => handleQuickBill(v)}
-                      className="payment-shortcut-pill tw-py-1.5 tw-px-2.5"
-                    >
-                      ${v.toLocaleString("es-CO")}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
 
               {/* Indicador de Estado en Vivo (Restante, Cambio, Exceso) */}
               <div className="tw-mt-1 md:tw-mt-auto">
@@ -1378,43 +1392,61 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                     </div>
                   </div>
                 ) : restante > 0 ? (
-                  <div className="tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-bad/30 tw-bg-bad-soft/40 tw-flex tw-items-center tw-justify-between">
-                    <div className="tw-flex tw-items-center tw-gap-2 tw-text-bad">
-                      <Icon name="clock" size={15}/>
-                      <span className="tw-text-xs tw-font-bold">Saldo restante por pagar:</span>
+                  <div className="tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-bad/30 tw-bg-bad-soft/40 tw-flex tw-items-center tw-justify-between tw-gap-2.5">
+                    <div className="tw-flex tw-items-center tw-gap-2.5 tw-text-bad tw-min-w-0">
+                      <div className="tw-w-7.5 tw-h-7.5 sm:tw-w-8 sm:tw-h-8 tw-rounded-lg tw-bg-bad/15 tw-flex tw-items-center tw-justify-center tw-shrink-0">
+                        <Icon name="clock" size={17}/>
+                      </div>
+                      <div className="tw-min-w-0">
+                        <div className="tw-text-xs sm:tw-text-sm tw-font-extrabold tw-uppercase tw-tracking-wide tw-leading-tight">
+                          Saldo restante:
+                        </div>
+                        <div className="tw-text-[10px] sm:tw-text-[10.5px] tw-text-bad/80 tw-leading-tight">
+                          Pendiente por pagar
+                        </div>
+                      </div>
                     </div>
-                    <span className="mono tw-text-base md:tw-text-lg tw-font-extrabold tw-text-bad">
+                    <span className="mono tw-text-lg sm:tw-text-xl tw-font-black tw-text-bad tw-whitespace-nowrap tw-shrink-0">
                       {window.fmtCOP(restante)}
                     </span>
                   </div>
                 ) : cambio > 0 ? (
-                  <div className="tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-good/40 tw-bg-good-soft/70 tw-flex tw-flex-col tw-gap-1 tw-shadow-sm">
-                    <div className="tw-flex tw-items-center tw-justify-between">
-                      <div className="tw-flex tw-items-center tw-gap-2 tw-text-good">
-                        <Icon name="coins" size={16}/>
-                        <span className="tw-text-xs md:tw-text-sm tw-font-extrabold tw-uppercase tw-tracking-wide">
-                          Cambio a devolver al cliente:
-                        </span>
+                  <div className="tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-good/40 tw-bg-good-soft/70 tw-flex tw-flex-col tw-gap-1.5 tw-shadow-sm">
+                    <div className="tw-flex tw-items-center tw-justify-between tw-gap-3">
+                      <div className="tw-flex tw-items-center tw-gap-2.5 tw-text-good tw-min-w-0">
+                        <div className="tw-w-8 tw-h-8 tw-rounded-lg tw-bg-good/15 tw-flex tw-items-center tw-justify-center tw-shrink-0">
+                          <Icon name="coins" size={18}/>
+                        </div>
+                        <div className="tw-min-w-0">
+                          <div className="tw-text-xs sm:tw-text-sm tw-font-black tw-uppercase tw-tracking-wide tw-text-good tw-leading-tight tw-whitespace-nowrap">
+                            Cambio a devolver:
+                          </div>
+                          <div className="tw-text-[10px] sm:tw-text-[10.5px] tw-text-good/80 tw-leading-tight">
+                            Entregar al cliente
+                          </div>
+                        </div>
                       </div>
-                      <span className="mono tw-text-lg md:tw-text-xl tw-font-black tw-text-good">
+                      <span className="mono tw-text-xl sm:tw-text-2xl tw-font-black tw-text-good tw-whitespace-nowrap tw-shrink-0 tw-tracking-tight tw-text-right">
                         {window.fmtCOP(cambio)}
                       </span>
                     </div>
-                    <div className="tw-flex tw-items-center tw-justify-between tw-pt-1 tw-border-t tw-border-good/20 tw-text-[10.5px] tw-text-good">
-                      <span>Total recibido: <b>{window.fmtCOP(totalRecibido)}</b></span>
-                      <span>Total venta: <b>{window.fmtCOP(total)}</b></span>
+                    <div className="tw-flex tw-items-center tw-justify-between tw-pt-1.5 tw-border-t tw-border-good/20 tw-text-[11px] tw-text-good">
+                      <span className="tw-whitespace-nowrap">Total recibido: <b className="mono tw-font-bold">{window.fmtCOP(totalRecibido)}</b></span>
+                      <span className="tw-whitespace-nowrap">Total venta: <b className="mono tw-font-bold">{window.fmtCOP(total)}</b></span>
                     </div>
                   </div>
                 ) : (
-                  <div className="tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-good/40 tw-bg-good-soft/60 tw-flex tw-items-center tw-justify-between">
-                    <div className="tw-flex tw-items-center tw-gap-2 tw-text-good">
-                      <Icon name="checkCircle" size={16}/>
-                      <div>
-                        <div className="tw-text-xs tw-font-bold">Pago exacto cubierto</div>
-                        <div className="tw-text-[10px] tw-text-good/80">No hay cambio pendiente por entregar</div>
+                  <div className="tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-good/40 tw-bg-good-soft/60 tw-flex tw-items-center tw-justify-between tw-gap-2.5">
+                    <div className="tw-flex tw-items-center tw-gap-2.5 tw-text-good tw-min-w-0">
+                      <div className="tw-w-7.5 tw-h-7.5 sm:tw-w-8 sm:tw-h-8 tw-rounded-lg tw-bg-good/15 tw-flex tw-items-center tw-justify-center tw-shrink-0">
+                        <Icon name="checkCircle" size={17}/>
+                      </div>
+                      <div className="tw-min-w-0">
+                        <div className="tw-text-xs sm:tw-text-sm tw-font-bold tw-leading-tight">Pago exacto cubierto</div>
+                        <div className="tw-text-[10px] sm:tw-text-[10.5px] tw-text-good/80 tw-leading-tight">No hay cambio pendiente</div>
                       </div>
                     </div>
-                    <span className="mono tw-text-base tw-font-bold tw-text-good">
+                    <span className="mono tw-text-base sm:tw-text-lg tw-font-bold tw-text-good tw-whitespace-nowrap tw-shrink-0">
                       {window.fmtCOP(total)}
                     </span>
                   </div>
@@ -1424,43 +1456,54 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
 
             {/* Columna Derecha: Teclado Numérico y Atajos de Billetes (solo visible en pantallas md+) */}
             <div className="tw-hidden md:tw-flex md:tw-col-span-5 tw-flex-col tw-gap-2 tw-bg-surface-2 tw-p-2.5 sm:tw-p-3 tw-rounded-xl tw-border tw-border-border">
-              {/* Atajos de Billetes */}
-              <div className="tw-flex tw-flex-col tw-gap-1">
-                <div className="tw-flex tw-items-center tw-justify-between">
-                  <span className="tw-text-[9.5px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
-                    Atajos rápidos ({activo})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleCompletar(activo)}
-                    className="tw-text-accent tw-text-[10px] tw-font-bold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0"
-                    title="Fijar exactamente el valor restante a pagar"
-                  >
-                    ⚡ Completar
-                  </button>
-                </div>
-                <div className="tw-grid tw-grid-cols-4 tw-gap-1">
-                  {[10000, 20000, 50000, 100000].map(v => (
+              {/* Atajos de Billetes (solo visible para Efectivo) */}
+              {activo === "Efectivo" && (
+                <div className="tw-flex tw-flex-col tw-gap-1">
+                  <div className="tw-flex tw-items-center tw-justify-between">
+                    <span className="tw-text-[9.5px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
+                      Atajos rápidos (Efectivo)
+                    </span>
                     <button
-                      key={v}
                       type="button"
-                      onClick={() => handleQuickBill(v)}
-                      className="payment-shortcut-pill tw-py-1 tw-px-0.5 tw-text-center tw-text-[10.5px] tw-font-bold"
+                      onClick={() => handleCompletar("Efectivo")}
+                      className="tw-text-accent tw-text-[10px] tw-font-bold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0"
+                      title="Fijar exactamente el valor restante a pagar"
                     >
-                      ${v.toLocaleString("es-CO")}
+                      ⚡ Completar
                     </button>
-                  ))}
+                  </div>
+                  <div className="tw-grid tw-grid-cols-4 tw-gap-1.5">
+                    {BILLETES_CONFIG.map(b => (
+                      <button
+                        key={b.valor}
+                        type="button"
+                        onClick={() => handleQuickBill(b.valor)}
+                        className="payment-shortcut-pill tw-p-1 tw-flex tw-flex-col tw-items-center tw-justify-center tw-gap-1 tw-rounded-lg hover:tw-scale-[1.04] active:tw-scale-[0.96] tw-transition-all tw-group"
+                        title={`Pagar con billete de ${b.label}`}
+                      >
+                        <img
+                          src={b.img}
+                          alt={`Billete de ${b.label}`}
+                          className="tw-w-full tw-h-auto tw-max-h-8 tw-object-cover tw-rounded-sm tw-shadow-xs group-hover:tw-brightness-105"
+                          loading="lazy"
+                        />
+                        <span className="tw-text-[10px] tw-font-bold tw-tracking-tight tw-leading-none tw-text-txt">
+                          {b.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Botonera del Teclado Numérico */}
-              <div className="tw-grid tw-grid-cols-3 tw-gap-1.5">
+              <div className="tw-grid tw-grid-cols-3 tw-gap-2">
                 {["7", "8", "9", "4", "5", "6", "1", "2", "3"].map(d => (
                   <button
                     key={d}
                     type="button"
                     onClick={() => handleDigit(d)}
-                    className="payment-keypad-btn tw-h-[38px] tw-text-base tw-font-bold"
+                    className="payment-keypad-btn tw-h-[48px] lg:tw-h-[52px] tw-text-xl lg:tw-text-2xl tw-font-bold"
                   >
                     {d}
                   </button>
@@ -1470,7 +1513,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="payment-keypad-btn action-clear tw-h-[38px] tw-text-base tw-font-bold"
+                  className="payment-keypad-btn action-clear tw-h-[48px] lg:tw-h-[52px] tw-text-xl lg:tw-text-2xl tw-font-bold"
                   title="Limpiar valor (C)"
                 >
                   C
@@ -1478,24 +1521,24 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 <button
                   type="button"
                   onClick={() => handleDigit("0")}
-                  className="payment-keypad-btn tw-h-[38px] tw-text-base tw-font-bold"
+                  className="payment-keypad-btn tw-h-[48px] lg:tw-h-[52px] tw-text-xl lg:tw-text-2xl tw-font-bold"
                 >
                   0
                 </button>
                 <button
                   type="button"
                   onClick={handleBackspace}
-                  className="payment-keypad-btn action-backspace tw-h-[38px]"
+                  className="payment-keypad-btn action-backspace tw-h-[48px] lg:tw-h-[52px]"
                   title="Borrar último dígito (Backspace)"
                 >
-                  <Icon name="backspace" size={17}/>
+                  <Icon name="backspace" size={21}/>
                 </button>
 
                 {/* Fila 5: 00, 000, . (Dimensiones 100% uniformes) */}
                 <button
                   type="button"
                   onClick={handleDoubleZero}
-                  className="payment-keypad-btn tw-h-[38px] tw-text-sm tw-font-bold"
+                  className="payment-keypad-btn tw-h-[48px] lg:tw-h-[52px] tw-text-base lg:tw-text-lg tw-font-bold"
                   title="Agregar 00"
                 >
                   00
@@ -1503,7 +1546,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 <button
                   type="button"
                   onClick={handleTripleZero}
-                  className="payment-keypad-btn tw-h-[38px] tw-text-sm tw-font-bold"
+                  className="payment-keypad-btn tw-h-[48px] lg:tw-h-[52px] tw-text-base lg:tw-text-lg tw-font-bold"
                   title="Agregar 000 (miles)"
                 >
                   000
@@ -1511,7 +1554,7 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
                 <button
                   type="button"
                   onClick={handleDecimal}
-                  className="payment-keypad-btn tw-h-[38px] tw-text-base tw-font-bold"
+                  className="payment-keypad-btn tw-h-[48px] lg:tw-h-[52px] tw-text-xl lg:tw-text-2xl tw-font-bold"
                   title="Separador decimal"
                 >
                   .
@@ -1645,27 +1688,45 @@ const PaymentModal = ({ total, items, onClose, onPay }) => {
               </div>
             </div>
 
-            {/* Atajos de Billetes en el teclado */}
-            <div className="tw-flex tw-items-center tw-gap-1.5 tw-overflow-x-auto no-scrollbar tw-py-0.5">
-              <button
-                type="button"
-                onClick={() => handleCompletar(activo)}
-                className="payment-shortcut-pill tw-py-1.5 tw-px-3 tw-bg-accent-soft tw-text-accent tw-border-accent/40 tw-font-bold hover:tw-bg-accent hover:tw-text-white tw-shrink-0 tw-text-xs"
-                title="Fijar exactamente el valor restante a pagar"
-              >
-                Completar
-              </button>
-              {[10000, 20000, 50000, 100000].map(v => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => handleQuickBill(v)}
-                  className="payment-shortcut-pill tw-py-1.5 tw-px-2.5 tw-shrink-0 tw-text-xs"
-                >
-                  ${v.toLocaleString("es-CO")}
-                </button>
-              ))}
-            </div>
+            {/* Atajos de Billetes en el teclado (solo visible para Efectivo) */}
+            {activo === "Efectivo" && (
+              <div className="tw-flex tw-flex-col tw-gap-1">
+                <div className="tw-flex tw-items-center tw-justify-between">
+                  <span className="tw-text-[10px] tw-font-bold tw-uppercase tw-tracking-wider tw-text-txt-3">
+                    Billetes
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleCompletar("Efectivo")}
+                    className="tw-text-accent tw-text-[11px] tw-font-bold hover:tw-underline tw-bg-transparent tw-border-0 tw-p-0"
+                    title="Fijar exactamente el valor restante a pagar"
+                  >
+                    ⚡ Completar
+                  </button>
+                </div>
+                <div className="tw-grid tw-grid-cols-4 tw-gap-1.5">
+                  {BILLETES_CONFIG.map(b => (
+                    <button
+                      key={b.valor}
+                      type="button"
+                      onClick={() => handleQuickBill(b.valor)}
+                      className="payment-shortcut-pill tw-p-1 sm:tw-p-1.5 tw-flex tw-flex-col tw-items-center tw-justify-center tw-gap-1 tw-rounded-lg active:tw-scale-[0.96] tw-transition-all"
+                      title={`Pagar con billete de ${b.label}`}
+                    >
+                      <img
+                        src={b.img}
+                        alt={`Billete de ${b.label}`}
+                        className="tw-w-full tw-h-auto tw-max-h-7 sm:tw-max-h-8 tw-object-contain tw-rounded-xs tw-shadow-xs"
+                        loading="lazy"
+                      />
+                      <span className="tw-text-[10px] sm:tw-text-[11px] tw-font-bold tw-tracking-tight tw-leading-none tw-text-txt mono">
+                        {b.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Teclado numérico idéntico a la imagen (5 filas x 3 columnas) */}
             <div className="tw-grid tw-grid-cols-3 tw-gap-2">

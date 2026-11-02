@@ -10,7 +10,8 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
     rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS standalone runtime (local para evitar fallos de DNS/red con cdn.tailwindcss.com) -->
+  <script src="tailwind.min.js"></script>
   <script>
     if (typeof tailwind !== 'undefined') {
       tailwind.config = {

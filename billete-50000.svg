@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 76" width="140" height="76">
+  <defs>
+    <linearGradient id="bg50" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5B21B6" />
+      <stop offset="35%" stop-color="#7C3AED" />
+      <stop offset="70%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#4C1D95" />
+    </linearGradient>
+    <linearGradient id="strip50" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.95" />
+      <stop offset="30%" stop-color="#A78BFA" stop-opacity="0.9" />
+      <stop offset="60%" stop-color="#38BDF8" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.95" />
+    </linearGradient>
+    <pattern id="pattern50" width="8" height="8" patternUnits="userSpaceOnUse">
+      <path d="M0 4 C2 0, 6 0, 8 4 C6 8, 2 8, 0 4 Z" fill="none" stroke="#EDE9FE" stroke-width="0.3" opacity="0.25" />
+    </pattern>
+    <filter id="shadow50" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Cuerpo del billete -->
+  <rect x="2" y="2" width="136" height="72" rx="5" fill="url(#bg50)" stroke="#C4B5FD" stroke-width="0.8" filter="url(#shadow50)" />
+  <rect x="2" y="2" width="136" height="72" rx="5" fill="url(#pattern50)" />
+
+  <!-- Marco interior de seguridad -->
+  <rect x="5" y="5" width="130" height="66" rx="3.5" fill="none" stroke="#F5F3FF" stroke-width="0.6" stroke-dasharray="2.5 1" opacity="0.6" />
+
+  <!-- Franja holográfica vertical de seguridad -->
+  <rect x="42" y="3" width="7" height="70" fill="url(#strip50)" opacity="0.85" />
+  <line x1="45.5" y1="3" x2="45.5" y2="73" stroke="#FFF" stroke-width="0.5" stroke-dasharray="1.5 1.5" opacity="0.7" />
+
+  <!-- Marca de agua circular / retrato -->
+  <circle cx="23" cy="38" r="15" fill="#3B0764" opacity="0.5" stroke="#C4B5FD" stroke-width="0.5" stroke-dasharray="1 1" />
+  <circle cx="23" cy="38" r="11" fill="none" stroke="#F5F3FF" stroke-width="0.4" opacity="0.35" />
+  <circle cx="23" cy="34" r="5" fill="#F5F3FF" opacity="0.4" />
+  <path d="M15 48 C16 42, 30 42, 31 48" fill="#F5F3FF" opacity="0.4" />
+
+  <!-- Encabezado oficial -->
+  <text x="54" y="14" fill="#F5F3FF" font-family="system-ui, sans-serif" font-size="5" font-weight="700" letter-spacing="0.5" opacity="0.85">BANCO DE LA REPÚBLICA</text>
+  <text x="54" y="21" fill="#DDD6FE" font-family="system-ui, sans-serif" font-size="4" font-weight="600" opacity="0.75">COLOMBIA</text>
+
+  <!-- Mariposa Amarilla (Símbolo macondiano de Gabo en el billete de 50 mil) -->
+  <g transform="translate(62, 37) scale(0.65)" opacity="0.95">
+    <!-- Alas de mariposa dorada -->
+    <path d="M0 0 C-4 -8, -12 -6, -11 0 C-11 5, -5 6, 0 1" fill="#FBBF24" stroke="#D97706" stroke-width="0.5" />
+    <path d="M0 0 C4 -8, 12 -6, 11 0 C11 5, 5 6, 0 1" fill="#FBBF24" stroke="#D97706" stroke-width="0.5" />
+    <path d="M0 1 C-3 4, -8 7, -6 10 C-4 12, -1 8, 0 2" fill="#F59E0B" />
+    <path d="M0 1 C3 4, 8 7, 6 10 C4 12, 1 8, 0 2" fill="#F59E0B" />
+    <ellipse cx="0" cy="1" rx="1" ry="4" fill="#78350F" />
+  </g>
+
+  <!-- Denominación principal destacada -->
+  <text x="130" y="34" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="900" text-anchor="end" letter-spacing="-0.5">50</text>
+  <text x="130" y="44" fill="#F5F3FF" font-family="system-ui, -apple-system, sans-serif" font-size="7" font-weight="800" text-anchor="end" letter-spacing="0.4">MIL</text>
+  <text x="130" y="52" fill="#DDD6FE" font-family="system-ui, sans-serif" font-size="5" font-weight="700" text-anchor="end">PESOS</text>
+
+  <!-- Valor numérico en esquina inferior izquierda -->
+  <rect x="7" y="55" width="28" height="12" rx="2.5" fill="#3B0764" opacity="0.8" stroke="#C4B5FD" stroke-width="0.5" />
+  <text x="21" y="64" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="7" font-weight="800" text-anchor="middle">50 MIL</text>
+</svg>
+
