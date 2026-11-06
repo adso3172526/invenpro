@@ -380,9 +380,9 @@ const Cajeros = () => {
             </div>
           </div></div>
 
-          {/* Desktop: tabla */}
+          {/* Desktop: tabla (sin scroll horizontal; solo se muestra en desktop) */}
           <div className="card tw-hidden md:tw-block">
-            <div className="tbl-wrap">
+            <div className="tbl-wrap" style={{ overflowX: "visible" }}>
               <table className="tbl">
                 <thead><tr><th>N° Factura</th><th>Fecha</th><th>Hora</th><th>Cajero</th><th className="num">Items</th><th>Método</th><th className="num">Total</th><th></th></tr></thead>
                 <tbody>
