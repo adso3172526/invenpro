@@ -37,8 +37,25 @@ const CierreDetalleModal = ({ turno, cierre, onClose }) => {
 
 // Detalle de una venta: productos vendidos + desglose del pago
 const VentaDetalleModal = ({ factura, onClose }) => {
-  const items = factura.items || [];
-  const pagos = factura.pagos || [];
+  const [items, setItems] = React.useState(factura.items || []);
+  const [pagos, setPagos] = React.useState(factura.pagos || []);
+  const [loading, setLoading] = React.useState(false);
+
+  // Red de seguridad: si la factura llegó por realtime sin el detalle anidado,
+  // los items vienen vacíos. En ese caso se leen directo de la BD al abrir.
+  React.useEffect(() => {
+    if ((factura.items && factura.items.length) || !(DB.facturas && DB.facturas.getDetalle)) return;
+    setLoading(true);
+    DB.facturas.getDetalle(factura.id)
+      .then(det => {
+        if (!det) return;
+        if (det.items && det.items.length) { setItems(det.items); try { factura.items = det.items; } catch (e) {} }
+        if (det.pagos && det.pagos.length) { setPagos(det.pagos); try { factura.pagos = det.pagos; } catch (e) {} }
+      })
+      .catch(e => console.error("getDetalle:", e))
+      .finally(() => setLoading(false));
+  }, [factura]);
+
   return (
     <Modal title={`Venta ${factura.id}`} lg bottomSheet onClose={onClose} footer={
       <button className="btn" onClick={onClose}>Cerrar</button>
@@ -60,7 +77,7 @@ const VentaDetalleModal = ({ factura, onClose }) => {
                 <td className="num mono">{window.fmtCOP(it.q * it.precio)}</td>
               </tr>
             ))}
-            {items.length === 0 && <tr><td colSpan="4" className="muted" style={{ textAlign: "center", padding: 16 }}>Sin productos</td></tr>}
+            {items.length === 0 && <tr><td colSpan="4" className="muted" style={{ textAlign: "center", padding: 16 }}>{loading ? "Cargando detalle…" : "Sin productos"}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -75,7 +92,7 @@ const VentaDetalleModal = ({ factura, onClose }) => {
             <div className="mono tw-font-semibold tw-text-sm tw-shrink-0">{window.fmtCOP(it.q * it.precio)}</div>
           </div>
         ))}
-        {items.length === 0 && <div className="muted tw-text-sm tw-text-center tw-py-3">Sin productos</div>}
+        {items.length === 0 && <div className="muted tw-text-sm tw-text-center tw-py-3">{loading ? "Cargando detalle…" : "Sin productos"}</div>}
       </div>
 
       {/* Pago */}

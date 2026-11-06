@@ -37,6 +37,19 @@
       }
       return null;
     }
+
+    // Lee el detalle (items + pagos) de una factura directo de la BD. Se usa como
+    // red de seguridad cuando la factura llegó por realtime sin el detalle anidado.
+    async getDetalle(id) {
+      var db = this.getDb();
+      var cam = (root.Helpers && root.Helpers.camelize) || function (x) { return x; };
+      var itemsRes = await db.from("factura_items").select("*").eq("factura_id", id);
+      var pagosRes = await db.from("factura_pagos").select("*").eq("factura_id", id);
+      return {
+        items: (itemsRes && itemsRes.data) ? cam(itemsRes.data) : [],
+        pagos: (pagosRes && pagosRes.data) ? cam(pagosRes.data) : [],
+      };
+    }
   }
 
   root.FacturaService = FacturaService;
