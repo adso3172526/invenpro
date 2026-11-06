@@ -496,6 +496,11 @@ const Cajeros = () => {
               if (!newNombre.trim() || !newApellido.trim() || !newDoc.trim() || !newUsuario.trim()) {
                 setToast("Nombres, apellidos, documento y usuario son obligatorios"); return;
               }
+              // Evitar duplicados: mismo nombre normalizado que un cajero ya existente.
+              const nombreNorm = window.normalizarNombre(newNombre + " " + newApellido);
+              if ((MOCK.cajeros || []).some(c => window.normalizarNombre(c.nombre) === nombreNorm)) {
+                setToast(`Ya existe un cajero llamado "${nombreNorm}"`); return;
+              }
               setSavingNew(true);
               // Crea cajero + usuario de login de forma atómica (fn_crear_cajero en la BD).
               const { id, error } = await DB.cajeros.create({
@@ -511,8 +516,8 @@ const Cajeros = () => {
           </>
         }>
           <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
-            <div className="field"><label>Nombres</label><input value={newNombre} onChange={e => setNewNombre(e.target.value)} placeholder="Ej: Carolina"/></div>
-            <div className="field"><label>Apellidos</label><input value={newApellido} onChange={e => setNewApellido(e.target.value)} placeholder="Ej: Mendoza"/></div>
+            <div className="field"><label>Nombres</label><input value={newNombre} onChange={e => setNewNombre(window.normalizarNombreInput(e.target.value))} placeholder="ej: carolina"/></div>
+            <div className="field"><label>Apellidos</label><input value={newApellido} onChange={e => setNewApellido(window.normalizarNombreInput(e.target.value))} placeholder="ej: mendoza"/></div>
             <div className="field"><label>Documento</label><input className="mono" value={newDoc} onChange={e => setNewDoc(e.target.value)} placeholder="C.C."/></div>
             <div className="field"><label>Teléfono</label><input className="mono" value={newTel} onChange={e => setNewTel(e.target.value)} placeholder="+57"/></div>
             <div className="field"><label>Rol</label><select value={newRol} onChange={e => setNewRol(e.target.value)}><option>Cajero</option>{!esSupervisor && <option>Supervisor</option>}</select></div>
@@ -601,7 +606,7 @@ const CajeroConfig = ({ cajero, onClose, onDone, esSupervisor }) => {
       {/* Datos personales */}
       <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide muted tw-mb-2">Datos personales</div>
       <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-2 tw-gap-x-3">
-        <div className="field"><label>Nombre</label><input value={nombre} onChange={e => setNombre(e.target.value)}/></div>
+        <div className="field"><label>Nombre</label><input value={nombre} onChange={e => setNombre(window.normalizarNombreInput(e.target.value))}/></div>
         <div className="field"><label>Documento</label><input className="mono" value={doc} onChange={e => setDoc(e.target.value)}/></div>
         <div className="field"><label>Rol</label><select value={rol} onChange={e => setRol(e.target.value)}><option>Cajero</option>{!esSupervisor && <option>Supervisor</option>}</select></div>
       </div>

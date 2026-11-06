@@ -106,9 +106,9 @@
 
   var todayStr = new Date().toISOString().slice(0, 10);
 
-  // Normaliza un nombre a la forma canónica: minúsculas, sin tildes (conserva la ñ),
-  // sin espacios dobles y sin espacios al inicio/fin. Evita duplicados tipo "Jésica"/"Jesica".
-  function normalizarNombre(s) {
+  // Minúsculas + sin tildes (conserva la ñ). NO recorta espacios: apto para usar
+  // en vivo en un input mientras el usuario escribe (puede teclear espacios).
+  function normalizarNombreInput(s) {
     if (s == null) return s;
     return String(s)
       .toLowerCase()
@@ -116,12 +116,17 @@
       .replace(/[éèëê]/g, "e")
       .replace(/[íìïî]/g, "i")
       .replace(/[óòöôõ]/g, "o")
-      .replace(/[úùüû]/g, "u")
-      .replace(/\s+/g, " ")
-      .trim();
+      .replace(/[úùüû]/g, "u");
   }
 
-  var Helpers = { camelize: camelize, snakify: snakify, hashPass: hashPass, md5Hex: md5Hex, fmtCOP: fmtCOP, daysFromNow: daysFromNow, todayStr: todayStr, normalizarNombre: normalizarNombre };
+  // Forma canónica para guardar: lo anterior + colapsa espacios dobles y recorta
+  // los extremos. Evita duplicados tipo "Jésica"/"Jesica".
+  function normalizarNombre(s) {
+    if (s == null) return s;
+    return normalizarNombreInput(s).replace(/\s+/g, " ").trim();
+  }
+
+  var Helpers = { camelize: camelize, snakify: snakify, hashPass: hashPass, md5Hex: md5Hex, fmtCOP: fmtCOP, daysFromNow: daysFromNow, todayStr: todayStr, normalizarNombre: normalizarNombre, normalizarNombreInput: normalizarNombreInput };
   root.Helpers = Helpers;
   window.Helpers = Helpers;
 })();

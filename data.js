@@ -16,6 +16,7 @@
   window.daysFromNow = Helpers.daysFromNow;
   window.todayStr = Helpers.todayStr;
   window.normalizarNombre = Helpers.normalizarNombre;
+  window.normalizarNombreInput = Helpers.normalizarNombreInput;
 
   // ---- Domain classes: expose to window for JSX backward compat ----
   var Proto = root.Producto || window.Producto;
