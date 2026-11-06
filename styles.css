@@ -4478,8 +4478,8 @@ table.tbl tr.item-detail td {
 }
 
 .tab-bar button.on {
-  background: var(--surface);
-  color: var(--text);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
   box-shadow: var(--shadow-sm);
 }
 
