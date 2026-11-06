@@ -133,6 +133,12 @@ const Cajeros = () => {
   const [toast, setToast] = useStateA(null);
   const [verCierre, setVerCierre] = useStateA(null);  // turno cuyo cierre se muestra
   const [verVenta, setVerVenta] = useStateA(null);    // factura cuyo detalle se muestra
+  // Filtros del tab Ventas: por defecto el MES ACTUAL (día 1 → hoy). Fechas YYYY-MM-DD.
+  const _fmtF = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const _hoyV = new Date();
+  const [vDesde, setVDesde] = useStateA(_fmtF(new Date(_hoyV.getFullYear(), _hoyV.getMonth(), 1)));
+  const [vHasta, setVHasta] = useStateA(_fmtF(_hoyV));
+  const [vCajero, setVCajero] = useStateA("Todos");
   const [newNombre, setNewNombre] = useStateA("");
   const [newApellido, setNewApellido] = useStateA("");
   const [newDoc, setNewDoc] = useStateA("");
@@ -180,8 +186,22 @@ const Cajeros = () => {
   const turnosOrdenados = [...MOCK.turnos].sort((a, b) => numTurno(b) - numTurno(a));
   const pagTur = usePagination(turnosOrdenados, 10);
   const cierreDe = (turnoId) => (MOCK.cierres || []).find(c => c.turnoId === turnoId);
-  // Ventas: MOCK.facturas ya viene ordenado de más reciente a más antiguo
-  const pagVen = usePagination(MOCK.facturas || [], 10);
+  // Ventas: filtrar por rango de fecha + cajero (MOCK.facturas ya viene ordenado
+  // de más reciente a más antiguo). Por defecto queda el mes actual.
+  const cajerosVentas = useMemoA(
+    () => ["Todos", ...Array.from(new Set((MOCK.facturas || []).map(f => f.cajero)))],
+    [MOCK.facturas]
+  );
+  const facturasFiltradas = useMemoA(
+    () => (MOCK.facturas || []).filter(f => {
+      if (vDesde && f.fecha < vDesde) return false;
+      if (vHasta && f.fecha > vHasta) return false;
+      if (vCajero !== "Todos" && f.cajero !== vCajero) return false;
+      return true;
+    }),
+    [MOCK.facturas, vDesde, vHasta, vCajero]
+  );
+  const pagVen = usePagination(facturasFiltradas, 10);
 
   const currentUser = useMemoA(() => {
     try { return JSON.parse(localStorage.getItem("invenpro-session"))?.user || {}; } catch { return {}; }
@@ -347,6 +367,19 @@ const Cajeros = () => {
 
       {tab === "ventas" && (
         <>
+          {/* Filtros (por defecto: mes actual) */}
+          <div className="card tw-mb-3"><div className="card-b">
+            <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-3 tw-gap-3 tw-items-end">
+              <div className="field tw-mb-0"><label>Desde</label><input type="date" value={vDesde} onChange={e => setVDesde(e.target.value)}/></div>
+              <div className="field tw-mb-0"><label>Hasta</label><input type="date" value={vHasta} onChange={e => setVHasta(e.target.value)}/></div>
+              <div className="field tw-mb-0"><label>Cajero</label><select value={vCajero} onChange={e => setVCajero(e.target.value)}>{cajerosVentas.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            </div>
+            <div className="tw-flex tw-items-center tw-justify-between tw-mt-2 tw-gap-2">
+              <span className="muted tw-text-xs">{facturasFiltradas.length} venta(s) en el filtro</span>
+              <button className="btn sm ghost" onClick={() => { const h = new Date(); setVDesde(_fmtF(new Date(h.getFullYear(), h.getMonth(), 1))); setVHasta(_fmtF(h)); setVCajero("Todos"); }}>Mes actual</button>
+            </div>
+          </div></div>
+
           {/* Desktop: tabla */}
           <div className="card tw-hidden md:tw-block">
             <div className="tbl-wrap">
@@ -370,7 +403,7 @@ const Cajeros = () => {
                     );
                   })}
                   {pagVen.slice.length === 0 && (
-                    <tr><td colSpan="8" className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ventas registradas</td></tr>
+                    <tr><td colSpan="8" className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ventas en el rango seleccionado</td></tr>
                   )}
                 </tbody>
               </table>
@@ -401,7 +434,7 @@ const Cajeros = () => {
               );
             })}
             {pagVen.slice.length === 0 && (
-              <div className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ventas registradas</div>
+              <div className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ventas en el rango seleccionado</div>
             )}
             <Pagination {...pagVen} label="ventas"/>
           </div>
