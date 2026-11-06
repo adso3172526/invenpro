@@ -56,9 +56,24 @@ const VentaDetalleModal = ({ factura, onClose }) => {
       .finally(() => setLoading(false));
   }, [factura]);
 
+  // Reimprime el recibo reutilizando printReceipt del POS (mismo formato de tirilla).
+  // recibido/cambio no se guardan en la factura, así que en la copia van como total/0.
+  const reimprimir = () => {
+    if (typeof printReceipt !== "function") { console.error("printReceipt no disponible"); return; }
+    printReceipt({
+      id: factura.id, fecha: factura.fecha, hora: factura.hora,
+      cajero: factura.cajero, caja: factura.caja, metodo: factura.metodo,
+      total: factura.total, items: items,
+      recibido: factura.total, cambio: 0,
+    });
+  };
+
   return (
     <Modal title={`Venta ${factura.id}`} lg bottomSheet onClose={onClose} footer={
-      <button className="btn" onClick={onClose}>Cerrar</button>
+      <>
+        <button className="btn ghost" onClick={onClose}>Cerrar</button>
+        <button className="btn primary" disabled={!items.length} onClick={reimprimir}><Icon name="print" size={14}/> Reimprimir</button>
+      </>
     }>
       <div className="muted tw-text-xs tw-mb-3">{factura.fecha} · {factura.hora} · {factura.cajero}</div>
 
