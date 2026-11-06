@@ -65,7 +65,7 @@ const VentaDetalleModal = ({ factura, onClose }) => {
       {/* Productos */}
       <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide muted tw-mb-2">Productos</div>
       {/* Desktop: tabla */}
-      <div className="tbl-wrap tw-mb-4 tw-hidden sm:tw-block">
+      <div className="tbl-wrap tw-mb-4 tw-hidden md:tw-block">
         <table className="tbl">
           <thead><tr><th>Producto</th><th className="num">Cant.</th><th className="num">Precio</th><th className="num">Subtotal</th></tr></thead>
           <tbody>
@@ -82,7 +82,7 @@ const VentaDetalleModal = ({ factura, onClose }) => {
         </table>
       </div>
       {/* Mobile: lista */}
-      <div className="tw-flex tw-flex-col tw-gap-2 tw-mb-4 sm:tw-hidden">
+      <div className="tw-flex tw-flex-col tw-gap-2 tw-mb-4 md:tw-hidden">
         {items.map((it, i) => (
           <div key={i} className="tw-flex tw-items-center tw-justify-between tw-gap-3 tw-border-b tw-border-border tw-pb-2">
             <div className="tw-min-w-0">
