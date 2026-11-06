@@ -1,4 +1,4 @@
-// Cajeros y turnos
+// Ventas y turnos (equipo de cajeros, turnos, historial de ventas y usuarios)
 
 // Detalle del cierre de caja de un turno (arqueo + desglose por medio de pago)
 const CierreDetalleModal = ({ turno, cierre, onClose }) => {
@@ -35,6 +35,50 @@ const CierreDetalleModal = ({ turno, cierre, onClose }) => {
   );
 };
 
+// Detalle de una venta: productos vendidos + desglose del pago
+const VentaDetalleModal = ({ factura, onClose }) => {
+  const items = factura.items || [];
+  const pagos = factura.pagos || [];
+  return (
+    <Modal title={`Venta ${factura.id}`} lg bottomSheet onClose={onClose} footer={
+      <button className="btn" onClick={onClose}>Cerrar</button>
+    }>
+      <div className="muted tw-text-xs tw-mb-3">{factura.fecha} · {factura.hora} · {factura.cajero}</div>
+
+      {/* Productos */}
+      <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide muted tw-mb-2">Productos</div>
+      <div className="tbl-wrap tw-mb-4">
+        <table className="tbl">
+          <thead><tr><th>Producto</th><th className="num">Cant.</th><th className="num">Precio</th><th className="num">Subtotal</th></tr></thead>
+          <tbody>
+            {items.map((it, i) => (
+              <tr key={i}>
+                <td>{it.nombre}</td>
+                <td className="num mono">{it.q}</td>
+                <td className="num mono">{window.fmtCOP(it.precio)}</td>
+                <td className="num mono">{window.fmtCOP(it.q * it.precio)}</td>
+              </tr>
+            ))}
+            {items.length === 0 && <tr><td colSpan="4" className="muted" style={{ textAlign: "center", padding: 16 }}>Sin productos</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pago */}
+      <div className="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wide muted tw-mb-2">Pago</div>
+      <div className="card tw-bg-surface-2"><div className="card-b">
+        {pagos.length ? pagos.map((p, i) => (
+          <div key={i} className="row spaced"><span className="muted">{p.metodo}</span><span className="mono">{window.fmtCOP(p.monto)}</span></div>
+        )) : (
+          <div className="row spaced"><span className="muted">{factura.metodo}</span><span className="mono">{window.fmtCOP(factura.total)}</span></div>
+        )}
+        <hr className="tw-border-0 tw-border-t tw-border-border tw-my-2"/>
+        <div className="row spaced"><span className="tw-font-semibold">Total</span><span className="mono tw-font-semibold">{window.fmtCOP(factura.total)}</span></div>
+      </div></div>
+    </Modal>
+  );
+};
+
 const Cajeros = () => {
   const [tab, setTab] = useStateA("equipo");
   const [showAdd, setShowAdd] = useStateA(false);
@@ -42,6 +86,7 @@ const Cajeros = () => {
   const [cfgUsuario, setCfgUsuario] = useStateA(null);
   const [toast, setToast] = useStateA(null);
   const [verCierre, setVerCierre] = useStateA(null);  // turno cuyo cierre se muestra
+  const [verVenta, setVerVenta] = useStateA(null);    // factura cuyo detalle se muestra
   const [newNombre, setNewNombre] = useStateA("");
   const [newApellido, setNewApellido] = useStateA("");
   const [newDoc, setNewDoc] = useStateA("");
@@ -54,9 +99,9 @@ const Cajeros = () => {
   // Realtime: only re-render when no modal is open
   const [, _rtTick] = React.useState(0);
   const _modalRef = React.useRef(false);
-  _modalRef.current = showAdd || !!cfgCajero || !!cfgUsuario;
+  _modalRef.current = showAdd || !!cfgCajero || !!cfgUsuario || !!verVenta;
   React.useEffect(() => {
-    const tables = ["cajeros", "turnos", "usuarios_sistema"];
+    const tables = ["cajeros", "turnos", "usuarios_sistema", "facturas"];
     const offs = tables.map(t => window.EventBus.on("realtime:" + t, () => {
       if (!_modalRef.current) _rtTick(n => n + 1);
     }));
@@ -89,6 +134,8 @@ const Cajeros = () => {
   const turnosOrdenados = [...MOCK.turnos].sort((a, b) => numTurno(b) - numTurno(a));
   const pagTur = usePagination(turnosOrdenados, 10);
   const cierreDe = (turnoId) => (MOCK.cierres || []).find(c => c.turnoId === turnoId);
+  // Ventas: MOCK.facturas ya viene ordenado de más reciente a más antiguo
+  const pagVen = usePagination(MOCK.facturas || [], 10);
 
   const currentUser = useMemoA(() => {
     try { return JSON.parse(localStorage.getItem("invenpro-session"))?.user || {}; } catch { return {}; }
@@ -109,13 +156,14 @@ const Cajeros = () => {
     <>
       <div className="page-h tw-flex tw-flex-col sm:tw-flex-row tw-gap-3 sm:tw-items-center sm:tw-justify-between">
         <div>
-          <h2>Cajeros y turnos</h2>
-          <p className="sub">Administra usuarios del POS y supervisa la actividad de cada turno.</p>
+          <h2>Ventas y turnos</h2>
+          <p className="sub">Consulta las ventas, administra usuarios del POS y supervisa la actividad de cada turno.</p>
         </div>
         <div className="tw-flex tw-flex-wrap tw-gap-2 tw-w-full sm:tw-w-auto">
           <div className="tab-bar tw-w-full sm:tw-w-auto">
             <button className={tab === "equipo" ? "on" : ""} onClick={() => setTab("equipo")}>Equipo</button>
             <button className={tab === "turnos" ? "on" : ""} onClick={() => setTab("turnos")}>Turnos</button>
+            <button className={tab === "ventas" ? "on" : ""} onClick={() => setTab("ventas")}>Ventas</button>
             <button className={tab === "usuarios" ? "on" : ""} onClick={() => setTab("usuarios")}>Usuarios</button>
           </div>
           <button className="btn primary tw-w-full sm:tw-w-auto" onClick={() => setShowAdd(true)}><Icon name="plus" size={14}/> Nuevo cajero</button>
@@ -251,6 +299,69 @@ const Cajeros = () => {
         </>
       )}
 
+      {tab === "ventas" && (
+        <>
+          {/* Desktop: tabla */}
+          <div className="card tw-hidden md:tw-block">
+            <div className="tbl-wrap">
+              <table className="tbl">
+                <thead><tr><th>N° Factura</th><th>Fecha</th><th>Hora</th><th>Cajero</th><th className="num">Items</th><th>Método</th><th className="num">Total</th><th></th></tr></thead>
+                <tbody>
+                  {pagVen.slice.map(f => {
+                    const nItems = (f.items || []).reduce((a, i) => a + (i.q || 0), 0);
+                    const metodoLabel = (f.pagos && f.pagos.length > 1) ? "Mixto" : f.metodo;
+                    return (
+                      <tr key={f.id} className="row-hover">
+                        <td className="mono">{f.id}</td>
+                        <td className="mono tw-text-xs">{f.fecha}</td>
+                        <td className="mono tw-text-xs">{f.hora}</td>
+                        <td className="tw-font-medium">{f.cajero}</td>
+                        <td className="num mono">{nItems}</td>
+                        <td><span className="chip">{metodoLabel}</span></td>
+                        <td className="num mono">{window.fmtCOP(f.total)}</td>
+                        <td className="num"><button className="btn sm" onClick={() => setVerVenta(f)}>Detalle</button></td>
+                      </tr>
+                    );
+                  })}
+                  {pagVen.slice.length === 0 && (
+                    <tr><td colSpan="8" className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ventas registradas</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination {...pagVen} label="ventas"/>
+          </div>
+          {/* Mobile: tarjetas */}
+          <div className="tw-block md:tw-hidden tw-flex tw-flex-col tw-gap-2.5">
+            {pagVen.slice.map(f => {
+              const nItems = (f.items || []).reduce((a, i) => a + (i.q || 0), 0);
+              const metodoLabel = (f.pagos && f.pagos.length > 1) ? "Mixto" : f.metodo;
+              return (
+                <div key={f.id} className="tw-bg-surface tw-border tw-border-border tw-rounded-xl tw-p-3.5 tw-shadow-sm">
+                  <div className="tw-flex tw-items-center tw-justify-between tw-mb-2">
+                    <div>
+                      <div className="tw-font-medium tw-text-sm">{f.cajero}</div>
+                      <div className="muted mono tw-text-[11px]">{f.id}</div>
+                    </div>
+                    <span className="mono tw-font-semibold">{window.fmtCOP(f.total)}</span>
+                  </div>
+                  <div className="tw-grid tw-grid-cols-1 min-[360px]:tw-grid-cols-2 tw-gap-x-3 tw-gap-y-1 tw-text-xs tw-mb-2.5">
+                    <div><span className="muted">Fecha:</span> <span className="mono">{f.fecha} {f.hora}</span></div>
+                    <div><span className="muted">Items:</span> <span className="mono">{nItems}</span></div>
+                    <div><span className="muted">Método:</span> {metodoLabel}</div>
+                  </div>
+                  <button className="btn sm tw-w-full" onClick={() => setVerVenta(f)}><Icon name="eye" size={13}/> Ver detalle</button>
+                </div>
+              );
+            })}
+            {pagVen.slice.length === 0 && (
+              <div className="muted" style={{ textAlign: "center", padding: 28 }}>Sin ventas registradas</div>
+            )}
+            <Pagination {...pagVen} label="ventas"/>
+          </div>
+        </>
+      )}
+
       {tab === "usuarios" && (
         <>
           {/* Desktop: tabla */}
@@ -336,6 +447,7 @@ const Cajeros = () => {
       {cfgCajero && <CajeroConfig cajero={cfgCajero} esSupervisor={esSupervisor} onClose={() => setCfgCajero(null)} onDone={(msg) => { setCfgCajero(null); setToast(msg); }}/>}
       {cfgUsuario && <UsuarioConfig usuario={cfgUsuario} esSupervisor={esSupervisor} onClose={() => setCfgUsuario(null)} onDone={(msg) => { setCfgUsuario(null); setToast(msg); }}/>}
       {verCierre && <CierreDetalleModal turno={verCierre} cierre={cierreDe(verCierre.id)} onClose={() => setVerCierre(null)}/>}
+      {verVenta && <VentaDetalleModal factura={verVenta} onClose={() => setVerVenta(null)}/>}
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
     </>
   );
@@ -498,4 +610,4 @@ const UsuarioConfig = ({ usuario, onClose, onDone, esSupervisor }) => {
   );
 };
 
-Object.assign(window, { Cajeros, CajeroConfig, UsuarioConfig });
+Object.assign(window, { Cajeros, CajeroConfig, UsuarioConfig, VentaDetalleModal });
