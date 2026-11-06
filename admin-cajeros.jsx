@@ -367,16 +367,14 @@ const Cajeros = () => {
 
       {tab === "ventas" && (
         <>
-          {/* Filtros (por defecto: mes actual) */}
-          <div className="card tw-mb-3"><div className="card-b">
-            <div className="tw-grid tw-grid-cols-1 sm:tw-grid-cols-3 tw-gap-3 tw-items-end">
+          {/* Filtros (por defecto: mes actual) — una sola fila para no alargar la vista */}
+          <div className="card tw-mb-3"><div className="card-b tw-py-2.5">
+            <div className="tw-grid tw-grid-cols-2 sm:tw-flex sm:tw-flex-wrap tw-items-end tw-gap-x-3 tw-gap-y-2">
               <div className="field tw-mb-0"><label>Desde</label><input type="date" value={vDesde} onChange={e => setVDesde(e.target.value)}/></div>
               <div className="field tw-mb-0"><label>Hasta</label><input type="date" value={vHasta} onChange={e => setVHasta(e.target.value)}/></div>
-              <div className="field tw-mb-0"><label>Cajero</label><select value={vCajero} onChange={e => setVCajero(e.target.value)}>{cajerosVentas.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-            </div>
-            <div className="tw-flex tw-items-center tw-justify-between tw-mt-2 tw-gap-2">
-              <span className="muted tw-text-xs">{facturasFiltradas.length} venta(s) en el filtro</span>
-              <button className="btn sm ghost" onClick={() => { const h = new Date(); setVDesde(_fmtF(new Date(h.getFullYear(), h.getMonth(), 1))); setVHasta(_fmtF(h)); setVCajero("Todos"); }}>Mes actual</button>
+              <div className="field tw-mb-0 tw-col-span-2 sm:tw-col-span-1"><label>Cajero</label><select value={vCajero} onChange={e => setVCajero(e.target.value)}>{cajerosVentas.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              <button className="btn sm ghost tw-col-span-2 sm:tw-col-span-1 sm:tw-mb-1" onClick={() => { const h = new Date(); setVDesde(_fmtF(new Date(h.getFullYear(), h.getMonth(), 1))); setVHasta(_fmtF(h)); setVCajero("Todos"); }}>Mes actual</button>
+              <span className="muted tw-text-xs tw-col-span-2 sm:tw-col-span-1 sm:tw-ml-auto sm:tw-mb-2">{facturasFiltradas.length} venta(s)</span>
             </div>
           </div></div>
 
