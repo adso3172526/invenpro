@@ -547,7 +547,7 @@ const CajeroConfig = ({ cajero, onClose, onDone, esSupervisor }) => {
   const handleSave = async () => {
     setSaving(true);
     const updates = {};
-    if (nombre !== cajero.nombre) updates.nombre = nombre;
+    if (nombre !== cajero.nombre) updates.nombre = window.normalizarNombre(nombre);
     if (doc !== cajero.doc) updates.doc = doc;
     if (rol !== cajero.rol) updates.rol = rol;
     if (estado !== cajero.estado) updates.estado = estado;

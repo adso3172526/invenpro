@@ -15,6 +15,7 @@
   window.fmtCOP = Helpers.fmtCOP;
   window.daysFromNow = Helpers.daysFromNow;
   window.todayStr = Helpers.todayStr;
+  window.normalizarNombre = Helpers.normalizarNombre;
 
   // ---- Domain classes: expose to window for JSX backward compat ----
   var Proto = root.Producto || window.Producto;

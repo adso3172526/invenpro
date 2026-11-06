@@ -106,7 +106,22 @@
 
   var todayStr = new Date().toISOString().slice(0, 10);
 
-  var Helpers = { camelize: camelize, snakify: snakify, hashPass: hashPass, md5Hex: md5Hex, fmtCOP: fmtCOP, daysFromNow: daysFromNow, todayStr: todayStr };
+  // Normaliza un nombre a la forma canónica: minúsculas, sin tildes (conserva la ñ),
+  // sin espacios dobles y sin espacios al inicio/fin. Evita duplicados tipo "Jésica"/"Jesica".
+  function normalizarNombre(s) {
+    if (s == null) return s;
+    return String(s)
+      .toLowerCase()
+      .replace(/[áàäâã]/g, "a")
+      .replace(/[éèëê]/g, "e")
+      .replace(/[íìïî]/g, "i")
+      .replace(/[óòöôõ]/g, "o")
+      .replace(/[úùüû]/g, "u")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  var Helpers = { camelize: camelize, snakify: snakify, hashPass: hashPass, md5Hex: md5Hex, fmtCOP: fmtCOP, daysFromNow: daysFromNow, todayStr: todayStr, normalizarNombre: normalizarNombre };
   root.Helpers = Helpers;
   window.Helpers = Helpers;
 })();
