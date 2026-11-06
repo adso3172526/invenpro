@@ -4483,6 +4483,19 @@ table.tbl tr.item-detail td {
   box-shadow: var(--shadow-sm);
 }
 
+/* Desktop: tabs más cómodos (el móvil ≤640px se queda full-width con flex:1) */
+@media (min-width: 641px) {
+  .tab-bar button {
+    padding: 8px 18px;
+    font-size: 13px;
+    transition: background var(--transition-fast, .12s ease), color var(--transition-fast, .12s ease);
+  }
+  .tab-bar button:hover:not(.on) {
+    color: var(--text);
+    background: color-mix(in oklab, var(--surface) 55%, transparent);
+  }
+}
+
 .progress {
   width: 100%;
   height: 6px;
