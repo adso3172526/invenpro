@@ -188,10 +188,14 @@ const Cajeros = () => {
   const cierreDe = (turnoId) => (MOCK.cierres || []).find(c => c.turnoId === turnoId);
   // Ventas: filtrar por rango de fecha + cajero (MOCK.facturas ya viene ordenado
   // de más reciente a más antiguo). Por defecto queda el mes actual.
-  const cajerosVentas = useMemoA(
-    () => ["Todos", ...Array.from(new Set((MOCK.facturas || []).map(f => f.cajero)))],
-    [MOCK.facturas]
-  );
+  // Opciones del filtro: cajeros reales (aunque no tengan ventas aún) + cualquier
+  // nombre histórico que aparezca en las facturas (p. ej. admin). Deduplicado y ordenado.
+  const cajerosVentas = useMemoA(() => {
+    const set = new Set();
+    (MOCK.cajeros || []).forEach(c => set.add(c.nombre));
+    (MOCK.facturas || []).forEach(f => set.add(f.cajero));
+    return ["Todos", ...Array.from(set).sort()];
+  }, [MOCK.cajeros, MOCK.facturas]);
   const facturasFiltradas = useMemoA(
     () => (MOCK.facturas || []).filter(f => {
       if (vDesde && f.fecha < vDesde) return false;
