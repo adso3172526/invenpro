@@ -94,7 +94,7 @@ const VentaDetalleModal = ({ factura, onClose }) => {
 };
 
 const Cajeros = () => {
-  const [tab, setTab] = useStateA("equipo");
+  const [tab, setTab] = useStateA("ventas");
   const [showAdd, setShowAdd] = useStateA(false);
   const [cfgCajero, setCfgCajero] = useStateA(null);
   const [cfgUsuario, setCfgUsuario] = useStateA(null);
