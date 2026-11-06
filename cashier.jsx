@@ -1856,8 +1856,8 @@ const printReceipt = (factura) => {
 <title>Recibo ${factura.id}</title>
 <style>
   @page { size: ${anchoMm}mm auto; margin: 0; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Courier New', monospace; font-size: 12px; width: ${bodyMm}mm; margin: 0 auto; padding: 4mm 0; color: #000; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: 'Courier New', monospace; font-size: 12px; font-weight: 700; width: ${bodyMm}mm; margin: 0 auto; padding: 4mm 0; color: #000; }
   .center { text-align: center; }
   h2 { font-size: 14px; margin-bottom: 2px; }
   .info { font-size: 11px; margin-bottom: 1px; }
