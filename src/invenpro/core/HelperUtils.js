@@ -108,9 +108,12 @@
 
   // Minúsculas + sin tildes (conserva la ñ). NO recorta espacios: apto para usar
   // en vivo en un input mientras el usuario escribe (puede teclear espacios).
+  // normalize("NFC") compone primero los acentos combinantes (a + ´) en su forma
+  // precompuesta (á), para que el reemplazo por vocales los capture también.
   function normalizarNombreInput(s) {
     if (s == null) return s;
     return String(s)
+      .normalize("NFC")
       .toLowerCase()
       .replace(/[áàäâã]/g, "a")
       .replace(/[éèëê]/g, "e")

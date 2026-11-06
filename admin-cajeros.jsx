@@ -521,7 +521,7 @@ const Cajeros = () => {
             <div className="field"><label>Documento</label><input className="mono" value={newDoc} onChange={e => setNewDoc(e.target.value)} placeholder="C.C."/></div>
             <div className="field"><label>Teléfono</label><input className="mono" value={newTel} onChange={e => setNewTel(e.target.value)} placeholder="+57"/></div>
             <div className="field"><label>Rol</label><select value={newRol} onChange={e => setNewRol(e.target.value)}><option>Cajero</option>{!esSupervisor && <option>Supervisor</option>}</select></div>
-            <div className="field"><label>Usuario POS</label><input className="mono" value={newUsuario} onChange={e => setNewUsuario(e.target.value)} placeholder="nombre.apellido"/></div>
+            <div className="field"><label>Usuario POS</label><input className="mono" value={newUsuario} onChange={e => setNewUsuario(window.normalizarNombreInput(e.target.value))} placeholder="nombre.apellido"/></div>
             <div className="field sm:tw-col-span-2"><label>Contraseña inicial</label><input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Vacío = 123456 por defecto"/></div>
           </div>
         </Modal>
