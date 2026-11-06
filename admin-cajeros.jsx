@@ -180,7 +180,7 @@ const Cajeros = () => {
             <button className={tab === "ventas" ? "on" : ""} onClick={() => setTab("ventas")}>Ventas</button>
             <button className={tab === "usuarios" ? "on" : ""} onClick={() => setTab("usuarios")}>Usuarios</button>
           </div>
-          <button className="btn primary tw-w-full sm:tw-w-auto" onClick={() => setShowAdd(true)}><Icon name="plus" size={14}/> Nuevo cajero</button>
+          <button className={"btn primary tw-w-full sm:tw-w-auto " + (tab === "equipo" ? "" : "tw-hidden sm:tw-inline-flex")} onClick={() => setShowAdd(true)}><Icon name="plus" size={14}/> Nuevo cajero</button>
         </div>
       </div>
 
