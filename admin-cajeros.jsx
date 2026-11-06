@@ -175,9 +175,9 @@ const Cajeros = () => {
         </div>
         <div className="tw-flex tw-flex-wrap tw-gap-2 tw-w-full sm:tw-w-auto">
           <div className="tab-bar tw-w-full sm:tw-w-auto">
-            <button className={tab === "equipo" ? "on" : ""} onClick={() => setTab("equipo")}>Equipo</button>
-            <button className={tab === "turnos" ? "on" : ""} onClick={() => setTab("turnos")}>Turnos</button>
             <button className={tab === "ventas" ? "on" : ""} onClick={() => setTab("ventas")}>Ventas</button>
+            <button className={tab === "turnos" ? "on" : ""} onClick={() => setTab("turnos")}>Turnos</button>
+            <button className={tab === "equipo" ? "on" : ""} onClick={() => setTab("equipo")}>Equipo</button>
             <button className={tab === "usuarios" ? "on" : ""} onClick={() => setTab("usuarios")}>Usuarios</button>
           </div>
           <button className={"btn primary tw-w-full sm:tw-w-auto " + (tab === "equipo" ? "" : "max-sm:tw-hidden")} onClick={() => setShowAdd(true)}><Icon name="plus" size={14}/> Nuevo cajero</button>
